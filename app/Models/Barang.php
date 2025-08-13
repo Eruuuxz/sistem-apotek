@@ -10,13 +10,13 @@ class Barang extends Model
     use HasFactory;
 
     protected $table = 'barang';
-    protected $fillable = ['kode', 'nama', 'harga_jual', 'stok'];
+    // Tambahkan supplier_id ke fillable jika barang memiliki relasi supplier
+    protected $fillable = ['kode', 'nama', 'harga_jual', 'stok', 'supplier_id']; 
 
     public function supplier()
     {
         return $this->belongsTo(Supplier::class, 'supplier_id');
     }
-
 
     public function pembelianDetail()
     {
@@ -28,3 +28,4 @@ class Barang extends Model
         return $this->hasMany(PenjualanDetail::class);
     }
 }
+

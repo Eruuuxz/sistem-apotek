@@ -11,7 +11,7 @@
     </div>
 @endif
 
-<a href="/barang/create" class="bg-blue-600 text-white px-4 py-2 rounded">+ Tambah Barang</a>
+<a href="{{ route('barang.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded">+ Tambah Barang</a>
 
 <table class="w-full mt-4 bg-white shadow rounded">
     <thead class="bg-gray-200">
@@ -20,6 +20,7 @@
             <th class="px-4 py-2">Nama Barang</th>
             <th class="px-4 py-2">Harga Jual</th>
             <th class="px-4 py-2">Stok</th>
+            <th class="px-4 py-2">Supplier</th> {{-- Tambah kolom Supplier --}}
             <th class="px-4 py-2">Aksi</th>
         </tr>
     </thead>
@@ -30,9 +31,10 @@
             <td class="border px-4 py-2">{{ $item->nama }}</td>
             <td class="border px-4 py-2">Rp {{ number_format($item->harga_jual, 0, ',', '.') }}</td>
             <td class="border px-4 py-2">{{ $item->stok }}</td>
+            <td class="border px-4 py-2">{{ $item->supplier->nama ?? '-' }}</td> {{-- Tampilkan nama supplier --}}
             <td class="border px-4 py-2">
-                <a href="{{ url('/barang/' . $item->id . '/edit') }}" class="text-yellow-500">Edit</a> |
-                <form action="{{ url('/barang/' . $item->id) }}" method="POST" class="inline">
+                <a href="{{ route('barang.edit', $item->id) }}" class="text-yellow-500">Edit</a> |
+                <form action="{{ route('barang.destroy', $item->id) }}" method="POST" class="inline">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="text-red-500" onclick="return confirm('Yakin ingin hapus?')">Hapus</button>
@@ -43,3 +45,4 @@
     </tbody>
 </table>
 @endsection
+

@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory; // Tambahkan ini
 
 class Supplier extends Model
 {
+    use HasFactory; // Tambahkan ini
+
     protected $table = 'supplier';
     protected $fillable = ['kode', 'nama', 'alamat', 'kota', 'telepon'];
     
@@ -16,6 +19,13 @@ class Supplier extends Model
 
     public function obat()
     {
-        return $this->hasMany(Obat::class);
+        // Asumsi obat juga bisa punya supplier, jika tidak relevan bisa dihapus
+        return $this->hasMany(Obat::class, 'supplier_id'); 
+    }
+
+    public function pembelian()
+    {
+        return $this->hasMany(Pembelian::class);
     }
 }
+

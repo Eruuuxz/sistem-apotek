@@ -6,10 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-        public function up(): void
+    public function up(): void
     {
         Schema::create('obat', function (Blueprint $table) {
             $table->id();
@@ -20,15 +17,13 @@ return new class extends Migration
             $table->decimal('harga_dasar', 15, 2);
             $table->decimal('persen_untung', 5, 2);
             $table->decimal('harga_jual', 15, 2);
+            $table->foreignId('supplier_id')->nullable()->constrained('supplier')->onDelete('set null');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('obats');
+        Schema::dropIfExists('obat');
     }
 };
