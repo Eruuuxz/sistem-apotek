@@ -2,30 +2,35 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory; // Tambahkan ini
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Supplier extends Model
 {
-    use HasFactory; // Tambahkan ini
+    use HasFactory;
 
     protected $table = 'supplier';
-    protected $fillable = ['kode', 'nama', 'alamat', 'kota', 'telepon'];
     
-    public function barang()
+    protected $fillable = [
+        'kode',
+        'nama',
+        'alamat',
+        'telepon',
+    ];
+
+    public function obat(): HasMany
+    {
+        return $this->hasMany(Obat::class, 'supplier_id');
+    }
+
+    public function barang(): HasMany
     {
         return $this->hasMany(Barang::class, 'supplier_id');
     }
 
-    public function obat()
+    public function pembelian(): HasMany
     {
-        // Asumsi obat juga bisa punya supplier, jika tidak relevan bisa dihapus
-        return $this->hasMany(Obat::class, 'supplier_id'); 
-    }
-
-    public function pembelian()
-    {
-        return $this->hasMany(Pembelian::class);
+        return $this->hasMany(Pembelian::class, 'supplier_id');
     }
 }
-

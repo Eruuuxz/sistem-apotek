@@ -2,13 +2,27 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Retur extends Model
 {
-    public function detail()
-{
-    return $this->hasMany(ReturDetail::class);
-}
+    use HasFactory;
 
+    protected $table = 'retur';
+    
+    protected $fillable = [
+        'no_retur',
+        'tanggal',
+        'jenis',
+        'transaksi_id',
+        'total',
+        'keterangan',
+    ];
+
+    public function details(): HasMany
+    {
+        return $this->hasMany(ReturDetail::class, 'retur_id');
+    }
 }

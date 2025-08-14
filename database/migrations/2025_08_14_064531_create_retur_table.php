@@ -8,20 +8,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('penjualan', function (Blueprint $table) {
+        Schema::create('retur', function (Blueprint $table) {
             $table->id();
-            $table->string('no_nota')->unique();
+            $table->string('no_retur')->unique();
             $table->date('tanggal');
-            $table->string('kasir_nama');
+            $table->enum('jenis', ['pembelian', 'penjualan']); // Jenis retur: pembelian atau penjualan
+            $table->unsignedBigInteger('transaksi_id'); // ID transaksi sumber (pembelian_id atau penjualan_id)
             $table->decimal('total', 15, 2)->default(0);
-            $table->decimal('bayar', 15, 2)->default(0); // Tambahkan ini
-            $table->decimal('kembalian', 15, 2)->default(0); // Tambahkan ini
+            $table->string('keterangan')->nullable();
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('penjualan');
+        Schema::dropIfExists('retur');
     }
 };

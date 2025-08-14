@@ -6,22 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-    Schema::create('pembelian', function (Blueprint $table) {
-        $table->id();
-        $table->string('nomor_faktur');
-        $table->date('tanggal');
-        $table->timestamps();
-    });
+        Schema::create('pembelian', function (Blueprint $table) {
+            $table->id();
+            $table->string('no_faktur')->unique(); // Ubah dari nomor_faktur ke no_faktur
+            $table->date('tanggal');
+            $table->foreignId('supplier_id')->nullable()->constrained('supplier')->onDelete('set null'); // Tambahkan ini
+            $table->decimal('total', 15, 2)->default(0); // Tambahkan ini
+            $table->timestamps();
+        });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('pembelian');

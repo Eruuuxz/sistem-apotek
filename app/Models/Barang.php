@@ -4,28 +4,35 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Barang extends Model
 {
     use HasFactory;
 
     protected $table = 'barang';
-    // Tambahkan supplier_id ke fillable jika barang memiliki relasi supplier
-    protected $fillable = ['kode', 'nama', 'harga_jual', 'stok', 'supplier_id']; 
+    
+    protected $fillable = [
+        'kode',
+        'nama',
+        'harga_jual',
+        'stok',
+        'supplier_id',
+    ];
 
-    public function supplier()
+    public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
-    public function pembelianDetail()
+    public function pembelianDetails(): HasMany
     {
-        return $this->hasMany(PembelianDetail::class);
+        return $this->hasMany(PembelianDetail::class, 'barang_id');
     }
 
-    public function penjualanDetail()
+    public function penjualanDetails(): HasMany
     {
-        return $this->hasMany(PenjualanDetail::class);
+        return $this->hasMany(PenjualanDetail::class, 'barang_id');
     }
 }
-

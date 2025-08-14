@@ -8,14 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-    Schema::create('pembelian_detail', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('pembelian_id')->constrained('pembelian')->cascadeOnDelete();
-        $table->foreignId('obat_id')->constrained('obat')->cascadeOnDelete();
-        $table->integer('jumlah');
-        $table->decimal('harga_beli', 15, 2);
-        $table->timestamps();
-    });
+        Schema::create('pembelian_detail', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('pembelian_id')->constrained('pembelian')->cascadeOnDelete();
+            $table->foreignId('obat_id')->constrained('obat')->cascadeOnDelete();
+            $table->integer('jumlah');
+            $table->decimal('harga_beli', 15, 2); // Ubah nama kolom dari 'harga' menjadi 'harga_beli'
+            $table->timestamps();
+        });
     }
 
     public function down(): void

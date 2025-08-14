@@ -4,20 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pembelian extends Model
 {
     use HasFactory;
 
     protected $table = 'pembelian';
+    
+    protected $fillable = [
+        'no_faktur',
+        'tanggal',
+        'supplier_id',
+        'total',
+    ];
 
-    public function pembelianDetail()
+    public function supplier(): BelongsTo
     {
-        return $this->hasMany(PembelianDetail::class, 'pembelian_id');
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
-    public function supplier()
+    public function detail(): HasMany
     {
-        return $this->belongsTo(Supplier::class);
+        return $this->hasMany(PembelianDetail::class, 'pembelian_id');
     }
 }

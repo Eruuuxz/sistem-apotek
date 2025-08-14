@@ -2,18 +2,31 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PenjualanDetail extends Model
 {
-    public function penjualan()
-{
-    return $this->belongsTo(Penjualan::class);
-}
+    use HasFactory;
 
-public function barang()
-{
-    return $this->belongsTo(Barang::class);
-}
+    protected $table = 'penjualan_detail';
+    
+    protected $fillable = [
+        'penjualan_id',
+        'barang_id',
+        'qty',
+        'harga',
+        'subtotal', 
+    ];
 
+    public function penjualan(): BelongsTo
+    {
+        return $this->belongsTo(Penjualan::class, 'penjualan_id');
+    }
+
+    public function barang(): BelongsTo
+    {
+        return $this->belongsTo(Barang::class, 'barang_id');
+    }
 }

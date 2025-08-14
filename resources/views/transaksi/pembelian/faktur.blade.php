@@ -1,8 +1,9 @@
+{{-- File: /pembelian/faktur.blade.php --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Faktur Pembelian</title>
+    <title>Faktur Pembelian - {{ $p->no_faktur }}</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         @media print {
@@ -16,8 +17,8 @@
         <div class="flex justify-between items-center border-b pb-4 mb-4">
             <div>
                 <h1 class="text-2xl font-bold">FAKTUR PEMBELIAN</h1>
-                <p class="text-sm text-gray-600">Nomor: <span class="font-medium">FPB-2025-001</span></p>
-                <p class="text-sm text-gray-600">Tanggal: <span class="font-medium">11 Agustus 2025</span></p>
+                <p class="text-sm text-gray-600">Nomor: <span class="font-medium">{{ $p->no_faktur }}</span></p>
+                <p class="text-sm text-gray-600">Tanggal: <span class="font-medium">{{ \Carbon\Carbon::parse($p->tanggal)->translatedFormat('d F Y') }}</span></p>
             </div>
             <div class="text-right">
                 <h2 class="text-lg font-bold">APOTEK SEHAT SELALU</h2>
@@ -28,9 +29,9 @@
 
         <div class="mb-4">
             <h3 class="font-bold">Supplier:</h3>
-            <p>PT Farmasi Jaya</p>
-            <p>Jl. Obat No. 1, Jakarta</p>
-            <p>Telp: (021) 987654</p>
+            <p>{{ $p->supplier->nama ?? '-' }}</p>
+            <p>{{ $p->supplier->alamat ?? '-' }}</p>
+            <p>Telp: {{ $p->supplier->telepon ?? '-' }}</p>
         </div>
 
         <table class="w-full text-sm border-collapse border border-gray-300 mb-4">
@@ -44,25 +45,20 @@
                 </tr>
             </thead>
             <tbody>
+                @foreach($p->detail as $i => $d)
                 <tr>
-                    <td class="border border-gray-300 px-3 py-2">1</td>
-                    <td class="border border-gray-300 px-3 py-2">Paracetamol 500mg</td>
-                    <td class="border border-gray-300 px-3 py-2 text-right">100</td>
-                    <td class="border border-gray-300 px-3 py-2 text-right">Rp 2.000</td>
-                    <td class="border border-gray-300 px-3 py-2 text-right">Rp 200.000</td>
+                    <td class="border border-gray-300 px-3 py-2">{{ $i+1 }}</td>
+                    <td class="border border-gray-300 px-3 py-2">{{ $d->obat->nama ?? '-' }}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-right">{{ $d->jumlah }}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-right">Rp {{ number_format($d->harga_beli, 0, ',', '.') }}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-right">Rp {{ number_format($d->jumlah * $d->harga_beli, 0, ',', '.') }}</td>
                 </tr>
-                <tr>
-                    <td class="border border-gray-300 px-3 py-2">2</td>
-                    <td class="border border-gray-300 px-3 py-2">Amoxicillin 500mg</td>
-                    <td class="border border-gray-300 px-3 py-2 text-right">50</td>
-                    <td class="border border-gray-300 px-3 py-2 text-right">Rp 3.500</td>
-                    <td class="border border-gray-300 px-3 py-2 text-right">Rp 175.000</td>
-                </tr>
+                @endforeach
             </tbody>
             <tfoot>
                 <tr>
                     <td colspan="4" class="border border-gray-300 px-3 py-2 text-right font-bold">Total</td>
-                    <td class="border border-gray-300 px-3 py-2 text-right font-bold">Rp 375.000</td>
+                    <td class="border border-gray-300 px-3 py-2 text-right font-bold">Rp {{ number_format($p->total, 0, ',', '.') }}</td>
                 </tr>
             </tfoot>
         </table>
@@ -74,13 +70,14 @@
             </div>
             <div class="text-center">
                 <p class="mb-16">Hormat Kami,</p>
-                <p class="font-medium">PT Farmasi Jaya</p>
+                <p class="font-medium">{{ $p->supplier->nama ?? 'Supplier' }}</p>
             </div>
         </div>
     </div>
 
-    <div class="text-center mt-4 no-print">
+    <div class="text-center mt-4 no-print flex justify-center gap-2">
         <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded shadow">Cetak Faktur</button>
+        <a href="{{ route('pembelian.pdf', $p->id) }}" class="bg-green-600 text-white px-4 py-2 rounded shadow">Unduh PDF</a>
     </div>
 </body>
 </html>
