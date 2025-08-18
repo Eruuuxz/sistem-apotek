@@ -9,19 +9,19 @@
 <div class="grid grid-cols-4 gap-4 mb-8">
     <div class="bg-white p-4 shadow rounded">
         <h2 class="text-lg font-semibold text-gray-600">Total Barang</h2>
-        <p class="text-3xl font-bold text-blue-600 mt-2">120</p>
+        <p class="text-3xl font-bold text-blue-600 mt-2">{{ $totalBarang }}</p>
     </div>
     <div class="bg-white p-4 shadow rounded">
         <h2 class="text-lg font-semibold text-gray-600">Total Supplier</h2>
-        <p class="text-3xl font-bold text-green-600 mt-2">15</p>
+        <p class="text-3xl font-bold text-green-600 mt-2">{{ $totalSupplier }}</p>
     </div>
     <div class="bg-white p-4 shadow rounded">
         <h2 class="text-lg font-semibold text-gray-600">Penjualan Hari Ini</h2>
-        <p class="text-3xl font-bold text-purple-600 mt-2">Rp 1.500.000</p>
+        <p class="text-3xl font-bold text-purple-600 mt-2">Rp {{ number_format($penjualanHariIni,0,',','.') }}</p>
     </div>
     <div class="bg-white p-4 shadow rounded">
         <h2 class="text-lg font-semibold text-gray-600">Stok Menipis</h2>
-        <p class="text-3xl font-bold text-red-600 mt-2">8</p>
+        <p class="text-3xl font-bold text-red-600 mt-2">{{ $stokMenipis }}</p>
     </div>
 </div>
 
@@ -45,15 +45,19 @@
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // data dari controller → ke JS
+    const penjualanSeries = @json($penjualanBulanan->pluck('total'));
+    const penjualanLabels = @json($penjualanBulanan->pluck('ym')); // format YYYY-MM
+
     // Chart Penjualan Bulanan
     const ctxPenjualan = document.getElementById('penjualanChart').getContext('2d');
-    const penjualanChart = new Chart(ctxPenjualan, {
+    new Chart(ctxPenjualan, {
         type: 'bar',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu'],
+            labels: penjualanLabels,
             datasets: [{
                 label: 'Penjualan (Rp)',
-                data: [1500000, 1800000, 1200000, 2000000, 2500000, 2100000, 3000000, 2800000],
+                data: penjualanSeries,
                 backgroundColor: 'rgba(37, 99, 235, 0.7)'
             }]
         },
@@ -63,24 +67,25 @@
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: function(value) {
-                            return 'Rp ' + value.toLocaleString();
-                        }
+                        callback: v => 'Rp '+Number(v).toLocaleString('id-ID')
                     }
                 }
             }
         }
     });
 
+    const stokLabel = @json($stokLowList->pluck('nama'));
+    const stokData = @json($stokLowList->pluck('stok'));
+
     // Chart Stok Menipis
     const ctxStok = document.getElementById('stokChart').getContext('2d');
-    const stokChart = new Chart(ctxStok, {
+    new Chart(ctxStok, {
         type: 'pie',
         data: {
-            labels: ['Paracetamol', 'Amoxicillin', 'Vitamin C', 'Ibuprofen', 'CTM'],
+            labels: stokLabel,
             datasets: [{
                 label: 'Jumlah Stok',
-                data: [5, 3, 2, 4, 1],
+                data: stokData,
                 backgroundColor: [
                     'rgba(255, 99, 132, 0.7)',
                     'rgba(54, 162, 235, 0.7)',

@@ -14,10 +14,10 @@
             Kasir Apotek
         </div>
         <nav class="mt-4">
-            <a href="/kasir/pos" class="block px-4 py-2 hover:bg-green-600 {{ request()->is('kasir/pos') ? 'bg-green-600' : '' }}">
+            <a href="/pos" class="block px-4 py-2 hover:bg-green-600 {{ request()->is('kasir/pos') ? 'bg-green-600' : '' }}">
                 POS Penjualan
             </a>
-            <a href="/kasir/riwayat" class="block px-4 py-2 hover:bg-green-600 {{ request()->is('kasir/riwayat') ? 'bg-green-600' : '' }}">
+            <a href="/penjualan" class="block px-4 py-2 hover:bg-green-600 {{ request()->is('kasir/riwayat') ? 'bg-green-600' : '' }}">
                 Riwayat Penjualan
             </a>
         </nav>

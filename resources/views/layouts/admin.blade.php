@@ -14,25 +14,25 @@
             Apotek XYZ
         </div>
         <nav class="mt-4">
-            <a href="/" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('/') ? 'bg-blue-600' : '' }}">
+            <a href="{{ route('dashboard') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('dashboard*') || request()->is('/') ? 'bg-blue-600' : '' }}">
                 Dashboard
             </a>
-            <a href="/barang" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('barang*') ? 'bg-blue-600' : '' }}">
+            <a href="{{ route('barang.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('barang*') ? 'bg-blue-600' : '' }}">
                 Data Barang
             </a>
-            <a href="/supplier" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('supplier*') ? 'bg-blue-600' : '' }}">
+            <a href="{{ route('supplier.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('supplier*') ? 'bg-blue-600' : '' }}">
                 Data Supplier
             </a>
-            <a href="/pembelian" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('pembelian*') ? 'bg-blue-600' : '' }}">
+            <a href="{{ route('pembelian.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('pembelian*') ? 'bg-blue-600' : '' }}">
                 Pembelian
             </a>
-            <a href="/penjualan" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('penjualan*') ? 'bg-blue-600' : '' }}">
+            <a href="{{ route('penjualan.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('penjualan*') ? 'bg-blue-600' : '' }}">
                 Penjualan
             </a>
-            <a href="/retur" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('retur*') ? 'bg-blue-600' : '' }}">
+            <a href="{{ route('retur.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('retur*') ? 'bg-blue-600' : '' }}">
                 Retur Barang
             </a>
-            <a href="/laporan" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('laporan*') ? 'bg-blue-600' : '' }}">
+            <a href="{{ route('laporan.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('laporan*') ? 'bg-blue-600' : '' }}">
                 Laporan
             </a>
         </nav>
@@ -55,7 +55,5 @@
         </main>
     </div>
     @stack('scripts')
-    
-
 </body>
 </html>
