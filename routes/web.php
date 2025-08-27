@@ -25,7 +25,6 @@ Route::get('/', [DashboardController::class, 'index']);
 */
 
 // Master Data Routes
-Route::resource('barang', BarangController::class);
 Route::resource('supplier', SupplierController::class);
 Route::resource('obat', ObatController::class);
 
