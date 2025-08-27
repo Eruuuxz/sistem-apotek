@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Penjualan, PenjualanDetail, Barang}; // Tambahkan Barang
+use App\Models\{Penjualan, PenjualanDetail, Obat}; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; // Tambahkan ini
 
@@ -50,14 +50,14 @@ class PenjualanController extends Controller
             foreach ($cart as $item) {
                 PenjualanDetail::create([
                     'penjualan_id' => $penjualan->id,
-                    'barang_id'   => Barang::where('kode', $item['kode'])->value('id'), // Ambil ID barang dari kode
+                    'obat_id'   => Obat::where('kode', $item['kode'])->value('id'), 
                     'qty'   => $item['qty'],
                     'harga'   => $item['harga'],
                     'subtotal'   => $item['qty'] * $item['harga'],
                 ]);
 
-                // Stok barang berkurang
-                Barang::where('kode', $item['kode'])->decrement('stok', $item['qty']);
+                // Stok obat berkurang
+                Obat::where('kode', $item['kode'])->decrement('stok', $item['qty']); 
             }
         });
 
@@ -68,13 +68,13 @@ class PenjualanController extends Controller
 
     public function show($id)
     {
-        $p = Penjualan::with('detail.barang')->findOrFail($id);
+        $p = Penjualan::with('detail.obat')->findOrFail($id); // Ubah detail.barang menjadi detail.obat
         return view('kasir.detail', compact('p'));
     }
 
     public function struk($id)
     {
-        $p = Penjualan::with('detail.barang')->findOrFail($id);
+        $p = Penjualan::with('detail.obat')->findOrFail($id); // Ubah detail.barang menjadi detail.obat
         return view('kasir.struk', compact('p'));
     }
 }

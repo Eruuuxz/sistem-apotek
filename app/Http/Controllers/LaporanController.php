@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Penjualan, Barang}; // Tambahkan Barang
+use App\Models\{Penjualan, Obat}; // Tambahkan Barang
 use Illuminate\Http\Request;
 use Carbon\Carbon; // Digunakan untuk filter tanggal
 use PDF; // Untuk export PDF
@@ -45,7 +45,7 @@ class LaporanController extends Controller
         $from = $r->input('from');
         $to = $r->input('to');
 
-        $q = \App\Models\Penjualan::with('detail.barang')->latest();
+        $q = \App\Models\Penjualan::with('detail.obat')->latest();
 
         if ($from) $q->whereDate('tanggal','>=',$from);
         if ($to)   $q->whereDate('tanggal','<=',$to);
@@ -65,7 +65,7 @@ class LaporanController extends Controller
     public function stok(Request $r)
     {
         $threshold = $r->filled('threshold') ? (int)$r->threshold : null;
-        $q = Barang::query();
+        $q = Obat::query();
 
         if ($threshold !== null) {
             $q->where('stok','<',$threshold);

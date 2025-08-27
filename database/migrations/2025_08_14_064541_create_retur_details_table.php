@@ -11,12 +11,7 @@ return new class extends Migration
         Schema::create('retur_detail', function (Blueprint $table) {
             $table->id();
             $table->foreignId('retur_id')->constrained('retur')->cascadeOnDelete();
-            // Kolom ini akan menyimpan ID dari tabel 'obat' atau 'barang'
-            // Tergantung jenis retur (pembelian -> obat, penjualan -> barang)
-            $table->unsignedBigInteger('barang_id'); 
-            // Anda bisa menambahkan foreign key constraint secara kondisional atau tidak sama sekali
-            // Jika ingin strict, bisa buat 2 kolom: obat_id dan barang_id, salah satu nullable
-            // Untuk fleksibilitas, kita biarkan unsignedBigInteger saja dan validasi di aplikasi
+            $table->foreignId('obat_id')->constrained('obat')->cascadeOnDelete(); 
             
             $table->integer('qty');
             $table->decimal('harga', 15, 2);

@@ -17,7 +17,7 @@
             <a href="{{ route('dashboard') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('dashboard*') || request()->is('/') ? 'bg-blue-600' : '' }}">
                 Dashboard
             </a>
-            <a href="{{ route('obat.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('barang*') ? 'bg-blue-600' : '' }}">
+            <a href="{{ route('obat.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('obat*') ? 'bg-blue-600' : '' }}">
                 Data Obat
             </a>
             <a href="{{ route('supplier.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('supplier*') ? 'bg-blue-600' : '' }}">

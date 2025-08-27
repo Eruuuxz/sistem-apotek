@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\Obat; // Import model Obat
 
 class ObatSeeder extends Seeder
 {
@@ -12,6 +13,6 @@ class ObatSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        Obat::factory()->count(50)->create(); // Buat 50 data obat dummy
     }
 }

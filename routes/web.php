@@ -1,15 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\BarangController;
+// use App\Http\Controllers\BarangController; // Hapus atau komentari ini
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ObatController;
-use App\Http\Controllers\PembelianController; // Tambahkan ini
-use App\Http\Controllers\ReturController;     // Tambahkan ini
-use App\Http\Controllers\POSController;       // Tambahkan ini
-use App\Http\Controllers\PenjualanController; // Tambahkan ini
-use App\Http\Controllers\LaporanController; // Tambahkan ini
-use App\Http\Controllers\DashboardController; // Tambahkan ini
+use App\Http\Controllers\PembelianController;
+use App\Http\Controllers\ReturController;
+use App\Http\Controllers\POSController;
+use App\Http\Controllers\PenjualanController;
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', [DashboardController::class, 'index']);
 
@@ -62,13 +62,13 @@ Route::get('/penjualan/{id}/struk', [PenjualanController::class, 'struk'])->name
 // Route::get('/pembelian/faktur', function () { return view('transaksi.pembelian.faktur'); })->name('pembelian.faktur'); // Diganti dengan PembelianController
 
 // Test routes (bisa dihapus setelah development)
-Route::get('/test-barang', function () {
-    return \App\Models\Barang::with('supplier')->get();
-});
+// Route::get('/test-barang', function () { // Hapus atau komentari ini
+//     return \App\Models\Barang::with('supplier')->get();
+// });
 
-Route::get('/test-pembelian', function () {
-    return \App\Models\Pembelian::with(['pembelianDetail.barang.supplier'])->get();
-});
+// Route::get('/test-pembelian', function () { // Hapus atau komentari ini
+//     return \App\Models\Pembelian::with(['pembelianDetail.barang.supplier'])->get();
+// });
 
 // Laporan & Dashboard Routes 
 Route::get('/dashboard', [DashboardController::class,'index'])->name('dashboard'); // Pindahkan atau pastikan ini ada

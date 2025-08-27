@@ -2,52 +2,52 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Barang; // Menggunakan model Barang untuk POS
+use App\Models\Obat; 
 use Illuminate\Http\Request;
 
 class POSController extends Controller
 {
     public function index()
     {
-        $barang = Barang::orderBy('nama')->get(['id', 'kode', 'nama', 'harga_jual', 'stok']);
+        $obat = Obat::orderBy('nama')->get(['id', 'kode', 'nama', 'harga_jual', 'stok']); 
         
         $cart = session('cart', []); // ['BRG001'=>['kode'=>..,'nama'=>..,'harga'=>..,'qty'=>..]]
         $this->validateCart($cart); // Validasi keranjang saat dimuat
         
         $total = collect($cart)->sum(fn ($i) => $i['harga'] * $i['qty']);
         
-        return view('kasir.pos', compact('barang', 'cart', 'total'));
+        return view('kasir.pos', compact('obat', 'cart', 'total')); 
     }
 
     public function add(Request $r)
     {
         $r->validate(['kode' => 'required']);
         
-        $b = Barang::where('kode', $r->kode)->first();
+        $o = Obat::where('kode', $r->kode)->first(); 
         
-        if (!$b) {
-            return back()->with('error', 'Barang tidak ditemukan');
+        if (!$o) { 
+            return back()->with('error', 'Obat tidak ditemukan'); 
         }
 
         $cart = session('cart', []);
         
-        if (isset($cart[$b->kode])) {
+        if (isset($cart[$o->kode])) { 
             // Cek stok sebelum menambah
-            if ($cart[$b->kode]['qty'] + 1 > $b->stok) {
-                return back()->with('error', 'Stok ' . $b->nama . ' tidak cukup.');
+            if ($cart[$o->kode]['qty'] + 1 > $o->stok) { 
+                return back()->with('error', 'Stok ' . $o->nama . ' tidak cukup.'); 
             }
-            $cart[$b->kode]['qty'] += 1;
+            $cart[$o->kode]['qty'] += 1; 
         } else {
             // Cek stok untuk item baru
-            if ($b->stok < 1) {
-                return back()->with('error', 'Stok ' . $b->nama . ' kosong.');
+            if ($o->stok < 1) { 
+                return back()->with('error', 'Stok ' . $o->nama . ' kosong.'); 
             }
-            $cart[$b->kode] = [
-                'kode' => $b->kode,
-                'nama' => $b->nama,
-                'harga' => $b->harga_jual,
+            $cart[$o->kode] = [ 
+                'kode' => $o->kode, 
+                'nama' => $o->nama, 
+                'harga' => $o->harga_jual, 
                 'qty' => 1,
-                'stok' => $b->stok // Simpan stok saat ini untuk referensi
+                'stok' => $o->stok // Simpan stok saat ini untuk referensi 
             ];
         }
         
@@ -62,19 +62,19 @@ class POSController extends Controller
         $cart = session('cart', []);
         
         if (isset($cart[$r->kode])) {
-            $b = Barang::where('kode', $r->kode)->first();
-            if (!$b) { // Barang tidak ditemukan di DB, hapus dari keranjang
+            $o = Obat::where('kode', $r->kode)->first(); 
+            if (!$o) { 
                 unset($cart[$r->kode]);
                 session(['cart' => $cart]);
-                return back()->with('error', 'Barang tidak ditemukan di database.');
+                return back()->with('error', 'Obat tidak ditemukan di database.'); 
             }
 
             // Batasi qty agar tidak melebihi stok yang tersedia
             $newQty = (int)$r->qty;
-            if ($newQty > $b->stok) {
-                $newQty = $b->stok; // Set ke stok maksimal
+            if ($newQty > $o->stok) { 
+                $newQty = $o->stok; // Set ke stok maksimal 
                 session(['cart' => $cart]); // Update session jika qty diubah
-                return back()->with('error', 'Kuantitas melebihi stok yang tersedia. Stok maksimal: ' . $b->stok);
+                return back()->with('error', 'Kuantitas melebihi stok yang tersedia. Stok maksimal: ' . $o->stok); 
             }
             
             $cart[$r->kode]['qty'] = $newQty;
@@ -97,22 +97,22 @@ class POSController extends Controller
     private function validateCart(&$cart)
     {
         foreach ($cart as $kode => &$item) {
-            $b = Barang::where('kode', $kode)->first();
-            if (!$b) {
-                unset($cart[$kode]); // Hapus item jika barang tidak ditemukan di DB
+            $o = Obat::where('kode', $kode)->first();
+            if (!$o) { 
+                unset($cart[$kode]); // Hapus item jika obat tidak ditemukan di DB
                 continue;
             }
             // Kunci harga ke harga jual terbaru dari DB
-            $item['harga'] = $b->harga_jual;
+            $item['harga'] = $o->harga_jual; 
             // Batasi qty hingga stok yang tersedia
-            if ($item['qty'] > $b->stok) {
-                $item['qty'] = $b->stok;
+            if ($item['qty'] > $o->stok) { 
+                $item['qty'] = $o->stok; 
             }
             if ($item['qty'] < 1) { // Pastikan qty minimal 1
                 $item['qty'] = 1;
             }
             // Update stok referensi di keranjang
-            $item['stok'] = $b->stok;
+            $item['stok'] = $o->stok; 
         }
         session(['cart' => $cart]); // Simpan kembali keranjang yang sudah divalidasi
     }

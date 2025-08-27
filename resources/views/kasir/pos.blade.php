@@ -19,11 +19,11 @@
 @endif
 
 <div class="grid grid-cols-3 gap-4">
-    <!-- Form Input Barang -->
+    <!-- Form Input Obat -->
     <div class="col-span-2 bg-white p-4 shadow rounded">
         <form action="{{ route('pos.add') }}" method="POST" class="mb-4 flex gap-2">
             @csrf
-            <input type="text" name="kode" placeholder="Scan / Ketik Kode Barang" class="border px-3 py-2 w-full" autofocus>
+            <input type="text" name="kode" placeholder="Scan / Ketik Kode Obat" class="border px-3 py-2 w-full" autofocus>
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Tambah</button>
         </form>
 
@@ -31,7 +31,7 @@
             <thead class="bg-gray-200">
                 <tr>
                     <th class="px-2 py-1 text-left">Kode</th>
-                    <th class="px-2 py-1 text-left">Nama Barang</th>
+                    <th class="px-2 py-1 text-left">Nama Obat</th>
                     <th class="px-2 py-1 text-right">Harga</th>
                     <th class="px-2 py-1 text-center">Qty</th>
                     <th class="px-2 py-1 text-right">Stok</th>
@@ -39,7 +39,7 @@
                     <th class="px-2 py-1 text-center">Aksi</th>
                 </tr>
             </thead>
-            <tbody id="daftar_barang">
+            <tbody id="daftar_obat">
                 @forelse($cart as $item)
                 <tr>
                     <td class="border px-2 py-1">{{ $item['kode'] }}</td>

@@ -54,7 +54,7 @@
 
     <div class="mt-2">
         @foreach($p->detail as $d)
-            <p>{{ $d->qty }}x {{ $d->barang->nama }}</p>
+            <p>{{ $d->qty }}x {{ $d->obat->nama }}</p> 
             <p class="text-right">Rp {{ number_format($d->harga, 0, ',', '.') }} <span style="margin-left: 10px;">Rp {{ number_format($d->subtotal, 0, ',', '.') }}</span></p>
         @endforeach
         <div class="border-b mt-2"></div>

@@ -18,6 +18,7 @@ class Obat extends Model
         'nama',
         'kategori',
         'stok',
+        'min_stok', 
         'harga_dasar',
         'persen_untung',
         'harga_jual',
@@ -32,5 +33,16 @@ class Obat extends Model
     public function pembelianDetails(): HasMany
     {
         return $this->hasMany(PembelianDetail::class, 'obat_id');
+    }
+
+    // Tambahkan relasi untuk PenjualanDetail dan ReturDetail
+    public function penjualanDetails(): HasMany
+    {
+        return $this->hasMany(PenjualanDetail::class, 'obat_id'); // Akan kita ubah di migrasi penjualan_detail
+    }
+
+    public function returDetails(): HasMany
+    {
+        return $this->hasMany(ReturDetail::class, 'obat_id'); // Akan kita ubah di migrasi retur_detail
     }
 }

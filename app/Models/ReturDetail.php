@@ -14,7 +14,7 @@ class ReturDetail extends Model
     
     protected $fillable = [
         'retur_id',
-        'barang_id',
+        'obat_id',
         'qty',
         'harga',
         'subtotal',
@@ -25,8 +25,8 @@ class ReturDetail extends Model
         return $this->belongsTo(Retur::class, 'retur_id');
     }
 
-    public function barang(): BelongsTo
+    public function obat(): BelongsTo
     {
-        return $this->belongsTo(Barang::class, 'barang_id');
+        return $this->belongsTo(Obat::class, 'obat_id');
     }
 }

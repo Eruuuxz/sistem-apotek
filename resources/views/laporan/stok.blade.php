@@ -15,18 +15,18 @@
     <thead class="bg-gray-200">
         <tr>
             <th class="px-3 py-2">Kode</th>
-            <th class="px-3 py-2">Nama</th>
+            <th class="px-3 py-2">Nama Obat</th> 
             <th class="px-3 py-2 text-right">Stok</th>
             <th class="px-3 py-2 text-right">Min Stok</th>
         </tr>
     </thead>
     <tbody>
-        @foreach($data as $b)
+        @foreach($data as $o) 
         <tr>
-            <td class="border px-3 py-2">{{ $b->kode }}</td>
-            <td class="border px-3 py-2">{{ $b->nama }}</td>
-            <td class="border px-3 py-2 text-right">{{ $b->stok }}</td>
-            <td class="border px-3 py-2 text-right">{{ $b->min_stok ?? ' - ' }}</td>
+            <td class="border px-3 py-2">{{ $o->kode }}</td> 
+            <td class="border px-3 py-2">{{ $o->nama }}</td> 
+            <td class="border px-3 py-2 text-right">{{ $o->stok }}</td> 
+            <td class="border px-3 py-2 text-right">{{ $o->min_stok ?? ' - ' }}</td> 
         </tr>
         @endforeach
     </tbody>

@@ -14,6 +14,7 @@ return new class extends Migration
             $table->string('nama');
             $table->string('kategori')->nullable();
             $table->integer('stok')->default(0);
+            $table->integer('min_stok')->default(5); // Tambahkan kolom min_stok
             $table->decimal('harga_dasar', 15, 2);
             $table->decimal('persen_untung', 5, 2);
             $table->decimal('harga_jual', 15, 2);

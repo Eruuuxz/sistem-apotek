@@ -16,7 +16,7 @@
 <table class="w-full bg-white border shadow rounded">
     <thead class="bg-gray-200">
         <tr>
-            <th class="px-3 py-2 text-left">Barang</th>
+            <th class="px-3 py-2 text-left">Obat</th>
             <th class="px-3 py-2 text-right">Qty</th>
             <th class="px-3 py-2 text-right">Harga Satuan</th>
             <th class="px-3 py-2 text-right">Subtotal</th>
@@ -25,7 +25,7 @@
     <tbody>
         @foreach($p->detail as $d)
         <tr>
-            <td class="border px-3 py-1">{{ $d->barang->kode }} - {{ $d->barang->nama }}</td>
+            <td class="border px-3 py-1">{{ $d->obat->kode }} - {{ $d->obat->nama }}</td> 
             <td class="border px-3 py-1 text-right">{{ $d->qty }}</td>
             <td class="border px-3 py-1 text-right">Rp {{ number_format($d->harga, 0, ',', '.') }}</td>
             <td class="border px-3 py-1 text-right">Rp {{ number_format($d->subtotal, 0, ',', '.') }}</td>

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Retur, ReturDetail, Pembelian, Penjualan, Obat, Barang}; // Tambahkan Obat, Barang
+use App\Models\{Retur, ReturDetail, Pembelian, Penjualan, Obat}; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -48,11 +48,11 @@ class ReturController extends Controller
                 'max_qty' => $d->jumlah
             ]);
         } else { // jenis === 'penjualan'
-            $src = Penjualan::with('detail.barang')->findOrFail($id);
+            $src = Penjualan::with('detail.obat')->findOrFail($id); 
             $items = $src->detail->map(fn ($d) => [
-                'id' => $d->barang_id,
-                'kode' => $d->barang->kode,
-                'nama' => $d->barang->nama,
+                'id' => $d->obat_id, 
+                'kode' => $d->obat->kode, 
+                'nama' => $d->obat->nama, 
                 'harga' => $d->harga,
                 'max_qty' => $d->qty
             ]);
@@ -94,7 +94,7 @@ class ReturController extends Controller
 
                 ReturDetail::create([
                     'retur_id' => $retur->id,
-                    'barang_id' => $id, // Kolom ini akan menyimpan ID obat atau barang
+                    'obat_id' => $id, 
                     'qty' => $qty,
                     'harga' => $harga,
                     'subtotal' => $sub
@@ -107,10 +107,10 @@ class ReturController extends Controller
                         $obat->decrement('stok', $qty);
                     }
                 } else {
-                    // retur dari customer: stok BARANG BERTAMBAH
-                    $barang = Barang::find($id);
-                    if ($barang) {
-                        $barang->increment('stok', $qty);
+                    // retur dari customer: stok OBAT BERTAMBAH
+                    $obat = Obat::find($id); 
+                    if ($obat) {
+                        $obat->increment('stok', $qty);
                     }
                 }
                 $total += $sub;
