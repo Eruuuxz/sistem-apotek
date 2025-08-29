@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Illuminate\Validation\ValidationException; // Tambahkan ini
 
 class CustomAuthenticatedSessionController extends Controller
 {
@@ -28,16 +29,31 @@ class CustomAuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Redirect berdasarkan role user
         $user = Auth::user();
-        
+        $requestedRole = $request->input('role'); // Ambil role dari input form login
+
+        // Mencegah login ke halaman yang salah
+        // Jika ada role yang diminta dari form login (misal: /login/admin atau /login/kasir)
+        // dan role user yang login tidak sesuai dengan role yang diminta,
+        // maka logout user dan kembalikan dengan error.
+        if ($requestedRole && $user->role !== $requestedRole) {
+            Auth::logout(); // Logout user yang salah role
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'email' => 'Anda tidak memiliki akses sebagai ' . ucfirst($requestedRole) . '.',
+            ]);
+        }
+
+        // Redirect berdasarkan role user yang sebenarnya
         if ($user->role === 'admin') {
             return redirect()->intended(route('dashboard'));
         } elseif ($user->role === 'kasir') {
             return redirect()->intended(route('pos.index'));
         }
 
-        // Fallback jika role tidak dikenali
+        // Fallback jika role tidak dikenali (seharusnya tidak terjadi jika role sudah ditentukan)
         return redirect()->route('pos.index');
     }
 
@@ -55,3 +71,4 @@ class CustomAuthenticatedSessionController extends Controller
         return redirect('/');
     }
 }
+

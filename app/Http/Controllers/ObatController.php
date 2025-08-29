@@ -24,12 +24,12 @@ class ObatController extends Controller
     {
         $request->validate([
             'kode' => 'required|unique:obat,kode',
-            'nama' => 'required',
-            'kategori' => 'required|string',
-            'stok' => 'required|integer',
-            'harga_dasar' => 'required|numeric',
-            'persen_untung' => 'required|numeric',
-            'harga_jual' => 'required|numeric',
+            'nama' => 'required|string|max:255',
+            'kategori' => 'required|string|max:255',
+            'stok' => 'required|integer|min:0',
+            'harga_dasar' => 'required|numeric|min:0',
+            'persen_untung' => 'required|numeric|min:0',
+            'harga_jual' => 'required|numeric|min:0',
             'supplier_id' => 'nullable|exists:supplier,id' // Validasi supplier_id
         ]);
 
@@ -48,12 +48,12 @@ class ObatController extends Controller
     {
         $request->validate([
             'kode' => 'required|unique:obat,kode,' . $obat->id,
-            'nama' => 'required',
-            'kategori' => 'required|string',
-            'stok' => 'required|integer',
-            'harga_dasar' => 'required|numeric',
-            'persen_untung' => 'required|numeric',
-            'harga_jual' => 'required|numeric',
+            'nama' => 'required|string|max:255',
+            'kategori' => 'required|string|max:255',
+            'stok' => 'required|integer|min:0',
+            'harga_dasar' => 'required|numeric|min:0',
+            'persen_untung' => 'required|numeric|min:0',
+            'harga_jual' => 'required|numeric|min:0',
             'supplier_id' => 'nullable|exists:supplier,id'
         ]);
 

@@ -90,4 +90,81 @@ class PembelianController extends Controller
         $pdf = \PDF::loadView('transaksi.pembelian.faktur', compact('p'));
         return $pdf->download('Faktur-' . $p->no_faktur . '.pdf');
     }
+
+    // app/Http/Controllers/PembelianController.php
+
+// ... (bagian lain dari kode)
+
+    public function edit(Pembelian $pembelian)
+    {
+        $suppliers = Supplier::orderBy('nama')->get();
+        $obat = Obat::orderBy('nama')->get();
+        // Load detail pembelian bersama dengan obatnya
+        $pembelian->load('detail.obat'); 
+        return view('transaksi.pembelian.edit', compact('pembelian', 'suppliers', 'obat'));
+    }
+
+    public function update(Request $r, Pembelian $pembelian)
+    {
+        $r->validate([
+            'no_faktur'   => ['required', 'max:50', Rule::unique('pembelian', 'no_faktur')->ignore($pembelian->id)], // Ignore current ID
+            'tanggal'   => ['required', 'date'],
+            'supplier_id' => ['required', 'exists:supplier,id'],
+            'obat_id'   => ['required', 'array', 'min:1'],
+            'obat_id.*'   => ['required', 'exists:obat,id'],
+            'jumlah'   => ['required', 'array', 'min:1'],
+            'jumlah.*'   => ['required', 'integer', 'min:1'],
+            'harga'   => ['required', 'array', 'min:1'],
+            'harga.*'   => ['required', 'numeric', 'min:0'],
+        ]);
+
+        DB::transaction(function () use ($r, $pembelian) {
+            // 1. Kembalikan stok obat dari detail pembelian lama
+            foreach ($pembelian->detail as $detail) {
+                $obat = Obat::find($detail->obat_id);
+                if ($obat) {
+                    $obat->decrement('stok', $detail->jumlah);
+                }
+            }
+
+            // 2. Hapus detail pembelian lama
+            $pembelian->detail()->delete();
+
+            // 3. Update data pembelian utama
+            $pembelian->update([
+                'no_faktur'   => $r->no_faktur,
+                'tanggal'   => $r->tanggal,
+                'supplier_id' => $r->supplier_id,
+                'total'   => 0, // Akan diupdate setelah detail baru ditambahkan
+            ]);
+
+            // 4. Tambahkan detail pembelian baru dan update stok
+            $total = 0;
+            foreach ($r->obat_id as $i => $obatId) {
+                $qty   = (int)$r->jumlah[$i];
+                $harga = (float)$r->harga[$i];
+                $sub   = $qty * $harga;
+
+                PembelianDetail::create([
+                    'pembelian_id' => $pembelian->id,
+                    'obat_id'   => $obatId,
+                    'jumlah'   => $qty,
+                    'harga_beli'   => $harga,
+                ]);
+
+                $obat = Obat::find($obatId);
+                if ($obat) {
+                    $obat->increment('stok', $qty);
+                }
+                $total += $sub;
+            }
+
+            $pembelian->update(['total' => $total]);
+        });
+
+        return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil diperbarui');
+    }
+
+// ... (bagian lain dari kode)
+
 }
