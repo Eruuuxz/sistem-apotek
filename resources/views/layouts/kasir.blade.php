@@ -14,12 +14,16 @@
             Kasir Apotek
         </div>
         <nav class="mt-4">
-            <a href="/pos" class="block px-4 py-2 hover:bg-green-600 {{ request()->is('kasir/pos') ? 'bg-green-600' : '' }}">
-                POS Penjualan
-            </a>
-            <a href="/penjualan" class="block px-4 py-2 hover:bg-green-600 {{ request()->is('kasir/riwayat') ? 'bg-green-600' : '' }}">
-                Riwayat Penjualan
-            </a>
+            @auth
+                @if(in_array(Auth::user()->role, ['kasir', 'admin']))
+                    <a href="{{ route('pos.index') }}" class="block px-4 py-2 hover:bg-green-600 {{ request()->is('pos*') ? 'bg-green-600' : '' }}">
+                        POS Penjualan
+                    </a>
+                    <a href="{{ route('penjualan.index') }}" class="block px-4 py-2 hover:bg-green-600 {{ request()->is('penjualan*') ? 'bg-green-600' : '' }}">
+                        Riwayat Penjualan
+                    </a>
+                @endif
+            @endauth
         </nav>
     </aside>
 
@@ -29,8 +33,15 @@
         <header class="bg-white shadow p-4 flex justify-between items-center">
             <h1 class="text-xl font-semibold">@yield('title', 'Sistem Kasir')</h1>
             <div>
-                <span class="mr-4">Halo, Kasir</span>
-                <a href="#" class="text-red-500">Logout</a>
+                @auth
+                    <span class="mr-4">Halo, {{ Auth::user()->name }} ({{ ucfirst(Auth::user()->role) }})</span>
+                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                        @csrf
+                        <button type="submit" class="text-red-500">Logout</button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="text-blue-500">Login</a>
+                @endauth
             </div>
         </header>
 

@@ -8,8 +8,8 @@
 <!-- Ringkasan Data -->
 <div class="grid grid-cols-4 gap-4 mb-8">
     <div class="bg-white p-4 shadow rounded">
-        <h2 class="text-lg font-semibold text-gray-600">Total Obat</h2> 
-        <p class="text-3xl font-bold text-blue-600 mt-2">{{ $totalObat }}</p> 
+        <h2 class="text-lg font-semibold text-gray-600">Total Obat</h2> {{-- Ubah Total Barang menjadi Total Obat --}}
+        <p class="text-3xl font-bold text-blue-600 mt-2">{{ $totalObat }}</p> {{-- Ubah $totalBarang menjadi $totalObat --}}
     </div>
     <div class="bg-white p-4 shadow rounded">
         <h2 class="text-lg font-semibold text-gray-600">Total Supplier</h2>
@@ -35,7 +35,7 @@
 
     <!-- Grafik Stok Menipis -->
     <div class="bg-white p-6 shadow rounded">
-        <h2 class="text-lg font-semibold text-gray-600 mb-4">Stok Obat Menipis</h2> 
+        <h2 class="text-lg font-semibold text-gray-600 mb-4">Stok Obat Menipis</h2> {{-- Ubah Stok Barang Menipis menjadi Stok Obat Menipis --}}
         <canvas id="stokChart" height="100"></canvas>
     </div>
 </div>

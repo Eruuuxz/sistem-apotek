@@ -1,17 +1,14 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-// use App\Http\Controllers\BarangController; // Hapus atau komentari ini
-use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\ObatController;
-use App\Http\Controllers\PembelianController;
-use App\Http\Controllers\ReturController;
-use App\Http\Controllers\POSController;
-use App\Http\Controllers\PenjualanController;
-use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\DashboardController;
-
-Route::get('/', [DashboardController::class, 'index']);
+use App\Http\Controllers\POSController;
+use App\Http\Controllers\ObatController; // Pastikan ini di-import
+use App\Http\Controllers\SupplierController; // Pastikan ini di-import
+use App\Http\Controllers\PembelianController; // Pastikan ini di-import
+use App\Http\Controllers\PenjualanController; // Pastikan ini di-import
+use App\Http\Controllers\ReturController; // Pastikan ini di-import
+use App\Http\Controllers\LaporanController; // Pastikan ini di-import
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,56 +21,53 @@ Route::get('/', [DashboardController::class, 'index']);
 |
 */
 
-// Master Data Routes
-Route::resource('supplier', SupplierController::class);
-Route::resource('obat', ObatController::class);
+Route::get('/', function () {
+    return view('welcome');
+});
 
-// Transaksi Pembelian Routes 
-Route::get('/pembelian', [PembelianController::class, 'index'])->name('pembelian.index');
-Route::get('/pembelian/create', [PembelianController::class, 'create'])->name('pembelian.create');
-Route::post('/pembelian', [PembelianController::class, 'store'])->name('pembelian.store');
-Route::get('/pembelian/faktur/{id}', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
-Route::get('/pembelian/faktur/{id}/pdf', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
+// Grup route yang memerlukan autentikasi
+Route::middleware(['auth'])->group(function () {
 
-// Transaksi Retur Routes 
-Route::get('/retur', [ReturController::class, 'index'])->name('retur.index');
-Route::get('/retur/create', [ReturController::class, 'create'])->name('retur.create');
-Route::post('/retur', [ReturController::class, 'store'])->name('retur.store');
-Route::get('/retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');
+    // Route untuk Admin (hanya bisa diakses oleh role 'admin')
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-// POS & Penjualan Routes 
-Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
-Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
-Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
-Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
-Route::post('/pos/checkout', [PenjualanController::class, 'checkout'])->name('pos.checkout');
-Route::get('/penjualan', [PenjualanController::class, 'index'])->name('penjualan.index'); // Riwayat Penjualan
-Route::get('/penjualan/{id}', [PenjualanController::class, 'show'])->name('penjualan.show'); // Detail Penjualan
-Route::get('/penjualan/{id}/struk', [PenjualanController::class, 'struk'])->name('penjualan.struk'); // Cetak Struk
+        // Master Data
+        Route::resource('obat', ObatController::class);
+        Route::resource('supplier', SupplierController::class);
 
-// Rute lama yang sudah digantikan atau tidak relevan lagi (dihapus/dikomentari disini)
-// Route::get('/pembelian', [\App\Http\Controllers\PembelianController::class, 'index']); // Diganti dengan name route
-// Route::get('/penjualan', [\App\Http\Controllers\PenjualanController::class, 'index']); // Diganti dengan name route
-// Route::get('/retur', function () { return view('transaksi.retur.index'); }); // Diganti dengan ReturController
-// Route::get('/laporan', function () { return view('laporan.index'); });
-// Route::get('/kasir/pos', function () { return view('kasir.pos'); }); // Diganti dengan POSController
-// Route::get('/kasir/riwayat', [\App\Http\Controllers\PenjualanController::class, 'index']); // Diganti dengan PenjualanController index
-// Route::get('/pembelian/create', function () { return view('transaksi.pembelian.create'); })->name('pembelian.create'); // Diganti dengan PembelianController
-// Route::get('/pembelian/faktur', function () { return view('transaksi.pembelian.faktur'); })->name('pembelian.faktur'); // Diganti dengan PembelianController
+        // Transaksi
+        Route::resource('pembelian', PembelianController::class);
+        Route::get('pembelian/faktur/{pembelian}', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
+        Route::get('pembelian/pdf/{pembelian}', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
+        
+        Route::resource('retur', ReturController::class);
+        Route::get('retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');
 
-// Test routes (bisa dihapus setelah development)
-// Route::get('/test-barang', function () { // Hapus atau komentari ini
-//     return \App\Models\Barang::with('supplier')->get();
-// });
+        // Laporan
+        Route::prefix('laporan')->name('laporan.')->group(function () {
+            Route::get('/', [LaporanController::class, 'index'])->name('index');
+            Route::get('penjualan', [LaporanController::class, 'penjualan'])->name('penjualan');
+            Route::get('penjualan/pdf', [LaporanController::class, 'penjualanPdf'])->name('penjualan.pdf');
+            Route::get('penjualan/excel', [LaporanController::class, 'penjualanExcel'])->name('penjualan.excel');
+            Route::get('stok', [LaporanController::class, 'stok'])->name('stok');
+        });
+    });
 
-// Route::get('/test-pembelian', function () { // Hapus atau komentari ini
-//     return \App\Models\Pembelian::with(['pembelianDetail.barang.supplier'])->get();
-// });
+    // Route untuk Kasir (bisa diakses oleh role 'kasir' dan 'admin')
+    Route::middleware('role:kasir|admin')->group(function () {
+        // POS (Point of Sale)
+        Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
+        Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
+        Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
+        Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
+        Route::post('/pos/checkout', [PenjualanController::class, 'checkout'])->name('pos.checkout');
 
-// Laporan & Dashboard Routes 
-Route::get('/dashboard', [DashboardController::class,'index'])->name('dashboard'); // Pindahkan atau pastikan ini ada
-Route::get('/laporan', fn() => view('laporan.index'))->name('laporan.index');
-Route::get('/laporan/penjualan', [LaporanController::class, 'penjualan'])->name('laporan.penjualan');
-Route::get('/laporan/penjualan/pdf', [LaporanController::class,'penjualanPdf'])->name('laporan.penjualan.pdf');
-Route::get('/laporan/penjualan/excel', [LaporanController::class,'penjualanExcel'])->name('laporan.penjualan.excel');
-Route::get('/laporan/stok', [LaporanController::class,'stok'])->name('laporan.stok');
+        // Riwayat Penjualan (Kasir)
+        Route::get('/penjualan', [PenjualanController::class, 'index'])->name('penjualan.index');
+        Route::get('/penjualan/{penjualan}', [PenjualanController::class, 'show'])->name('penjualan.show');
+        Route::get('/penjualan/{penjualan}/struk', [PenjualanController::class, 'struk'])->name('penjualan.struk');
+    });
+});
+
+require __DIR__.'/auth.php';

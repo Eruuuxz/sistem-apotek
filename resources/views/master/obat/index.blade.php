@@ -59,10 +59,4 @@
 </div>
 @endsection
 
-{{-- Hapus script JS dummy data karena sudah pakai data dari DB --}}
-{{-- @push('scripts')
-<script>
-    // ... (hapus kode JS dummy data)
-</script>
-@endpush --}}
 

@@ -14,27 +14,38 @@
             Apotek XYZ
         </div>
         <nav class="mt-4">
-            <a href="{{ route('dashboard') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('dashboard*') || request()->is('/') ? 'bg-blue-600' : '' }}">
-                Dashboard
-            </a>
-            <a href="{{ route('obat.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('obat*') ? 'bg-blue-600' : '' }}">
-                Data Obat
-            </a>
-            <a href="{{ route('supplier.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('supplier*') ? 'bg-blue-600' : '' }}">
-                Data Supplier
-            </a>
-            <a href="{{ route('pembelian.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('pembelian*') ? 'bg-blue-600' : '' }}">
-                Pembelian
-            </a>
-            <a href="{{ route('penjualan.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('penjualan*') ? 'bg-blue-600' : '' }}">
-                Penjualan
-            </a>
-            <a href="{{ route('retur.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('retur*') ? 'bg-blue-600' : '' }}">
-                Retur Barang
-            </a>
-            <a href="{{ route('laporan.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('laporan*') ? 'bg-blue-600' : '' }}">
-                Laporan
-            </a>
+            @auth {{-- Pastikan user sudah login --}}
+                @if(Auth::user()->role === 'admin')
+                    <a href="{{ route('dashboard') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('dashboard*') || request()->is('/') ? 'bg-blue-600' : '' }}">
+                        Dashboard
+                    </a>
+                    <a href="{{ route('obat.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('obat*') ? 'bg-blue-600' : '' }}">
+                        Data Obat
+                    </a>
+                    <a href="{{ route('supplier.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('supplier*') ? 'bg-blue-600' : '' }}">
+                        Data Supplier
+                    </a>
+                    <a href="{{ route('pembelian.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('pembelian*') ? 'bg-blue-600' : '' }}">
+                        Pembelian
+                    </a>
+                    <a href="{{ route('retur.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('retur*') ? 'bg-blue-600' : '' }}">
+                        Retur Barang
+                    </a>
+                    <a href="{{ route('laporan.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('laporan*') ? 'bg-blue-600' : '' }}">
+                        Laporan
+                    </a>
+                @endif
+
+                @if(in_array(Auth::user()->role, ['kasir', 'admin']))
+                    {{-- Link untuk kasir, juga bisa diakses admin --}}
+                    <a href="{{ route('pos.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('pos*') ? 'bg-blue-600' : '' }}">
+                        POS Penjualan
+                    </a>
+                    <a href="{{ route('penjualan.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('penjualan*') ? 'bg-blue-600' : '' }}">
+                        Riwayat Penjualan
+                    </a>
+                @endif
+            @endauth
         </nav>
     </aside>
 
@@ -44,8 +55,15 @@
         <header class="bg-white shadow p-4 flex justify-between items-center">
             <h1 class="text-xl font-semibold">@yield('title', 'Sistem Informasi Apotek')</h1>
             <div>
-                <span class="mr-4">Halo, User</span>
-                <a href="#" class="text-red-500">Logout</a>
+                @auth
+                    <span class="mr-4">Halo, {{ Auth::user()->name }} ({{ ucfirst(Auth::user()->role) }})</span>
+                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                        @csrf
+                        <button type="submit" class="text-red-500">Logout</button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="text-blue-500">Login</a>
+                @endauth
             </div>
         </header>
 
