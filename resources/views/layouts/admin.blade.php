@@ -36,7 +36,7 @@
                     </a>
                 @endif
 
-                @if(in_array(Auth::user()->role, ['kasir', 'admin']))
+                <!-- @if(in_array(Auth::user()->role, ['kasir', 'admin']))
                     {{-- Link untuk kasir, juga bisa diakses admin --}}
                     <a href="{{ route('pos.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('pos*') ? 'bg-blue-600' : '' }}">
                         POS Penjualan
@@ -44,7 +44,7 @@
                     <a href="{{ route('penjualan.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('penjualan*') ? 'bg-blue-600' : '' }}">
                         Riwayat Penjualan
                     </a>
-                @endif
+                @endif -->
             @endauth
         </nav>
     </aside>

@@ -2,28 +2,33 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\POSController;
-use App\Http\Controllers\ObatController; // Pastikan ini di-import
-use App\Http\Controllers\SupplierController; // Pastikan ini di-import
-use App\Http\Controllers\PembelianController; // Pastikan ini di-import
-use App\Http\Controllers\PenjualanController; // Pastikan ini di-import
-use App\Http\Controllers\ReturController; // Pastikan ini di-import
-use App\Http\Controllers\LaporanController; // Pastikan ini di-import
+use App\Http\Controllers\ObatController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\PembelianController;
+use App\Http\Controllers\PenjualanController;
+use App\Http\Controllers\ReturController;
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Auth\RoleLoginController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('welcome'); // Landing page → hanya ada tombol login
 });
+
+Route::get('/pilih-login', function () {
+    return view('auth/pilih-login'); // Halaman pilih role login
+});
+
+// Login khusus role
+Route::get('/login/admin', [RoleLoginController::class, 'showAdminLoginForm'])->name('login.admin');
+Route::get('/login/kasir', [RoleLoginController::class, 'showKasirLoginForm'])->name('login.kasir');
 
 // Grup route yang memerlukan autentikasi
 Route::middleware(['auth'])->group(function () {
