@@ -71,7 +71,7 @@ Route::middleware(['auth'])->group(function () {
         // Riwayat Penjualan (Kasir)
         Route::get('/penjualan', [PenjualanController::class, 'index'])->name('penjualan.index');
         Route::get('/penjualan/{penjualan}', [PenjualanController::class, 'show'])->name('penjualan.show');
-        Route::get('/penjualan/{penjualan}/struk', [PenjualanController::class, 'struk'])->name('penjualan.struk');
+        Route::get('/penjualan/{id}/struk/pdf', [PenjualanController::class, 'strukPdf'])->name('penjualan.struk.pdf');
     });
 });
 

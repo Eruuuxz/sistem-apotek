@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\{Penjualan, PenjualanDetail, Obat}; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; // Tambahkan ini
+use Barryvdh\DomPDF\Facade\Pdf; 
 
 class PenjualanController extends Controller
 {
@@ -63,7 +64,8 @@ class PenjualanController extends Controller
 
         session()->forget('cart'); // Kosongkan keranjang setelah checkout berhasil
 
-        return redirect()->route('penjualan.show', $penjualan->id)->with('success', 'Transaksi berhasil disimpan!');
+        // return redirect()->route('penjualan.show', $penjualan->id)->with('success', 'Transaksi berhasil disimpan!');
+        return redirect()->route('penjualan.struk.pdf', $penjualan->id);
     }
 
     public function show($id)
@@ -77,4 +79,16 @@ class PenjualanController extends Controller
         $p = Penjualan::with('detail.obat')->findOrFail($id); // Ubah detail.barang menjadi detail.obat
         return view('kasir.struk', compact('p'));
     }
+
+    public function strukPdf($id)
+{
+    $penjualan = Penjualan::with('detail.obat')->findOrFail($id);
+
+    // load view yang sama dengan struk.blade.php
+    $pdf = Pdf::loadView('kasir.struk', compact('penjualan'));
+
+    // bisa download atau stream ke browser
+    return $pdf->stream('faktur-'.$penjualan->no_nota.'.pdf');
+    // kalau mau langsung download: return $pdf->download('faktur-'.$p->no_nota.'.pdf');
+}
 }
