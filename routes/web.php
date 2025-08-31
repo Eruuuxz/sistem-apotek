@@ -8,7 +8,7 @@ use App\Http\Controllers\PembelianController;
 use App\Http\Controllers\PenjualanController;
 use App\Http\Controllers\ReturController;
 use App\Http\Controllers\LaporanController;
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AuthController; // Ini tidak digunakan, bisa dihapus jika tidak ada AuthController lain
 use App\Http\Controllers\Auth\RoleLoginController;
 use Illuminate\Support\Facades\Route;
 
@@ -59,16 +59,18 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
-    // Route untuk Kasir (bisa diakses oleh role 'kasir' dan 'admin')
-    Route::middleware('role:kasir|admin')->group(function () {
+    // Route untuk Kasir (hanya bisa diakses oleh role 'kasir')
+    Route::middleware('role:kasir')->group(function () { // <--- PERUBAHAN DI SINI
         // POS (Point of Sale)
         Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
         Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
         Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
         Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
         Route::post('/pos/checkout', [PenjualanController::class, 'checkout'])->name('pos.checkout');
+    });
 
-        // Riwayat Penjualan (Kasir)
+    // Riwayat Penjualan (bisa diakses oleh role 'kasir' dan 'admin')
+    Route::middleware('role:kasir|admin')->group(function () { // <--- PERUBAHAN DI SINI
         Route::get('/penjualan', [PenjualanController::class, 'index'])->name('penjualan.index');
         Route::get('/penjualan/{penjualan}', [PenjualanController::class, 'show'])->name('penjualan.show');
         Route::get('/penjualan/{id}/struk/pdf', [PenjualanController::class, 'strukPdf'])->name('penjualan.struk.pdf');
@@ -76,3 +78,4 @@ Route::middleware(['auth'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
