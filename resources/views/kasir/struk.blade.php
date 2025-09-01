@@ -2,63 +2,91 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Faktur Penjualan</title>
+    <title>Kwitansi A6</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 12px; }
-        .container { border: 2px solid #000; padding: 10px; }
-        .header { text-align: center; margin-bottom: 15px; }
-        .header h2 { margin: 0; font-size: 16px; }
-        .header p { margin: 2px 0; font-size: 12px; }
-        .info { margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        table, th, td { border: 1px solid #000; }
-        th, td { padding: 5px; text-align: left; }
-        .right { text-align: right; }
-        .total-box { border: 1px solid #000; padding: 8px; margin-top: 10px; font-weight: bold; }
+        @page {
+            size: A6 landscape; /* Pastikan A6 horizontal */
+            margin: 10px;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            margin: 0;
+            padding: 0;
+        }
+        .kwitansi {
+            border: 2px solid #000;
+            display: flex;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .left {
+            width: 35%;
+            border-right: 2px solid #000;
+            text-align: center;
+            padding: 8px;
+        }
+        .left img {
+            width: 60px;
+            margin-bottom: 5px;
+        }
+        .left h3 {
+            margin: 5px 0;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .left p {
+            font-size: 10px;
+            margin: 2px 0;
+            line-height: 1.2;
+        }
+        .right {
+            flex: 1;
+            padding: 12px;
+            position: relative;
+        }
+        .line {
+            margin: 8px 0;
+            font-size: 11px;
+        }
+        .rp-box {
+            border: 1px solid #000;
+            width: 160px;
+            height: 35px;
+            position: absolute;
+            bottom: 15px;
+            left: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- HEADER TOKO -->
-        <div class="header">
-            <h2>APOTEK SIMPANG CIMAREME</h2>
-            <p>Jl. Raya Cimareme RT 01 RW 02, Ds. Cimareme, Kec. Ngamprah</p>
-            <p>No Nota: {{ $penjualan->no_nota }} | Tanggal: {{ $penjualan->tanggal }}</p>
-            <p>Kasir: {{ $penjualan->kasir_nama }}</p>
+    <div class="kwitansi">
+        <!-- Bagian Kiri -->
+        <div class="left">
+            {{-- Logo Apotek --}}
+            <img src="{{ public_path('logo.png') }}" alt="Logo">
+            <h3>APOTEK LIZ FARMA 02</h3>
+            <p>Jl. Raya Batujajar No. 321 RT.001 RW.005</p>
+            <p>Kel. Batujajar Barat, Kec. Batujajar</p>
         </div>
 
-        <!-- DETAIL PEMBELIAN -->
-        <table>
-            <thead>
-                <tr>
-                    <th>Kode</th>
-                    <th>Nama Obat</th>
-                    <th class="right">Harga</th>
-                    <th class="right">Qty</th>
-                    <th class="right">Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($penjualan->detail as $d)
-                <tr>
-                    <td>{{ $d->obat->kode }}</td>
-                    <td>{{ $d->obat->nama }}</td>
-                    <td class="right">Rp {{ number_format($d->harga, 0, ',', '.') }}</td>
-                    <td class="right">{{ $d->qty }}</td>
-                    <td class="right">Rp {{ number_format($d->subtotal, 0, ',', '.') }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+        <!-- Bagian Kanan -->
+        <div class="right">
+            <div class="line">No: {{ $penjualan->no_nota }}</div>
+            <div class="line">Telah Terima dari: <strong>{{ $penjualan->kasir_nama }}</strong></div>
+            <div class="line">Uang Sejumlah: <strong>Rp {{ number_format($penjualan->total, 0, ',', '.') }}</strong></div>
+            <div class="line">Untuk Pembayaran: Pembelian Obat</div>
 
-        <!-- TOTAL -->
-        <div class="total-box">
-            Total: Rp {{ number_format($penjualan->total, 0, ',', '.') }}
+            <div class="rp-box">
+                Rp {{ number_format($penjualan->total, 0, ',', '.') }}
+            </div>
         </div>
-
-        <p style="margin-top:20px; font-size:11px; text-align:center;">
-            Terima kasih telah berbelanja di Apotek Simpang Cimareme
-        </p>
     </div>
 </body>
 </html>

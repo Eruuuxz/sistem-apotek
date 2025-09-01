@@ -19,7 +19,7 @@
                     <a href="{{ route('pos.index') }}" class="block px-4 py-2 hover:bg-green-600 {{ request()->is('pos*') ? 'bg-green-600' : '' }}">
                         POS Penjualan
                     </a>
-                    <a href="{{ route('penjualan.index') }}" class="block px-4 py-2 hover:bg-green-600 {{ request()->is('penjualan*') ? 'bg-green-600' : '' }}">
+                    <a href="{{ route('kasir.riwayat') }}" class="block px-4 py-2 hover:bg-green-600 {{ request()->is('penjualan*') ? 'bg-green-600' : '' }}">
                         Riwayat Penjualan
                     </a>
                 @endif
