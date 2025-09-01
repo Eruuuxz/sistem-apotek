@@ -1,4 +1,4 @@
-{{-- File: /kasir/pos.blade.php --}}
+{{-- File: /views/kasir/pos.blade.php --}}
 @extends('layouts.kasir')
 
 @section('title', 'POS Kasir')
@@ -81,7 +81,7 @@
             @csrf
             <div class="mb-3">
                 <label for="kasir_nama" class="block text-sm font-medium text-gray-700">Nama Kasir</label>
-                <input type="text" name="kasir_nama" id="kasir_nama" class="w-full border px-3 py-2" required>
+                <input type="text" name="kasir_nama" id="kasir_nama" class="w-full border px-3 py-2" value="{{ Auth::user()->name }}" readonly required>
             </div>
             <div class="mb-3">
                 <label for="total" class="block text-sm font-medium text-gray-700">Total</label>
@@ -110,10 +110,13 @@
     });
 
     function hitungKembalian() {
-        let total = parseFloat(document.getElementById('total').value.replace(/[^0-9,-]+/g,"").replace(",", ".")) || 0; // Parse total dari format IDR
+        // Ambil nilai total dari hidden input untuk perhitungan yang akurat
+        let total = parseFloat(document.querySelector('input[name="total_hidden"]').value) || 0; 
         let bayar = parseFloat(document.getElementById('bayar').value) || 0;
         let kembalian = bayar - total;
-        document.getElementById('kembalian').value = 'Rp ' + kembalian.toLocaleString('id-ID');
+
+        // Format kembalian ke Rupiah
+        document.getElementById('kembalian').value = 'Rp ' + kembalian.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
     }
 </script>
 @endpush

@@ -30,6 +30,9 @@ Route::get('/pilih-login', function () {
 Route::get('/login/admin', [RoleLoginController::class, 'showAdminLoginForm'])->name('login.admin');
 Route::get('/login/kasir', [RoleLoginController::class, 'showKasirLoginForm'])->name('login.kasir');
 
+// Route untuk PDF struk (tanpa middleware auth agar bisa diakses publik)
+Route::get('/penjualan/{id}/struk/pdf', [PenjualanController::class, 'strukPdf'])->name('penjualan.struk.pdf');
+
 // Grup route yang memerlukan autentikasi
 Route::middleware(['auth'])->group(function () {
 
@@ -60,7 +63,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Route untuk Kasir (hanya bisa diakses oleh role 'kasir')
-    Route::middleware('role:kasir')->group(function () { // <--- PERUBAHAN DI SINI
+    Route::middleware('role:kasir')->group(function () {
         // POS (Point of Sale)
         Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
         Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
@@ -70,12 +73,11 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Riwayat Penjualan (bisa diakses oleh role 'kasir' dan 'admin')
-    Route::middleware('role:kasir|admin')->group(function () { // <--- PERUBAHAN DI SINI
+    Route::middleware('role:kasir|admin')->group(function () {
         Route::get('/penjualan', [PenjualanController::class, 'index'])->name('penjualan.index');
         Route::get('/penjualan/{penjualan}', [PenjualanController::class, 'show'])->name('penjualan.show');
-        Route::get('/penjualan/{id}/struk/pdf', [PenjualanController::class, 'strukPdf'])->name('penjualan.struk.pdf');
+        Route::get('/penjualan/{id}/struk', [PenjualanController::class, 'struk'])->name('penjualan.struk');
     });
 });
 
 require __DIR__.'/auth.php';
-
