@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\{Penjualan, PenjualanDetail, Obat}; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; // Tambahkan ini
-use Barryvdh\DomPDF\Facade\Pdf; 
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PenjualanController extends Controller
 {
@@ -14,13 +14,15 @@ class PenjualanController extends Controller
         // Mengambil semua penjualan dengan paginasi
         $data = Penjualan::latest()->paginate(12);
         return view('kasir.riwayat', compact('data'));
+        
     }
 
     public function checkout(Request $r)
     {
         $r->validate([
-            'kasir_nama' => ['required', 'string', 'max:100'],
-            'bayar'   => ['required', 'numeric', 'min:0']
+            // Hapus validasi 'kasir_nama' karena akan diisi otomatis
+            // 'kasir_nama' => ['required', 'string', 'max:100'], 
+            'bayar'   => ['required', 'numeric', 'min:0'] 
         ]);
 
         $cart = session('cart', []);
@@ -41,11 +43,16 @@ class PenjualanController extends Controller
             // Generate nomor nota unik
             $no = 'PJ-' . date('Ymd') . '-' . str_pad((Penjualan::whereDate('tanggal', date('Y-m-d'))->count() + 1), 3, '0', STR_PAD_LEFT);
 
+            // Hitung kembalian
+            $kembalian = $r->bayar - $total; 
+
             $penjualan = Penjualan::create([
                 'no_nota'   => $no,
                 'tanggal'   => now()->toDateString(),
-                'kasir_nama' => $r->kasir_nama,
+                'kasir_nama' => auth()->user()->name, // Ambil nama kasir dari user yang sedang login
                 'total'   => $total,
+                'bayar'   => $r->bayar, 
+                'kembalian' => $kembalian, 
             ]);
 
             foreach ($cart as $item) {
@@ -64,31 +71,47 @@ class PenjualanController extends Controller
 
         session()->forget('cart'); // Kosongkan keranjang setelah checkout berhasil
 
-        // return redirect()->route('penjualan.show', $penjualan->id)->with('success', 'Transaksi berhasil disimpan!');
-        return redirect()->route('penjualan.struk.pdf', $penjualan->id);
+        return redirect()->route('penjualan.success', $penjualan->id);
+
     }
 
     public function show($id)
     {
-        $p = Penjualan::with('detail.obat')->findOrFail($id); // Ubah detail.barang menjadi detail.obat
+        $p = Penjualan::with('detail.obat')->findOrFail($id); 
         return view('kasir.detail', compact('p'));
     }
 
+    public function riwayatKasir()
+{
+    $data = Penjualan::where('kasir_nama', auth()->id())
+        ->orderBy('tanggal', 'desc')
+        ->paginate(10);
+
+    return view('kasir.riwayat', compact('data'));
+}
+
+
+    public function success($id)
+    {
+    $penjualan = Penjualan::with('detail.obat')->findOrFail($id);
+    return view('kasir.success', compact('penjualan'));
+}
+
+
     public function struk($id)
     {
-        $p = Penjualan::with('detail.obat')->findOrFail($id); // Ubah detail.barang menjadi detail.obat
-        return view('kasir.struk', compact('p'));
+        $penjualan = Penjualan::with('detail.obat')->findOrFail($id);
+        return view('kasir.struk', compact('penjualan'));
     }
 
     public function strukPdf($id)
-{
-    $penjualan = Penjualan::with('detail.obat')->findOrFail($id);
+    {
+        $penjualan = Penjualan::with('detail.obat')->findOrFail($id);
 
-    // load view yang sama dengan struk.blade.php
-    $pdf = Pdf::loadView('kasir.struk', compact('penjualan'));
+        // Load view yang sama dengan struk.blade.php
+        $pdf = Pdf::loadView('kasir.struk', compact('penjualan'));
 
-    // bisa download atau stream ke browser
-    return $pdf->stream('faktur-'.$penjualan->no_nota.'.pdf');
-    // kalau mau langsung download: return $pdf->download('faktur-'.$p->no_nota.'.pdf');
-}
+        // Stream ke browser
+        return $pdf->stream('faktur-' . $penjualan->no_nota . '.pdf');
+    }
 }

@@ -19,6 +19,19 @@ class POSController extends Controller
         return view('kasir.pos', compact('obat', 'cart', 'total')); 
     }
 
+    public function search(Request $request)
+    {
+    $keyword = $request->get('q');
+
+    $obat = Obat::where('nama', 'like', $keyword . '%') // cari awalan huruf
+                ->orWhere('kode', 'like', $keyword . '%') // bisa juga berdasarkan kode
+                ->orderBy('nama')
+                ->get(['id', 'kode', 'nama', 'harga_jual', 'stok']);
+
+    return response()->json($obat);
+}
+
+
     public function add(Request $r)
     {
         $r->validate(['kode' => 'required']);

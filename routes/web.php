@@ -67,6 +67,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
         Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
         Route::post('/pos/checkout', [PenjualanController::class, 'checkout'])->name('pos.checkout');
+        Route::get('/penjualan/success/{id}', [PenjualanController::class, 'success'])->name('penjualan.success');
+        Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
+        Route::get('/kasir/riwayat', [PenjualanController::class, 'riwayatKasir'])->name('kasir.riwayat');
     });
 
     // Riwayat Penjualan (bisa diakses oleh role 'kasir' dan 'admin')
