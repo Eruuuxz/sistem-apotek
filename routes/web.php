@@ -73,7 +73,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Riwayat Penjualan (bisa diakses oleh role 'kasir' dan 'admin')
-    Route::middleware('role:kasir|admin')->group(function () {
+    Route::middleware('role:kasir')->group(function () {
         Route::get('/penjualan', [PenjualanController::class, 'index'])->name('penjualan.index');
         Route::get('/penjualan/{penjualan}', [PenjualanController::class, 'show'])->name('penjualan.show');
         Route::get('/penjualan/{id}/struk', [PenjualanController::class, 'struk'])->name('penjualan.struk');
