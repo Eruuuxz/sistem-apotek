@@ -1,4 +1,4 @@
-{{-- File: /kasir/riwayat.blade.php --}}
+{{-- File: /views/kasir/riwayat.blade.php --}}
 @extends('layouts.kasir')
 
 @section('title', 'Riwayat Penjualan')
@@ -25,12 +25,10 @@
         <tbody>
             @forelse($data as $row)
                 <tr>
-                    <td class="border px-4 py-2">
-                        {{ $row->kasir->name ?? '-' }}
-                    </td>
                     <td class="border px-4 py-2">{{ $row->no_nota }}</td>
                     <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('Y-m-d') }}</td>
-                    <td class="border px-4 py-2">{{ $row->kasir_nama }}</td>
+                    {{-- Tampilkan nama kasir dari relasi user --}}
+                    <td class="border px-4 py-2">{{ $row->kasir->name ?? '-' }}</td> 
                     <td class="border px-4 py-2 text-right">Rp {{ number_format($row->total, 0, ',', '.') }}</td>
                     <td class="border px-4 py-2 text-center">
                         <a href="{{ route('penjualan.show', $row->id) }}" class="text-blue-500 hover:underline">Detail</a> |

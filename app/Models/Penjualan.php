@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Penjualan extends Model
 {
@@ -16,6 +17,7 @@ class Penjualan extends Model
         'no_nota',
         'tanggal',
         'kasir_nama',
+        'user_id',
         'total',
         'bayar',
         'kembalian',
@@ -24,5 +26,10 @@ class Penjualan extends Model
     public function detail(): HasMany
     {
         return $this->hasMany(PenjualanDetail::class, 'penjualan_id');
+    }
+    // Disini perbarui relasi kasir() untuk menggunakan user_id
+    public function kasir(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'user_id');
     }
 }

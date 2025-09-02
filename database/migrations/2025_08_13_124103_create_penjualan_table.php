@@ -12,7 +12,8 @@ return new class extends Migration
             $table->id();
             $table->string('no_nota')->unique();
             $table->date('tanggal');
-            $table->string('kasir_nama');
+            // $table->string('kasir_nama');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // Tambahkan ini
             $table->decimal('total', 15, 2)->default(0);
             $table->decimal('bayar', 15, 2)->default(0); // Tambahkan ini
             $table->decimal('kembalian', 15, 2)->default(0); // Tambahkan ini

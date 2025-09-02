@@ -1,3 +1,4 @@
+{{-- File: /views/kasir/struk.blade.php --}}
 <!DOCTYPE html>
 <html>
 <head>
@@ -79,7 +80,8 @@
         <!-- Bagian Kanan -->
         <div class="right">
             <div class="line">No: {{ $penjualan->no_nota }}</div>
-            <div class="line">Telah Terima dari: <strong>{{ $penjualan->kasir_nama }}</strong></div>
+            {{-- Tampilkan nama kasir dari relasi user --}}
+            <div class="line">Telah Terima dari: <strong>{{ $penjualan->kasir->name ?? '-' }}</strong></div> 
             <div class="line">Uang Sejumlah: <strong>Rp {{ number_format($penjualan->total, 0, ',', '.') }}</strong></div>
             <div class="line">Untuk Pembayaran: Pembelian Obat</div>
 

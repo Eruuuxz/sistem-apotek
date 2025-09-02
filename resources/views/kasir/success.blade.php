@@ -1,3 +1,4 @@
+{{-- File: /views/kasir/success.blade.php --}}
 @extends('layouts.kasir')
 
 @section('title', 'Transaksi Berhasil')

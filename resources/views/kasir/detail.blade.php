@@ -9,7 +9,8 @@
 <div class="bg-white shadow rounded p-6 mb-4">
     <p class="mb-2"><strong>No Nota:</strong> {{ $p->no_nota }}</p>
     <p class="mb-2"><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($p->tanggal)->translatedFormat('d F Y') }}</p>
-    <p class="mb-2"><strong>Kasir:</strong> {{ $p->kasir_nama }}</p>
+    {{-- Tampilkan nama kasir dari relasi user --}}
+    <p class="mb-2"><strong>Kasir:</strong> {{ $p->kasir->name ?? '-' }}</p> 
 </div>
 
 <h2 class="text-xl font-semibold mb-3">Item Penjualan</h2>
