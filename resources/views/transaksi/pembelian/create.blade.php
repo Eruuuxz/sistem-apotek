@@ -4,157 +4,170 @@
 @section('title', 'Tambah Pembelian')
 
 @section('content')
-<h1 class="text-2xl font-bold mb-4">Tambah Pembelian</h1>
+<h1 class="text-2xl font-bold mb-6">Tambah Pembelian</h1>
 
-<form action="{{ route('pembelian.store') }}" method="POST" class="bg-white shadow rounded p-6">
+<form action="{{ route('pembelian.store') }}" method="POST" class="bg-white shadow rounded p-6 space-y-6">
     @csrf
 
     {{-- Informasi Faktur --}}
-    <div class="mb-4">
-        <label class="block font-semibold mb-1">No Faktur</label>
-        <input type="text" name="no_faktur" value="{{ $noFaktur }}" class="border rounded w-full px-3 py-2" readonly>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <label class="block font-semibold mb-1">No Faktur</label>
+            <input type="text" name="no_faktur" value="{{ $noFaktur }}" class="border rounded w-full px-3 py-2 bg-gray-100" readonly>
+        </div>
+        <div>
+            <label class="block font-semibold mb-1">Tanggal</label>
+            <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" class="border rounded w-full px-3 py-2">
+        </div>
+        <div>
+            <label class="block font-semibold mb-1">Supplier</label>
+            <select name="supplier_id" id="supplier-select" class="border rounded w-full px-3 py-2">
+                <option value="">-- Pilih Supplier --</option>
+                @foreach($suppliers as $s)
+                    <option value="{{ $s->id }}">{{ $s->nama }}</option>
+                @endforeach
+            </select>
+        </div>
     </div>
 
-    <div class="mb-4">
-        <label class="block font-semibold mb-1">Tanggal</label>
-        <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" class="border rounded w-full px-3 py-2">
-    </div>
-
-    {{-- Supplier --}}
-    <div class="mb-4">
-        <label class="block font-semibold mb-1">Supplier</label>
-        <select name="supplier_id" class="border rounded w-full px-3 py-2">
-            <option value="">-- Pilih Supplier --</option>
-            @foreach($suppliers as $s)
-                <option value="{{ $s->id }}">{{ $s->nama }}</option>
-            @endforeach
-        </select>
+    {{-- Daftar Obat --}}
+    <div>
+        <label class="block font-semibold mb-2">Daftar Obat (stok apotek ditampilkan)</label>
+        <div id="obat-list" class="border p-3 rounded bg-gray-50 max-h-64 overflow-y-auto text-sm text-gray-700">
+            Pilih supplier terlebih dahulu.
+        </div>
     </div>
 
     {{-- Tabel Item Pembelian --}}
-    <div class="mb-4">
-        <label class="block font-semibold mb-2">Daftar Obat</label>
-        <table class="w-full border border-gray-300">
-            <thead class="bg-gray-200">
-                <tr>
-                    <th class="border px-2 py-1">Nama Obat</th>
-                    <th class="border px-2 py-1">Jumlah</th>
-                    <th class="border px-2 py-1">Harga Satuan</th>
-                    <th class="border px-2 py-1">Subtotal</th>
-                    <th class="border px-2 py-1">Aksi</th>
-                </tr>
-            </thead>
-            <tbody id="table-items">
-                <tr>
-                    <td class="border px-2 py-1">
-                        <select name="obat_id[]" class="w-full px-2 py-1 border rounded obat-select">
-                            <option value="">-- Pilih Obat --</option>
-                            @foreach($obat as $o)
-                                <option value="{{ $o->id }}" data-harga="{{ $o->harga_dasar }}">{{ $o->kode }} - {{ $o->nama }}</option>
-                            @endforeach
-                        </select>
-                    </td>
-                    <td class="border px-2 py-1">
-                        <input type="number" name="jumlah[]" class="w-full px-2 py-1 border rounded jumlah" value="1" min="1">
-                    </td>
-                    <td class="border px-2 py-1">
-                        <input type="number" name="harga[]" class="w-full px-2 py-1 border rounded harga" value="0" min="0">
-                    </td>
-                    <td class="border px-2 py-1 text-right subtotal">0</td>
-                    <td class="border px-2 py-1 text-center">
-                        <button type="button" class="text-red-500" onclick="hapusRow(this)">✖</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        <button type="button" class="bg-green-500 text-white px-3 py-1 rounded mt-2" onclick="tambahRow()">+ Tambah Item</button>
+    <div>
+        <label class="block font-semibold mb-2">Item Pembelian</label>
+        <div class="overflow-x-auto">
+            <table class="w-full border border-gray-300 table-auto" id="table-items">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-2 py-1 border">Nama Obat</th>
+                        <th class="px-2 py-1 border">Jumlah</th>
+                        <th class="px-2 py-1 border">Harga Satuan</th>
+                        <th class="px-2 py-1 border">Subtotal</th>
+                        <th class="px-2 py-1 border">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{-- Baris akan ditambahkan otomatis --}}
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-2 text-right font-bold text-lg">
+            Total: <span id="total-harga">Rp 0</span>
+        </div>
     </div>
 
-    {{-- Total --}}
-    <div class="mb-4 text-right font-bold">
-        Total: <span id="total-harga">0</span>
-    </div>
-
-    <div class="flex gap-2">
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Simpan</button>
-        <a href="/pembelian" class="bg-gray-400 text-white px-4 py-2 rounded">Batal</a>
+    <div class="flex gap-2 justify-end">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">Simpan</button>
+        <a href="/pembelian" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition">Batal</a>
     </div>
 </form>
 @endsection
 
 @push('scripts')
 <script>
-function hitungSubtotal(row) {
-    let jumlah = row.querySelector('.jumlah').value;
-    let harga = row.querySelector('.harga').value;
-    let subtotal = jumlah * harga;
-    row.querySelector('.subtotal').innerText = subtotal.toLocaleString('id-ID'); // Format ke IDR
-    hitungTotal();
-}
+document.addEventListener('DOMContentLoaded', function() {
+    const supplierSelect = document.getElementById('supplier-select');
+    const obatList = document.getElementById('obat-list');
+    const tableItems = document.querySelector('#table-items tbody');
+    const totalHargaEl = document.getElementById('total-harga');
 
-function hitungTotal() {
-    let total = 0;
-    document.querySelectorAll('#table-items tr').forEach(row => {
-        let jumlah = row.querySelector('.jumlah').value;
-        let harga = row.querySelector('.harga').value;
-        total += jumlah * harga;
-    });
-    document.getElementById('total-harga').innerText = total.toLocaleString('id-ID'); // Format ke IDR
-}
+    function formatRupiah(angka) {
+        return 'Rp ' + angka.toLocaleString('id-ID');
+    }
 
-function tambahRow() {
-    let tbody = document.getElementById('table-items');
-    let firstRow = tbody.rows[0];
-    let row = firstRow.cloneNode(true);
-    
-    // Reset nilai input pada baris baru
-    row.querySelectorAll('input').forEach(input => {
-        if (input.type === 'number') {
-            input.value = input.min || 0; // Reset number input to its min or 0
-        } else {
-            input.value = '';
-        }
-    });
-    row.querySelector('.obat-select').value = ''; // Reset select
-    row.querySelector('.subtotal').innerText = '0';
-    tbody.appendChild(row);
-    hitungTotal(); // Recalculate total after adding a row
-}
-
-function hapusRow(btn) {
-    let row = btn.closest('tr');
-    if (document.querySelectorAll('#table-items tr').length > 1) {
-        row.remove();
+    function hitungSubtotal(row) {
+        let jumlah = parseInt(row.querySelector('.jumlah').value) || 0;
+        let harga = parseFloat(row.querySelector('.harga').value) || 0;
+        row.querySelector('.subtotal').innerText = formatRupiah(jumlah * harga);
         hitungTotal();
-    } else {
-        alert('Minimal harus ada satu item obat.');
     }
-}
 
-// Fungsi baru untuk sinkronisasi harga dari select obat
-function syncHargaFromSelect(row) {
-    const selectObat = row.querySelector('.obat-select');
-    const selectedOption = selectObat.options[selectObat.selectedIndex];
-    const hargaDasar = selectedOption?.dataset?.harga || 0;
-    row.querySelector('.harga').value = hargaDasar;
-    hitungSubtotal(row);
-}
-
-// Event listener untuk input perubahan jumlah & harga
-document.addEventListener('input', function(e) {
-    if (e.target.classList.contains('jumlah') || e.target.classList.contains('harga')) {
-        hitungSubtotal(e.target.closest('tr'));
+    function hitungTotal() {
+        let total = 0;
+        tableItems.querySelectorAll('tr').forEach(row => {
+            let subtotal = parseFloat(row.querySelector('.subtotal').innerText.replace(/\D/g, '')) || 0;
+            total += subtotal;
+        });
+        totalHargaEl.innerText = formatRupiah(total);
     }
+
+    function tambahItem(obat) {
+        if([...tableItems.querySelectorAll('tr')].some(tr => tr.dataset.id == obat.id)) return;
+
+        let row = document.createElement('tr');
+        row.dataset.id = obat.id;
+        row.classList.add('hover:bg-gray-50');
+        row.innerHTML = `
+            <td class="px-2 py-1 border">${obat.kode} - ${obat.nama}</td>
+            <td class="px-2 py-1 border"><input type="number" name="jumlah[]" value="1" min="1" class="w-full jumlah px-2 py-1 border rounded"></td>
+            <td class="px-2 py-1 border"><input type="number" name="harga[]" value="${obat.harga_dasar}" class="w-full harga px-2 py-1 border rounded bg-gray-100" readonly></td>
+            <td class="px-2 py-1 border text-right subtotal">${formatRupiah(obat.harga_dasar)}</td>
+            <td class="px-2 py-1 border text-center"><button type="button" class="text-red-500 font-bold" onclick="this.closest('tr').remove();hitungTotal()">✖</button></td>
+            <input type="hidden" name="obat_id[]" value="${obat.id}">
+        `;
+        tableItems.appendChild(row);
+
+        row.querySelector('.jumlah').addEventListener('input', () => hitungSubtotal(row));
+
+        hitungTotal();
+    }
+
+    supplierSelect.addEventListener('change', function() {
+        const supplierId = this.value;
+        obatList.innerHTML = '<div class="text-gray-500 text-sm">Memuat...</div>';
+
+        if(!supplierId) {
+            obatList.innerHTML = 'Pilih supplier terlebih dahulu.';
+            return;
+        }
+
+        fetch(`/supplier/${supplierId}/obat`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.length === 0) {
+                    obatList.innerHTML = 'Tidak ada obat untuk supplier ini.';
+                    return;
+                }
+
+                let html = '<table class="w-full border border-gray-300 table-auto">';
+                html += '<thead class="bg-gray-100"><tr><th class="px-2 py-1"></th><th class="px-2 py-1">Kode</th><th class="px-2 py-1">Nama</th><th class="px-2 py-1 text-right">Stok Apotek</th><th class="px-2 py-1 text-right">Harga</th></tr></thead><tbody>';
+
+                data.forEach(obat => {
+                    html += `<tr class="hover:bg-gray-50">
+                        <td class="text-center px-2 py-1"><input type="checkbox" class="obat-checkbox" data-obat='${JSON.stringify(obat)}'></td>
+                        <td class="px-2 py-1">${obat.kode}</td>
+                        <td class="px-2 py-1">${obat.nama}</td>
+                        <td class="px-2 py-1 text-right">${obat.stok}</td>
+                        <td class="px-2 py-1 text-right">${formatRupiah(obat.harga_dasar)}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                obatList.innerHTML = html;
+
+                document.querySelectorAll('.obat-checkbox').forEach(cb => {
+                    cb.addEventListener('change', function() {
+                        const obat = JSON.parse(this.dataset.obat);
+                        if(this.checked) tambahItem(obat);
+                        else {
+                            const row = tableItems.querySelector(`tr[data-id='${obat.id}']`);
+                            if(row) row.remove();
+                            hitungTotal();
+                        }
+                    });
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                obatList.innerHTML = '<div class="text-red-500 text-sm">Gagal memuat data obat.</div>';
+            });
+    });
 });
-
-// Event listener untuk perubahan select obat
-document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('obat-select')) {
-        syncHargaFromSelect(e.target.closest('tr'));
-    }
-});
-
-// Inisialisasi total saat halaman dimuat
-document.addEventListener('DOMContentLoaded', hitungTotal);
 </script>
 @endpush

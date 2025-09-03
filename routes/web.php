@@ -47,6 +47,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Transaksi
         Route::resource('pembelian', PembelianController::class);
+        Route::get('/supplier/{id}/obat', [PembelianController::class, 'getObatBySupplier']);
         Route::get('pembelian/faktur/{pembelian}', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
         Route::get('pembelian/pdf/{pembelian}', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
         

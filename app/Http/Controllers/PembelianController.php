@@ -164,7 +164,15 @@ class PembelianController extends Controller
 
         return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil diperbarui');
     }
+    public function getObatBySupplier($supplierId)
+{
+    // Ambil obat yang supplier_id nya sama
+    $obat = Obat::where('supplier_id', $supplierId)
+                 ->where('stok', '>', 0) // hanya yang masih ada stok
+                 ->get(['id','kode','nama','stok','harga_dasar']);
 
-// ... (bagian lain dari kode)
+    return response()->json($obat);
+}
+
 
 }
