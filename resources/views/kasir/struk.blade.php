@@ -1,3 +1,4 @@
+{{-- File: /views/kasir/struk.blade.php --}}
 <!DOCTYPE html>
 <html>
 
@@ -102,7 +103,7 @@
             <div class="left-details">
                 <div>No Faktur: <strong>{{ $penjualan->no_nota }}</strong></div>
                 <div>Kasir: {{ $penjualan->kasir->name ?? '-' }}</div>
-                <div>Tgl: {{ $penjualan->tanggal }}</div>
+                <div>Tgl: {{ \Carbon\Carbon::parse($penjualan->tanggal)->format('d-m-Y') }}</div> {{-- Format tanggal --}}
             </div>
             <div class="right-details">
                 <div>Apotek Simpang Cimareme</div>
@@ -141,7 +142,13 @@
         <div class="totals">
             <div>Sub Total: Rp {{ number_format($penjualan->total, 0, ',', '.') }}</div>
             <div>Bayar: Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}</div>
-            <div>Kembalian: Rp {{ number_format($penjualan->kembalian, 0, ',', '.') }}</div>
+            <div>
+                @if ($penjualan->kembalian >= 0)
+                    Kembalian: Rp {{ number_format($penjualan->kembalian, 0, ',', '.') }}
+                @else
+                    Kekurangan: Rp {{ number_format(abs($penjualan->kembalian), 0, ',', '.') }}
+                @endif
+            </div>
         </div>
 
         <div class="footer-section">

@@ -1,3 +1,4 @@
+{{-- File: /views/kasir/riwayat.blade.php --}}
 @extends('layouts.kasir')
 
 @section('title', 'Riwayat Penjualan')
@@ -25,7 +26,7 @@
         @forelse($data as $row)
         <tr>
             <td class="border px-4 py-2">{{ $row->no_nota }}</td>
-            <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('Y-m-d') }}</td>
+            <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('d-m-Y') }}</td> {{-- Format tanggal --}}
             <td class="border px-4 py-2">{{ $row->kasir->name ?? '-' }}</td> 
             <td class="border px-4 py-2 text-right">Rp {{ number_format($row->total, 0, ',', '.') }}</td>
             <td class="border px-4 py-2 text-center">

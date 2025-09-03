@@ -77,137 +77,105 @@
             </table>
         </div>
 
-
         <!-- Ringkasan Pembayaran -->
-        <div class="bg-white p-4 shadow rounded">
-            <h2 class="text-lg font-semibold mb-4">Ringkasan</h2>
-            <form action="{{ route('pos.checkout') }}" method="POST">
-                @csrf
-                <div class="mb-3">
-                    <label for="kasir_nama" class="block text-sm font-medium text-gray-700">Nama Kasir</label>
-                    <input type="text" name="kasir_nama" id="kasir_nama" class="w-full border px-3 py-2" value="{{ Auth::user()->name }}" readonly required>
-                </div>
-                <div class="mb-3">
-                    <label for="total" class="block text-sm font-medium text-gray-700">Total</label>
-                    <input type="text" id="total" class="w-full border px-3 py-2 text-right font-bold bg-gray-100" value="Rp {{ number_format($total, 0, ',', '.') }}" readonly>
-                    <input type="hidden" name="total_hidden" value="{{ $total }}"> {{-- Hidden input untuk total --}}
-                </div>
-                <div class="mb-3">
-                    <label for="bayar" class="block text-sm font-medium text-gray-700">Bayar</label>
-                    <input type="text" id="bayar_display" class="w-full border px-3 py-2 text-right" placeholder="Rp 0"oninput="formatBayar()" required>
-                    <input type="hidden" name="bayar" id="bayar"> {{-- nilai asli tanpa format --}}
-                </div>
-                <div class="mb-3">
-                    <label for="kembalian" class="block text-sm font-medium text-gray-700">Kembalian</label>
-                    <input type="text" id="kembalian" class="w-full border px-3 py-2 text-right font-bold bg-gray-100" value="0" readonly>
-                </div>
-                <button type="submit" class="bg-green-600 text-white w-full py-2 rounded">Simpan & Cetak Struk</button>
-            </form>
+<div class="bg-white p-4 shadow rounded">
+    <h2 class="text-lg font-semibold mb-4">Ringkasan</h2>
+    <form action="{{ route('pos.checkout') }}" method="POST">
+        @csrf
+        <div class="mb-3">
+            <label for="kasir_nama" class="block text-sm font-medium text-gray-700">Nama Kasir</label>
+            <input type="text" name="kasir_nama" id="kasir_nama" 
+                   class="w-full border px-3 py-2" 
+                   value="{{ Auth::user()->name }}" readonly required>
         </div>
-    </div>
-@endsection
 
+        <div class="mb-3">
+            <label for="total" class="block text-sm font-medium text-gray-700">Total</label>
+            <input type="text" id="total" 
+                   class="w-full border px-3 py-2 text-right font-bold bg-gray-100" 
+                   value="Rp {{ number_format($total, 0, ',', '.') }}" readonly>
+            <input type="hidden" id="total_hidden" name="total_hidden" value="{{ $total }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="bayar" class="block text-sm font-medium text-gray-700">Bayar</label>
+            <input type="text" id="bayar_display" 
+                   class="w-full border px-3 py-2 text-right" 
+                   placeholder="Rp 0" oninput="formatBayar()" required>
+            <input type="hidden" name="bayar" id="bayar">
+        </div>
+
+
+        <div class="mb-3">
+            <label for="kembalian" class="block text-sm font-medium text-gray-700">Kembalian</label>
+            <input type="text" id="kembalian" 
+                   class="w-full border px-3 py-2 text-right font-bold bg-gray-100" 
+                   value="Rp 0" readonly>
+        </div>
+
+        <button id="btn_simpan" type="submit" 
+                class="bg-green-600 text-white w-full py-2 rounded">
+            Simpan & Cetak Struk
+        </button>
+    </form>
+</div>
+@endsection
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inisialisasi kembalian saat halaman dimuat
-        hitungKembalian();
-    });
-
-    function hitungKembalian() {
-        // Ambil nilai total dari hidden input untuk perhitungan yang akurat
-        let total = parseFloat(document.querySelector('input[name="total_hidden"]').value) || 0; 
-        let bayar = parseFloat(document.getElementById('bayar').value) || 0;
-        let kembalian = bayar - total;
-
-        // Format kembalian ke Rupiah
-        document.getElementById('kembalian').value = 'Rp ' + kembalian.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    // Format angka ke Rupiah dengan dukungan nilai negatif
+    function formatRupiah(angka) {
+        if (isNaN(angka)) return "Rp 0";
+        let prefix = '';
+        if (angka < 0) {
+            prefix = '- ';
+            angka = Math.abs(angka);
+        }
+        // Menggunakan toLocaleString untuk format ribuan
+        return prefix + 'Rp ' + angka.toLocaleString('id-ID');
     }
-</script>
-<script>
-    let searchBox = document.getElementById('search');
-    let suggestionBox = document.getElementById('suggestions');
 
-    searchBox.addEventListener('keyup', function() {
-        let q = this.value.trim();
+    function formatBayar() {
+        let input = document.getElementById('bayar_display');
+        let hidden = document.getElementById('bayar');
 
-        if (q.length < 1) {
-            suggestionBox.innerHTML = "";
-            suggestionBox.classList.add('hidden');
+        let value = input.value.replace(/\D/g, ''); // ambil angka saja
+        if (!value) {
+            hidden.value = 0;
+            input.value = "";
+            hitungKembalian();
             return;
         }
 
-        fetch(`/pos/search?q=${q}`)
-            .then(res => res.json())
-            .then(data => {
-                suggestionBox.innerHTML = "";
-                if (data.length === 0) {
-                    suggestionBox.classList.add('hidden');
-                    return;
-                }
-
-                data.forEach(item => {
-                    let li = document.createElement('li');
-                    li.className = "px-3 py-2 hover:bg-gray-100 cursor-pointer";
-                    li.innerHTML = `${item.nama} <span class="text-sm text-gray-500">(${item.kode})</span>`;
-
-                    // Klik item suggestion -> isi input & auto submit form
-                    li.onclick = () => {
-                        searchBox.value = item.kode;
-                        suggestionBox.innerHTML = "";
-                        suggestionBox.classList.add('hidden');
-                        searchBox.form.submit(); 
-                    };
-
-                    suggestionBox.appendChild(li);
-                });
-
-                suggestionBox.classList.remove('hidden');
-            });
-    });
-
-    // Kalau klik di luar suggestion -> sembunyikan
-    document.addEventListener('click', function(e) {
-        if (!searchBox.contains(e.target) && !suggestionBox.contains(e.target)) {
-            suggestionBox.innerHTML = "";
-            suggestionBox.classList.add('hidden');
-        }
-    });
-</script>
-@push('scripts')
-<script>
-function formatBayar() {
-    let input = document.getElementById('bayar_display');
-    let hidden = document.getElementById('bayar');
-
-    // Ambil hanya angka
-    let value = input.value.replace(/\D/g, '');
-    if (!value) {
-        hidden.value = 0;
-        input.value = "";
+        hidden.value = parseInt(value, 10);
+        input.value = formatRupiah(hidden.value);
         hitungKembalian();
-        return;
     }
 
-    // Simpan angka asli ke hidden input
-    hidden.value = parseInt(value, 10);
+    function hitungKembalian() {
+        let total = parseFloat(document.getElementById('total_hidden').value) || 0;
+        let bayar = parseFloat(document.getElementById('bayar').value) || 0;
+        let kembalian = bayar - total;
 
-    // Format ke Rupiah
-    input.value = hidden.value.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' });
+        // update tampilan
+        document.getElementById('kembalian').value = formatRupiah(kembalian);
 
-    // Update kembalian
-    hitungKembalian();
-}
+        // validasi jika kurang
+        let btnSimpan = document.getElementById('btn_simpan');
 
-function hitungKembalian() {
-    let total = parseFloat(document.querySelector('input[name="total_hidden"]').value) || 0; 
-    let bayar = parseFloat(document.getElementById('bayar').value) || 0;
-    let kembalian = bayar - total;
+        if (kembalian < 0) {
+            pesanKurang.classList.remove('hidden');
+            btnSimpan.disabled = true;
+        } else {
+            pesanKurang.classList.add('hidden');
+            btnSimpan.disabled = false;
+        }
+    }
 
-    document.getElementById('kembalian').value = 'Rp ' + 
-        (kembalian > 0 ? kembalian.toLocaleString('id-ID') : "0");
-}
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inisialisasi nilai input bayar_display dan bayar hidden
+        document.getElementById('bayar_display').value = 'Rp 0';
+        document.getElementById('bayar').value = 0;
+        hitungKembalian(); // Panggil hitungKembalian untuk inisialisasi tampilan kembalian
+    });
 </script>
-@endpush
-
 @endpush
