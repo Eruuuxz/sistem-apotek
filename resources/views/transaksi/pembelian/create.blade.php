@@ -4,69 +4,73 @@
 @section('title', 'Tambah Pembelian')
 
 @section('content')
-<h1 class="text-2xl font-bold mb-6">Tambah Pembelian</h1>
 
-<form action="{{ route('pembelian.store') }}" method="POST" class="bg-white shadow rounded p-6 space-y-6">
-    @csrf
+<div class="bg-white shadow rounded p-6 space-y-6">
+    <h1 class="text-xl font-semibold mb-4">Tambah Pembelian</h1>
 
-    {{-- Informasi Faktur --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <form action="{{ route('pembelian.store') }}" method="POST" class="space-y-6">
+        @csrf
+
+        {{-- Informasi Faktur --}}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block font-semibold mb-1">No Faktur</label>
+                <input type="text" name="no_faktur" value="{{ $noFaktur }}" class="border rounded w-full px-3 py-2 bg-gray-100" readonly>
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Tanggal</label>
+                <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" class="border rounded w-full px-3 py-2">
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Supplier</label>
+                <select name="supplier_id" id="supplier-select" class="border rounded w-full px-3 py-2">
+                    <option value="">-- Pilih Supplier --</option>
+                    @foreach($suppliers as $s)
+                        <option value="{{ $s->id }}">{{ $s->nama }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        {{-- Daftar Obat --}}
         <div>
-            <label class="block font-semibold mb-1">No Faktur</label>
-            <input type="text" name="no_faktur" value="{{ $noFaktur }}" class="border rounded w-full px-3 py-2 bg-gray-100" readonly>
+            <label class="block font-semibold mb-2">Daftar Obat</label>
+            <div id="obat-list" class="border p-3 rounded bg-gray-50 max-h-64 overflow-y-auto text-sm text-gray-700">
+                Pilih supplier terlebih dahulu.
+            </div>
         </div>
+
+        {{-- Tabel Item Pembelian --}}
         <div>
-            <label class="block font-semibold mb-1">Tanggal</label>
-            <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" class="border rounded w-full px-3 py-2">
+            <label class="block font-semibold mb-2">Item Pembelian</label>
+            <div class="overflow-x-auto">
+                <table class="w-full border border-gray-300 table-auto">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-2 py-1 border">Nama Obat</th>
+                            <th class="px-2 py-1 border">Jumlah</th>
+                            <th class="px-2 py-1 border">Harga Satuan</th>
+                            <th class="px-2 py-1 border">Subtotal</th>
+                            <th class="px-2 py-1 border">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-items">
+                        {{-- Baris akan ditambahkan otomatis --}}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-2 text-right font-bold text-lg text-blue-600">
+                Total: <span id="total-harga">Rp 0</span>
+            </div>
         </div>
-        <div>
-            <label class="block font-semibold mb-1">Supplier</label>
-            <select name="supplier_id" id="supplier-select" class="border rounded w-full px-3 py-2">
-                <option value="">-- Pilih Supplier --</option>
-                @foreach($suppliers as $s)
-                    <option value="{{ $s->id }}">{{ $s->nama }}</option>
-                @endforeach
-            </select>
-        </div>
-    </div>
 
-    {{-- Daftar Obat --}}
-    <div>
-        <label class="block font-semibold mb-2">Daftar Obat (stok apotek ditampilkan)</label>
-        <div id="obat-list" class="border p-3 rounded bg-gray-50 max-h-64 overflow-y-auto text-sm text-gray-700">
-            Pilih supplier terlebih dahulu.
+        <div class="flex gap-2 justify-end">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">Simpan</button>
+            <a href="{{ route('pembelian.index') }}" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition">Batal</a>
         </div>
-    </div>
+    </form>
+</div>
 
-    {{-- Tabel Item Pembelian --}}
-    <div>
-        <label class="block font-semibold mb-2">Item Pembelian</label>
-        <div class="overflow-x-auto">
-            <table class="w-full border border-gray-300 table-auto" id="table-items">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="px-2 py-1 border">Nama Obat</th>
-                        <th class="px-2 py-1 border">Jumlah</th>
-                        <th class="px-2 py-1 border">Harga Satuan</th>
-                        <th class="px-2 py-1 border">Subtotal</th>
-                        <th class="px-2 py-1 border">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{-- Baris akan ditambahkan otomatis --}}
-                </tbody>
-            </table>
-        </div>
-        <div class="mt-2 text-right font-bold text-lg">
-            Total: <span id="total-harga">Rp 0</span>
-        </div>
-    </div>
-
-    <div class="flex gap-2 justify-end">
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">Simpan</button>
-        <a href="/pembelian" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition">Batal</a>
-    </div>
-</form>
 @endsection
 
 @push('scripts')
@@ -74,7 +78,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const supplierSelect = document.getElementById('supplier-select');
     const obatList = document.getElementById('obat-list');
-    const tableItems = document.querySelector('#table-items tbody');
+    const tableItems = document.getElementById('table-items');
     const totalHargaEl = document.getElementById('total-harga');
 
     function formatRupiah(angka) {
@@ -108,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <td class="px-2 py-1 border"><input type="number" name="jumlah[]" value="1" min="1" class="w-full jumlah px-2 py-1 border rounded"></td>
             <td class="px-2 py-1 border"><input type="number" name="harga[]" value="${obat.harga_dasar}" class="w-full harga px-2 py-1 border rounded bg-gray-100" readonly></td>
             <td class="px-2 py-1 border text-right subtotal">${formatRupiah(obat.harga_dasar)}</td>
-            <td class="px-2 py-1 border text-center"><button type="button" class="text-red-500 font-bold" onclick="this.closest('tr').remove();hitungTotal()">✖</button></td>
+            <td class="px-2 py-1 border text-center"><button type="button" class="text-red-500 font-bold hover:text-red-700 transition" onclick="this.closest('tr').remove();hitungTotal()">✖</button></td>
             <input type="hidden" name="obat_id[]" value="${obat.id}">
         `;
         tableItems.appendChild(row);
@@ -136,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 let html = '<table class="w-full border border-gray-300 table-auto">';
-                html += '<thead class="bg-gray-100"><tr><th class="px-2 py-1"></th><th class="px-2 py-1">Kode</th><th class="px-2 py-1">Nama</th><th class="px-2 py-1 text-right">Stok Apotek</th><th class="px-2 py-1 text-right">Harga</th></tr></thead><tbody>';
+                html += '<thead class="bg-gray-100"><tr><th></th><th class="px-2 py-1">Kode</th><th class="px-2 py-1">Nama</th><th class="px-2 py-1 text-right">Stok Apotek</th><th class="px-2 py-1 text-right">Harga</th></tr></thead><tbody>';
 
                 data.forEach(obat => {
                     html += `<tr class="hover:bg-gray-50">

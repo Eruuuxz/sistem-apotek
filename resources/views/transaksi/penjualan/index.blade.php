@@ -3,7 +3,6 @@
 @section('title', 'Transaksi Penjualan')
 
 @section('content')
-<h1 class="text-2xl font-bold mb-4">Transaksi Penjualan</h1>
 
 <a href="/penjualan/create" class="bg-blue-600 text-white px-4 py-2 rounded">+ Tambah Penjualan</a>
 

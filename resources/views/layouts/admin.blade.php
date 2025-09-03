@@ -13,7 +13,7 @@
     <!-- Sidebar -->
     <aside class="w-64 bg-blue-800 text-white min-h-screen">
         <div class="p-4 text-2xl font-bold border-b border-blue-700">
-            Apotek XYZ
+            LIZ Farma 02 Admin
         </div>
         <nav class="mt-4">
             @auth {{-- Pastikan user sudah login --}}
