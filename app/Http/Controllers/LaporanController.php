@@ -2,79 +2,233 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Penjualan, Obat}; // Tambahkan Barang
+use App\Models\{Penjualan, Obat};
 use Illuminate\Http\Request;
-use Carbon\Carbon; // Digunakan untuk filter tanggal
-use PDF; // Untuk export PDF
-use App\Exports\PenjualanExport; // Untuk export Excel
-use Maatwebsite\Excel\Facades\Excel; // Untuk export Excel
+use Carbon\Carbon;
+use PDF;
+use Spatie\SimpleExcel\SimpleExcelWriter;
 
 class LaporanController extends Controller
 {
-    // Method untuk menampilkan halaman index laporan (opsional, bisa langsung redirect ke penjualan)
     public function index()
     {
         return view('laporan.index');
     }
 
-    public function penjualan(Request $r)
+    // 📊 Laporan Penjualan hari ini
+    public function penjualan(Request $request)
     {
-        $from = $r->input('from');
-        $to   = $r->input('to');
+        if ($request->has('tanggal')) {
+            $tanggal = $request->get('tanggal');
+            $offset = null;
+        } else {
+            $offset = (int) $request->get('day', 0);
+            $tanggal = now()->subDays($offset)->toDateString();
+        }
 
-        $q = Penjualan::withCount('detail')->withSum('detail as total_detail','subtotal')->latest();
+$data = Penjualan::with(['kasir'])
+    ->withCount('details')
+    ->withSum('details as total_qty', 'qty')
+    ->whereDate('tanggal', $tanggal)
+    ->orderBy('tanggal', 'desc')
+    ->paginate(10);
 
-        if ($from) $q->whereDate('tanggal','>=',$from);
-        if ($to)   $q->whereDate('tanggal','<=',$to);
 
-        $data = $q->paginate(15)->withQueryString();
+        $totalAll = Penjualan::whereDate('tanggal', $tanggal)->sum('total');
+        $jumlahTransaksi = $data->total();
 
-        // total keseluruhan sesuai filter
-        $totalAll = (clone $q)->get()->sum('total');
-
-        return view('laporan.penjualan',[
-            'data'=>$data,
-            'from'=>$from,
-            'to'=>$to,
-            'totalAll'=>$totalAll,
-        ]);
+        return view('laporan.penjualan', compact(
+            'data',
+            'tanggal',
+            'offset',
+            'totalAll',
+            'jumlahTransaksi'
+        ));
     }
-
-    public function penjualanPdf(Request $r)
+    // 📑 Export PDF
+    public function penjualanPdf(Request $request)
     {
-        $from = $r->input('from');
-        $to = $r->input('to');
+        $tanggal = $request->get('tanggal', now()->toDateString());
 
-        $q = \App\Models\Penjualan::with('detail.obat')->latest();
+        $rows = Penjualan::with('details.obat')
+            ->whereDate('tanggal', $tanggal)
+            ->latest()
+            ->get();
 
-        if ($from) $q->whereDate('tanggal','>=',$from);
-        if ($to)   $q->whereDate('tanggal','<=',$to);
-
-        $rows = $q->get();
         $totalAll = $rows->sum('total');
 
-        $pdf = PDF::loadView('laporan.penjualan_pdf', compact('rows','from','to','totalAll'));
-        return $pdf->download('Laporan-Penjualan.pdf');
+        $pdf = PDF::loadView('laporan.penjualan_pdf', compact('rows', 'tanggal', 'totalAll'));
+        return $pdf->download("Laporan-Penjualan-{$tanggal}.pdf");
     }
 
-    public function penjualanExcel(Request $r)
+    // 📊 Export Excel
+    public function penjualanExcel(Request $request)
     {
-        return Excel::download(new PenjualanExport($r->from,$r->to), 'Laporan-Penjualan.xlsx');
+        $tanggal = $request->get('tanggal', now()->toDateString());
+
+        $penjualan = Penjualan::withCount('details')
+            ->whereDate('tanggal', $tanggal)
+            ->get();
+
+        $filename = "laporan-penjualan-{$tanggal}.csv";
+
+        $headers = [
+            "Content-Type" => "text/csv",
+            "Content-Disposition" => "attachment; filename={$filename}",
+        ];
+
+        $callback = function () use ($penjualan, $tanggal) {
+            $file = fopen('php://output', 'w');
+
+            // Set semicolon sebagai pemisah
+            $delimiter = ';';
+
+            // Judul laporan
+            fputcsv($file, ["Laporan Penjualan - {$tanggal}"], $delimiter);
+            fputcsv($file, [], $delimiter); // baris kosong
+
+            // Header tabel
+            fputcsv($file, ['No Nota', 'Tanggal', 'Total', 'Item'], $delimiter);
+
+            // Data
+            foreach ($penjualan as $row) {
+                fputcsv($file, [
+                    $row->no_nota,
+                    $row->tanggal,
+                    $row->total,
+                    $row->details_count,
+                ], $delimiter);
+            }
+
+            // Total summary
+            fputcsv($file, [], $delimiter);
+            fputcsv($file, ['TOTAL', '', $penjualan->sum('total'), $penjualan->sum('details_count')], $delimiter);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
-    public function stok(Request $r)
+   public function penjualanBulanan(Request $request)
+{
+    // Ambil bulan & tahun dari request atau default bulan ini
+    $periode = $request->get('periode', now()->format('Y-m'));
+    [$tahun, $bulan] = explode('-', $periode);
+
+    // Data penjualan bulan ini
+$data = Penjualan::with(['kasir'])
+    ->withCount('details')
+    ->withSum('details as total_qty', 'qty')
+    ->whereYear('tanggal', $tahun)
+    ->whereMonth('tanggal', $bulan)
+    ->orderBy('tanggal', 'desc')
+    ->paginate(10);
+
+
+    $totalAll = Penjualan::whereYear('tanggal', $tahun)
+        ->whereMonth('tanggal', $bulan)
+        ->sum('total');
+    $jumlahTransaksi = $data->total();
+
+    // Hitung bulan sebelumnya & berikutnya
+    $current = \Carbon\Carbon::create($tahun, $bulan, 1);
+    $prevMonth = [
+        'bulan' => $current->copy()->subMonth()->month,
+        'tahun' => $current->copy()->subMonth()->year,
+    ];
+    $nextMonth = [
+        'bulan' => $current->copy()->addMonth()->month,
+        'tahun' => $current->copy()->addMonth()->year,
+    ];
+
+    return view('laporan.penjualan_bulanan', [
+        'data' => $data,
+        'bulan' => (int)$bulan,
+        'tahun' => (int)$tahun,
+        'totalAll' => $totalAll,
+        'jumlahTransaksi' => $jumlahTransaksi,
+        'prevMonth' => $prevMonth,
+        'nextMonth' => $nextMonth,
+    ]);
+}
+
+    public function penjualanBulananPdf(Request $request)
     {
-        $threshold = $r->filled('threshold') ? (int)$r->threshold : null;
+        $bulan = $request->get('bulan', now()->month);
+        $tahun = $request->get('tahun', now()->year);
+
+        $rows = Penjualan::with('details.obat')
+            ->whereYear('tanggal', $tahun)
+            ->whereMonth('tanggal', $bulan)
+            ->get();
+
+        $totalAll = $rows->sum('total');
+
+        $pdf = \PDF::loadView('laporan.penjualan_pdf', compact('rows', 'bulan', 'tahun', 'totalAll'));
+        return $pdf->download("Laporan-Penjualan-Bulanan-{$bulan}-{$tahun}.pdf");
+    }
+
+    public function penjualanBulananExcel(Request $request)
+    {
+        $bulan = $request->get('bulan', now()->month);
+        $tahun = $request->get('tahun', now()->year);
+
+        $penjualan = Penjualan::withCount('details')
+            ->whereYear('tanggal', $tahun)
+            ->whereMonth('tanggal', $bulan)
+            ->get();
+
+        $filename = "laporan-penjualan-bulanan-{$bulan}-{$tahun}.csv";
+
+        $headers = [
+            "Content-Type" => "text/csv",
+            "Content-Disposition" => "attachment; filename={$filename}",
+        ];
+
+        $callback = function () use ($penjualan, $bulan, $tahun) {
+            $file = fopen('php://output', 'w');
+            $delimiter = ';';
+
+            fputcsv($file, ["Laporan Penjualan Bulanan - {$bulan}/{$tahun}"], $delimiter);
+            fputcsv($file, [], $delimiter);
+            fputcsv($file, ['No Nota', 'Tanggal', 'Total', 'Item'], $delimiter);
+
+            foreach ($penjualan as $row) {
+                fputcsv($file, [
+                    $row->no_nota,
+                    $row->tanggal,
+                    $row->total,
+                    $row->details_count,
+                ], $delimiter);
+            }
+
+            fputcsv($file, [], $delimiter);
+            fputcsv($file, ['TOTAL', '', $penjualan->sum('total'), $penjualan->sum('details_count')], $delimiter);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    // 📉 Laporan stok
+    public function stok(Request $request)
+    {
+        $threshold = $request->filled('threshold') ? (int) $request->threshold : null;
+
         $q = Obat::query();
 
         if ($threshold !== null) {
-            $q->where('stok','<',$threshold);
+            $q->where('stok', '<', $threshold);
         } else {
-            // jika ada min_stok, pakai itu
-            $q->whereColumn('stok','<','min_stok');
+            $q->whereColumn('stok', '<', 'min_stok');
         }
-        $data = $q->orderBy('stok','asc')->paginate(20)->withQueryString();
 
-        return view('laporan.stok', compact('data','threshold'));
+        $data = $q->orderBy('stok', 'asc')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('laporan.stok', compact('data', 'threshold'));
     }
 }
