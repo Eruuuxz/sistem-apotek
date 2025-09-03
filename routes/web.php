@@ -8,6 +8,7 @@ use App\Http\Controllers\PembelianController;
 use App\Http\Controllers\PenjualanController;
 use App\Http\Controllers\ReturController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController; // Ini tidak digunakan, bisa dihapus jika tidak ada AuthController lain
 use App\Http\Controllers\Auth\RoleLoginController;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +47,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Transaksi
         Route::resource('pembelian', PembelianController::class);
+        Route::get('/supplier/{id}/obat', [PembelianController::class, 'getObatBySupplier']);
         Route::get('pembelian/faktur/{pembelian}', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
         Route::get('pembelian/pdf/{pembelian}', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
         
@@ -58,8 +60,14 @@ Route::middleware(['auth'])->group(function () {
             Route::get('penjualan', [LaporanController::class, 'penjualan'])->name('penjualan');
             Route::get('penjualan/pdf', [LaporanController::class, 'penjualanPdf'])->name('penjualan.pdf');
             Route::get('penjualan/excel', [LaporanController::class, 'penjualanExcel'])->name('penjualan.excel');
+            Route::get('penjualan-bulanan', [LaporanController::class, 'penjualanBulanan'])->name('penjualan.bulanan');
+            Route::get('penjualan-bulanan/pdf', [LaporanController::class, 'penjualanBulananPdf'])->name('penjualan.bulanan.pdf');
+            Route::get('penjualan-bulanan/excel', [LaporanController::class, 'penjualanBulananExcel'])->name('penjualan.bulanan.excel');
             Route::get('stok', [LaporanController::class, 'stok'])->name('stok');
         });
+
+        Route::resource('users', UserController::class);
+        
     });
 
     // Route untuk Kasir (hanya bisa diakses oleh role 'kasir')
@@ -73,6 +81,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/penjualan/success/{id}', [PenjualanController::class, 'success'])->name('penjualan.success');
         Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
         Route::get('/kasir/riwayat', [PenjualanController::class, 'riwayatKasir'])->name('kasir.riwayat');
+        Route::get('/penjualan/{id}', [PenjualanController::class, 'show'])->name('penjualan.show');
     });
 
     // Riwayat Penjualan (bisa diakses oleh role 'kasir' dan 'admin')

@@ -8,11 +8,24 @@ use Illuminate\Http\Request;
 
 class ObatController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $obats = Obat::with('supplier')->get(); // Ambil obat dengan supplier
+        $query = Obat::with('supplier'); // langsung include supplier di query
+
+        // filter stok
+        if ($request->filter === 'menipis') {
+            $query->whereBetween('stok', [1, 9]);
+        } elseif ($request->filter === 'habis') {
+            $query->where('stok', 0);
+        } elseif ($request->filter === 'tersedia') {
+            $query->where('stok', '>', 0);
+        }
+
+        $obats = $query->get(); // gunakan hasil query yang difilter
+
         return view('master.obat.index', compact('obats'));
     }
+
 
     public function create()
     {

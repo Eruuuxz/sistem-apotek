@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Sistem Informasi Apotek')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+
 <body class="bg-gray-100 flex">
 
     <!-- Sidebar -->
@@ -16,33 +18,33 @@
         <nav class="mt-4">
             @auth {{-- Pastikan user sudah login --}}
                 @if(Auth::user()->role === 'admin')
-                    <a href="{{ route('dashboard') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('dashboard*') || request()->is('/') ? 'bg-blue-600' : '' }}">
+                    <a href="{{ route('dashboard') }}"
+                        class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('dashboard*') || request()->is('/') ? 'bg-blue-600' : '' }}">
                         Dashboard
                     </a>
-                    <a href="{{ route('obat.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('obat*') ? 'bg-blue-600' : '' }}">
+                    <a href="{{ route('obat.index') }}"
+                        class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('obat*') ? 'bg-blue-600' : '' }}">
                         Data Obat
                     </a>
-                    <a href="{{ route('supplier.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('supplier*') ? 'bg-blue-600' : '' }}">
+                    <a href="{{ route('supplier.index') }}"
+                        class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('supplier*') ? 'bg-blue-600' : '' }}">
                         Data Supplier
                     </a>
-                    <a href="{{ route('pembelian.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('pembelian*') ? 'bg-blue-600' : '' }}">
+                    <a href="{{ route('pembelian.index') }}"
+                        class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('pembelian*') ? 'bg-blue-600' : '' }}">
                         Pembelian
                     </a>
-                    <a href="{{ route('retur.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('retur*') ? 'bg-blue-600' : '' }}">
+                    <a href="{{ route('retur.index') }}"
+                        class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('retur*') ? 'bg-blue-600' : '' }}">
                         Retur Barang
                     </a>
-                    <a href="{{ route('laporan.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('laporan*') ? 'bg-blue-600' : '' }}">
+                    <a href="{{ route('laporan.index') }}"
+                        class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('laporan*') ? 'bg-blue-600' : '' }}">
                         Laporan
                     </a>
-                @endif
-
-                @if(in_array(Auth::user()->role, ['kasir', 'admin']))
-                    {{-- Link untuk kasir, juga bisa diakses admin --}}
-                    <a href="{{ route('pos.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('pos*') ? 'bg-blue-600' : '' }}">
-                        POS Penjualan
-                    </a>
-                    <a href="{{ route('penjualan.index') }}" class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('penjualan*') ? 'bg-blue-600' : '' }}">
-                        Riwayat Penjualan
+                    <a href="{{ route('users.index') }}"
+                        class="block px-4 py-2 hover:bg-blue-600 {{ request()->is('users*') ? 'bg-blue-600' : '' }}">
+                        Management Kasir
                     </a>
                 @endif
             @endauth
@@ -74,4 +76,5 @@
     </div>
     @stack('scripts')
 </body>
+
 </html>
