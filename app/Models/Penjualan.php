@@ -12,7 +12,7 @@ class Penjualan extends Model
     use HasFactory;
 
     protected $table = 'penjualan';
-    
+
     protected $fillable = [
         'no_nota',
         'tanggal',

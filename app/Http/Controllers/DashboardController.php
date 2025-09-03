@@ -22,14 +22,14 @@ class DashboardController extends Controller
             ->take(12) // Ambil data 12 bulan terakhir
             ->get();
 
-    // Obat terlaris (top 5)
-    $obatTerlaris = DB::table('penjualan_detail')
-        ->join('obat', 'penjualan_detail.obat_id', '=', 'obat.id')
-        ->select('obat.nama', DB::raw('SUM(penjualan_detail.qty) as total_terjual'))
-        ->groupBy('obat.nama')
-        ->orderByDesc('total_terjual')
-        ->limit(5)
-        ->get();
+        // Obat terlaris (top 5)
+        $obatTerlaris = DB::table('penjualan_detail')
+            ->join('obat', 'penjualan_detail.obat_id', '=', 'obat.id')
+            ->select('obat.nama', DB::raw('SUM(penjualan_detail.qty) as total_terjual'))
+            ->groupBy('obat.nama')
+            ->orderByDesc('total_terjual')
+            ->limit(5)
+            ->get();
 
 
         return view('dashboard', compact(

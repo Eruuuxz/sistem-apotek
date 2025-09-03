@@ -11,7 +11,7 @@ class Retur extends Model
     use HasFactory;
 
     protected $table = 'retur';
-    
+
     protected $fillable = [
         'no_retur',
         'tanggal',

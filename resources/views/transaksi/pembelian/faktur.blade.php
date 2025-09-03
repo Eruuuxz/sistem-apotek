@@ -1,24 +1,33 @@
-{{-- File: /pembelian/faktur.blade.php --}}
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <title>Faktur Pembelian - {{ $p->no_faktur }}</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         @media print {
-            @page { size: A4; margin: 10mm; }
-            .no-print { display: none; }
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+
+            .no-print {
+                display: none;
+            }
         }
     </style>
 </head>
+
 <body class="p-8 bg-gray-100">
     <div class="bg-white p-6 rounded shadow max-w-3xl mx-auto">
         <div class="flex justify-between items-center border-b pb-4 mb-4">
             <div>
                 <h1 class="text-2xl font-bold">FAKTUR PEMBELIAN</h1>
                 <p class="text-sm text-gray-600">Nomor: <span class="font-medium">{{ $p->no_faktur }}</span></p>
-                <p class="text-sm text-gray-600">Tanggal: <span class="font-medium">{{ \Carbon\Carbon::parse($p->tanggal)->translatedFormat('d F Y') }}</span></p>
+                <p class="text-sm text-gray-600">Tanggal: <span
+                        class="font-medium">{{ \Carbon\Carbon::parse($p->tanggal)->translatedFormat('d F Y') }}</span>
+                </p>
             </div>
             <div class="text-right">
                 <h2 class="text-lg font-bold">APOTEK SEHAT SELALU</h2>
@@ -46,19 +55,22 @@
             </thead>
             <tbody>
                 @foreach($p->detail as $i => $d)
-                <tr>
-                    <td class="border border-gray-300 px-3 py-2">{{ $i+1 }}</td>
-                    <td class="border border-gray-300 px-3 py-2">{{ $d->obat->nama ?? '-' }}</td>
-                    <td class="border border-gray-300 px-3 py-2 text-right">{{ $d->jumlah }}</td>
-                    <td class="border border-gray-300 px-3 py-2 text-right">Rp {{ number_format($d->harga_beli, 0, ',', '.') }}</td>
-                    <td class="border border-gray-300 px-3 py-2 text-right">Rp {{ number_format($d->jumlah * $d->harga_beli, 0, ',', '.') }}</td>
-                </tr>
+                    <tr>
+                        <td class="border border-gray-300 px-3 py-2">{{ $i + 1 }}</td>
+                        <td class="border border-gray-300 px-3 py-2">{{ $d->obat->nama ?? '-' }}</td>
+                        <td class="border border-gray-300 px-3 py-2 text-right">{{ $d->jumlah }}</td>
+                        <td class="border border-gray-300 px-3 py-2 text-right">Rp
+                            {{ number_format($d->harga_beli, 0, ',', '.') }}</td>
+                        <td class="border border-gray-300 px-3 py-2 text-right">Rp
+                            {{ number_format($d->jumlah * $d->harga_beli, 0, ',', '.') }}</td>
+                    </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr>
                     <td colspan="4" class="border border-gray-300 px-3 py-2 text-right font-bold">Total</td>
-                    <td class="border border-gray-300 px-3 py-2 text-right font-bold">Rp {{ number_format($p->total, 0, ',', '.') }}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-right font-bold">Rp
+                        {{ number_format($p->total, 0, ',', '.') }}</td>
                 </tr>
             </tfoot>
         </table>
@@ -77,7 +89,9 @@
 
     <div class="text-center mt-4 no-print flex justify-center gap-2">
         <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded shadow">Cetak Faktur</button>
-        <a href="{{ route('pembelian.pdf', $p->id) }}" class="bg-green-600 text-white px-4 py-2 rounded shadow">Unduh PDF</a>
+        <a href="{{ route('pembelian.pdf', $p->id) }}" class="bg-green-600 text-white px-4 py-2 rounded shadow">Unduh
+            PDF</a>
     </div>
 </body>
+
 </html>

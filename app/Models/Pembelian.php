@@ -12,7 +12,7 @@ class Pembelian extends Model
     use HasFactory;
 
     protected $table = 'pembelian';
-    
+
     protected $fillable = [
         'no_faktur',
         'tanggal',

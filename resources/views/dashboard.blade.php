@@ -13,15 +13,13 @@
         </a>
 
         <!-- Total Supplier -->
-        <a href="{{ route('supplier.index') }}"
-            class="bg-white p-4 shadow rounded hover:bg-green-50 transition">
+        <a href="{{ route('supplier.index') }}" class="bg-white p-4 shadow rounded hover:bg-green-50 transition">
             <h2 class="text-lg font-semibold text-gray-600">Total Supplier</h2>
             <p class="text-3xl font-bold text-green-600 mt-2">{{ $totalSupplier }}</p>
         </a>
 
         <!-- Penjualan Hari Ini -->
-        <a href="{{ route('laporan.penjualan') }}"
-            class="bg-white p-4 shadow rounded hover:bg-purple-50 transition">
+        <a href="{{ route('laporan.penjualan') }}" class="bg-white p-4 shadow rounded hover:bg-purple-50 transition">
             <h2 class="text-lg font-semibold text-gray-600">Penjualan Hari Ini</h2>
             <p class="text-3xl font-bold text-purple-600 mt-2">
                 Rp {{ number_format($penjualanHariIni, 0, ',', '.') }}
@@ -70,62 +68,62 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Data penjualan
-    const penjualanSeries = @json($penjualanBulanan->pluck('total'));
-    const penjualanLabels = @json($penjualanBulanan->pluck('ym'));
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Data penjualan
+        const penjualanSeries = @json($penjualanBulanan->pluck('total'));
+        const penjualanLabels = @json($penjualanBulanan->pluck('ym'));
 
-    const ctxPenjualan = document.getElementById('penjualanChart').getContext('2d');
-    const gradientPenjualan = ctxPenjualan.createLinearGradient(0, 0, 0, 400);
-    gradientPenjualan.addColorStop(0, 'rgba(37, 99, 235, 0.8)');
-    gradientPenjualan.addColorStop(1, 'rgba(37, 99, 235, 0.3)');
+        const ctxPenjualan = document.getElementById('penjualanChart').getContext('2d');
+        const gradientPenjualan = ctxPenjualan.createLinearGradient(0, 0, 0, 400);
+        gradientPenjualan.addColorStop(0, 'rgba(37, 99, 235, 0.8)');
+        gradientPenjualan.addColorStop(1, 'rgba(37, 99, 235, 0.3)');
 
-    new Chart(ctxPenjualan, {
-        type: 'bar',
-        data: {
-            labels: penjualanLabels,
-            datasets: [{
-                label: 'Penjualan (Rp)',
-                data: penjualanSeries,
-                backgroundColor: gradientPenjualan,
-                borderRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, ticks: { callback: v => 'Rp ' + Number(v).toLocaleString('id-ID') } }
+        new Chart(ctxPenjualan, {
+            type: 'bar',
+            data: {
+                labels: penjualanLabels,
+                datasets: [{
+                    label: 'Penjualan (Rp)',
+                    data: penjualanSeries,
+                    backgroundColor: gradientPenjualan,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { callback: v => 'Rp ' + Number(v).toLocaleString('id-ID') } }
+                }
             }
-        }
-    });
+        });
 
-    // Data obat terlaris
-    const obatLabels = @json($obatTerlaris->pluck('nama'));
-    const obatData = @json($obatTerlaris->pluck('total_terjual'));
+        // Data obat terlaris
+        const obatLabels = @json($obatTerlaris->pluck('nama'));
+        const obatData = @json($obatTerlaris->pluck('total_terjual'));
 
-    const ctxObat = document.getElementById('obatTerlarisChart').getContext('2d');
-    const gradientObat = ctxObat.createLinearGradient(0, 0, 0, 400);
-    gradientObat.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
-    gradientObat.addColorStop(1, 'rgba(54, 162, 235, 0.3)');
+        const ctxObat = document.getElementById('obatTerlarisChart').getContext('2d');
+        const gradientObat = ctxObat.createLinearGradient(0, 0, 0, 400);
+        gradientObat.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
+        gradientObat.addColorStop(1, 'rgba(54, 162, 235, 0.3)');
 
-    new Chart(ctxObat, {
-        type: 'bar',
-        data: {
-            labels: obatLabels,
-            datasets: [{
-                label: 'Jumlah Terjual',
-                data: obatData,
-                backgroundColor: gradientObat,
-                borderRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-        }
-    });
-</script>
+        new Chart(ctxObat, {
+            type: 'bar',
+            data: {
+                labels: obatLabels,
+                datasets: [{
+                    label: 'Jumlah Terjual',
+                    data: obatData,
+                    backgroundColor: gradientObat,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    </script>
 @endpush

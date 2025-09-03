@@ -11,7 +11,7 @@ class ReturDetail extends Model
     use HasFactory;
 
     protected $table = 'retur_detail';
-    
+
     protected $fillable = [
         'retur_id',
         'obat_id',

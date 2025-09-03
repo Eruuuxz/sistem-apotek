@@ -12,13 +12,13 @@ class Obat extends Model
     use HasFactory;
 
     protected $table = 'obat';
-    
+
     protected $fillable = [
         'kode',
         'nama',
         'kategori',
         'stok',
-        'min_stok', 
+        'min_stok',
         'harga_dasar',
         'persen_untung',
         'harga_jual',

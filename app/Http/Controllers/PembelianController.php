@@ -21,46 +21,46 @@ class PembelianController extends Controller
     {
         $suppliers = Supplier::orderBy('nama')->get(); // Ambil semua supplier untuk dropdown
         $obat = Obat::orderBy('nama')->get();         // Ambil semua obat untuk dropdown
-        
+
         // no_faktur auto-suggest
         $noFaktur = 'FPB-' . date('Y') . '-' . str_pad((Pembelian::count() + 1), 3, '0', STR_PAD_LEFT);
-        
+
         return view('transaksi.pembelian.create', compact('suppliers', 'obat', 'noFaktur'));
     }
 
     public function store(Request $r)
     {
         $r->validate([
-            'no_faktur'   => ['required', 'max:50', Rule::unique('pembelian', 'no_faktur')],
-            'tanggal'   => ['required', 'date'],
+            'no_faktur' => ['required', 'max:50', Rule::unique('pembelian', 'no_faktur')],
+            'tanggal' => ['required', 'date'],
             'supplier_id' => ['required', 'exists:supplier,id'],
-            'obat_id'   => ['required', 'array', 'min:1'],
-            'obat_id.*'   => ['required', 'exists:obat,id'],
-            'jumlah'   => ['required', 'array', 'min:1'],
-            'jumlah.*'   => ['required', 'integer', 'min:1'],
-            'harga'   => ['required', 'array', 'min:1'],
-            'harga.*'   => ['required', 'numeric', 'min:0'],
+            'obat_id' => ['required', 'array', 'min:1'],
+            'obat_id.*' => ['required', 'exists:obat,id'],
+            'jumlah' => ['required', 'array', 'min:1'],
+            'jumlah.*' => ['required', 'integer', 'min:1'],
+            'harga' => ['required', 'array', 'min:1'],
+            'harga.*' => ['required', 'numeric', 'min:0'],
         ]);
 
         DB::transaction(function () use ($r) {
             $pembelian = Pembelian::create([
-                'no_faktur'   => $r->no_faktur,
-                'tanggal'   => $r->tanggal,
+                'no_faktur' => $r->no_faktur,
+                'tanggal' => $r->tanggal,
                 'supplier_id' => $r->supplier_id,
-                'total'   => 0, // Akan diupdate setelah detail ditambahkan
+                'total' => 0, // Akan diupdate setelah detail ditambahkan
             ]);
 
             $total = 0;
             foreach ($r->obat_id as $i => $obatId) {
-                $qty   = (int)$r->jumlah[$i];
-                $harga = (float)$r->harga[$i];
-                $sub   = $qty * $harga;
+                $qty = (int) $r->jumlah[$i];
+                $harga = (float) $r->harga[$i];
+                $sub = $qty * $harga;
 
                 PembelianDetail::create([
                     'pembelian_id' => $pembelian->id,
-                    'obat_id'   => $obatId,
-                    'jumlah'   => $qty,
-                    'harga_beli'   => $harga, // Sesuaikan dengan nama kolom di migration
+                    'obat_id' => $obatId,
+                    'jumlah' => $qty,
+                    'harga_beli' => $harga, // Sesuaikan dengan nama kolom di migration
                 ]);
 
                 // stok obat bertambah
@@ -93,29 +93,29 @@ class PembelianController extends Controller
 
     // app/Http/Controllers/PembelianController.php
 
-// ... (bagian lain dari kode)
+    // ... (bagian lain dari kode)
 
     public function edit(Pembelian $pembelian)
     {
         $suppliers = Supplier::orderBy('nama')->get();
         $obat = Obat::orderBy('nama')->get();
         // Load detail pembelian bersama dengan obatnya
-        $pembelian->load('detail.obat'); 
+        $pembelian->load('detail.obat');
         return view('transaksi.pembelian.edit', compact('pembelian', 'suppliers', 'obat'));
     }
 
     public function update(Request $r, Pembelian $pembelian)
     {
         $r->validate([
-            'no_faktur'   => ['required', 'max:50', Rule::unique('pembelian', 'no_faktur')->ignore($pembelian->id)], // Ignore current ID
-            'tanggal'   => ['required', 'date'],
+            'no_faktur' => ['required', 'max:50', Rule::unique('pembelian', 'no_faktur')->ignore($pembelian->id)], // Ignore current ID
+            'tanggal' => ['required', 'date'],
             'supplier_id' => ['required', 'exists:supplier,id'],
-            'obat_id'   => ['required', 'array', 'min:1'],
-            'obat_id.*'   => ['required', 'exists:obat,id'],
-            'jumlah'   => ['required', 'array', 'min:1'],
-            'jumlah.*'   => ['required', 'integer', 'min:1'],
-            'harga'   => ['required', 'array', 'min:1'],
-            'harga.*'   => ['required', 'numeric', 'min:0'],
+            'obat_id' => ['required', 'array', 'min:1'],
+            'obat_id.*' => ['required', 'exists:obat,id'],
+            'jumlah' => ['required', 'array', 'min:1'],
+            'jumlah.*' => ['required', 'integer', 'min:1'],
+            'harga' => ['required', 'array', 'min:1'],
+            'harga.*' => ['required', 'numeric', 'min:0'],
         ]);
 
         DB::transaction(function () use ($r, $pembelian) {
@@ -132,24 +132,24 @@ class PembelianController extends Controller
 
             // 3. Update data pembelian utama
             $pembelian->update([
-                'no_faktur'   => $r->no_faktur,
-                'tanggal'   => $r->tanggal,
+                'no_faktur' => $r->no_faktur,
+                'tanggal' => $r->tanggal,
                 'supplier_id' => $r->supplier_id,
-                'total'   => 0, // Akan diupdate setelah detail baru ditambahkan
+                'total' => 0, // Akan diupdate setelah detail baru ditambahkan
             ]);
 
             // 4. Tambahkan detail pembelian baru dan update stok
             $total = 0;
             foreach ($r->obat_id as $i => $obatId) {
-                $qty   = (int)$r->jumlah[$i];
-                $harga = (float)$r->harga[$i];
-                $sub   = $qty * $harga;
+                $qty = (int) $r->jumlah[$i];
+                $harga = (float) $r->harga[$i];
+                $sub = $qty * $harga;
 
                 PembelianDetail::create([
                     'pembelian_id' => $pembelian->id,
-                    'obat_id'   => $obatId,
-                    'jumlah'   => $qty,
-                    'harga_beli'   => $harga,
+                    'obat_id' => $obatId,
+                    'jumlah' => $qty,
+                    'harga_beli' => $harga,
                 ]);
 
                 $obat = Obat::find($obatId);
@@ -165,14 +165,12 @@ class PembelianController extends Controller
         return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil diperbarui');
     }
     public function getObatBySupplier($supplierId)
-{
-    // Ambil obat yang supplier_id nya sama
-    $obat = Obat::where('supplier_id', $supplierId)
-                 ->where('stok', '>', 0) // hanya yang masih ada stok
-                 ->get(['id','kode','nama','stok','harga_dasar']);
+    {
+        // Ambil obat yang supplier_id nya sama
+        $obat = Obat::where('supplier_id', $supplierId)
+            ->where('stok', '>', 0) // hanya yang masih ada stok
+            ->get(['id', 'kode', 'nama', 'stok', 'harga_dasar']);
 
-    return response()->json($obat);
-}
-
-
+        return response()->json($obat);
+    }
 }

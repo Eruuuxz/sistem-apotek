@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Retur, ReturDetail, Pembelian, Penjualan, Obat}; 
+use App\Models\{Retur, ReturDetail, Pembelian, Penjualan, Obat};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -40,7 +40,7 @@ class ReturController extends Controller
     {
         if ($jenis === 'pembelian') {
             $src = Pembelian::with('detail.obat')->findOrFail($id);
-            $items = $src->detail->map(fn ($d) => [
+            $items = $src->detail->map(fn($d) => [
                 'id' => $d->obat_id,
                 'kode' => $d->obat->kode,
                 'nama' => $d->obat->nama,
@@ -48,11 +48,11 @@ class ReturController extends Controller
                 'max_qty' => $d->jumlah
             ]);
         } else { // jenis === 'penjualan'
-            $src = Penjualan::with('detail.obat')->findOrFail($id); 
-            $items = $src->detail->map(fn ($d) => [
-                'id' => $d->obat_id, 
-                'kode' => $d->obat->kode, 
-                'nama' => $d->obat->nama, 
+            $src = Penjualan::with('detail.obat')->findOrFail($id);
+            $items = $src->detail->map(fn($d) => [
+                'id' => $d->obat_id,
+                'kode' => $d->obat->kode,
+                'nama' => $d->obat->nama,
                 'harga' => $d->harga,
                 'max_qty' => $d->qty
             ]);
@@ -63,38 +63,38 @@ class ReturController extends Controller
     public function store(Request $r)
     {
         $r->validate([
-            'no_retur'   => ['required', 'max:50', Rule::unique('retur', 'no_retur')],
-            'tanggal'   => ['required', 'date'],
-            'jenis'   => ['required', 'in:pembelian,penjualan'],
+            'no_retur' => ['required', 'max:50', Rule::unique('retur', 'no_retur')],
+            'tanggal' => ['required', 'date'],
+            'jenis' => ['required', 'in:pembelian,penjualan'],
             'transaksi_id' => ['required', 'integer'],
-            'item_id'   => ['required', 'array', 'min:1'],
+            'item_id' => ['required', 'array', 'min:1'],
             'item_id.*' => ['required', 'integer'],
-            'qty'   => ['required', 'array', 'min:1'],
-            'qty.*'   => ['required', 'integer', 'min:1'],
-            'harga'   => ['required', 'array', 'min:1'],
-            'harga.*'   => ['required', 'numeric', 'min:0'],
+            'qty' => ['required', 'array', 'min:1'],
+            'qty.*' => ['required', 'integer', 'min:1'],
+            'harga' => ['required', 'array', 'min:1'],
+            'harga.*' => ['required', 'numeric', 'min:0'],
             'keterangan' => ['nullable', 'string', 'max:255'],
         ]);
 
         DB::transaction(function () use ($r) {
             $retur = Retur::create([
-                'no_retur'   => $r->no_retur,
-                'tanggal'   => $r->tanggal,
-                'jenis'   => $r->jenis,
+                'no_retur' => $r->no_retur,
+                'tanggal' => $r->tanggal,
+                'jenis' => $r->jenis,
                 'transaksi_id' => $r->transaksi_id,
-                'total'   => 0, // Akan diupdate setelah detail ditambahkan
+                'total' => 0, // Akan diupdate setelah detail ditambahkan
                 'keterangan' => $r->keterangan ?? null,
             ]);
 
             $total = 0;
             foreach ($r->item_id as $i => $id) {
-                $qty = (int)$r->qty[$i];
-                $harga = (float)$r->harga[$i];
+                $qty = (int) $r->qty[$i];
+                $harga = (float) $r->harga[$i];
                 $sub = $qty * $harga;
 
                 ReturDetail::create([
                     'retur_id' => $retur->id,
-                    'obat_id' => $id, 
+                    'obat_id' => $id,
                     'qty' => $qty,
                     'harga' => $harga,
                     'subtotal' => $sub
@@ -108,7 +108,7 @@ class ReturController extends Controller
                     }
                 } else {
                     // retur dari customer: stok OBAT BERTAMBAH
-                    $obat = Obat::find($id); 
+                    $obat = Obat::find($id);
                     if ($obat) {
                         $obat->increment('stok', $qty);
                     }
