@@ -64,6 +64,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('penjualan-bulanan/pdf', [LaporanController::class, 'penjualanBulananPdf'])->name('penjualan.bulanan.pdf');
             Route::get('penjualan-bulanan/excel', [LaporanController::class, 'penjualanBulananExcel'])->name('penjualan.bulanan.excel');
             Route::get('stok', [LaporanController::class, 'stok'])->name('stok');
+            Route::get('profit', [LaporanController::class, 'profitBulanan'])->name('profit');
+            Route::get('/laporan/profit/detail/{tanggal}', [LaporanController::class, 'profitDetailJson']);
         });
 
         Route::resource('users', UserController::class);

@@ -9,14 +9,6 @@
             {{ session('success') }}
         </div>
     @endif
-
-    <div class="flex justify-between items-center mb-4">
-        <a href="{{ route('supplier.create') }}"
-            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-            + Tambah Supplier
-        </a>
-    </div>
-
     <div class="overflow-x-auto bg-white shadow-md rounded">
         <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-100">

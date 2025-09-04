@@ -4,10 +4,6 @@
 
 @section('content')
 
-    <div class="flex justify-between items-center mb-4">
-        <a href="{{ route('users.create') }}"
-            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">+ Tambah Kasir</a>
-    </div>
 
     <div class="overflow-x-auto bg-white shadow-md rounded">
         <table class="w-full table-auto border-collapse text-sm">

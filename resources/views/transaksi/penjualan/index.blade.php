@@ -4,8 +4,6 @@
 
 @section('content')
 
-    <a href="/penjualan/create" class="bg-blue-600 text-white px-4 py-2 rounded">+ Tambah Penjualan</a>
-
     <table class="w-full mt-4 bg-white shadow rounded">
         <thead class="bg-gray-200">
             <tr>

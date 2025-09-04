@@ -4,6 +4,10 @@
 
 @section('content')
 
+@php
+\Carbon\Carbon::setLocale('id');
+@endphp
+
     {{-- Navigasi + Input Date --}}
     <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <a href="{{ route('laporan.penjualan', ['day' => ($offset ?? 0) + 1]) }}"

@@ -6,6 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Sistem Kasir Apotek')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        <style>
+        /* Efek fade untuk halaman */
+        body {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        body.loaded {
+            opacity: 1;
+        }
+    </style>
 </head>
 
 <body class="bg-gray-100 flex min-h-screen font-sans">
@@ -112,6 +123,27 @@
     </div>
 
     @stack('scripts')
+
+    <script>
+        // Tambah class "loaded" setelah halaman selesai dimuat
+        document.addEventListener("DOMContentLoaded", function() {
+            document.body.classList.add("loaded");
+
+            // Tambah animasi saat klik link internal
+            document.querySelectorAll("a").forEach(link => {
+                link.addEventListener("click", function(e) {
+                    const target = this.getAttribute("href");
+                    if (target && target.startsWith("http") === false && !this.hasAttribute("target")) {
+                        e.preventDefault();
+                        document.body.classList.remove("loaded"); // fade out
+                        setTimeout(() => {
+                            window.location.href = target;
+                        }, 300); // sesuai durasi transition
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

@@ -24,13 +24,17 @@
         @endif
     </div>
 
-    {{-- Ringkasan + Export --}}
-    <div class="bg-white p-4 shadow-md rounded mb-4 flex flex-col md:flex-row justify-between items-center gap-2">
+    {{-- Ringkasan --}}
+    <div class="bg-white p-4 shadow-md rounded mb-6 flex flex-col md:flex-row justify-between items-center gap-2">
         <div class="text-sm md:text-base">
             <span class="font-semibold">Jumlah Transaksi:</span>
             <span class="font-bold text-blue-600">{{ $jumlahTransaksi }}</span>
+
             <span class="ml-6 font-semibold">Total Penjualan:</span>
             <span class="font-bold text-green-600">Rp {{ number_format($totalAll, 0, ',', '.') }}</span>
+
+            <span class="ml-6 font-semibold">Total Obat Terjual:</span>
+            <span class="font-bold text-purple-600">{{ $totalObatTerjual }}</span>
         </div>
         <div class="flex gap-2">
             <a href="{{ route('laporan.penjualan.bulanan.pdf', ['bulan' => $bulan, 'tahun' => $tahun]) }}"
@@ -40,44 +44,125 @@
         </div>
     </div>
 
-    {{-- Tabel --}}
-    <div class="overflow-x-auto bg-white shadow-md rounded">
+
+    {{-- Tabel Rekap Per Hari --}}
+    <div class="overflow-x-auto bg-white shadow-md rounded p-4">
+        <h3 class="text-lg font-semibold mb-3">Rekap Per Hari</h3>
         <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-100">
                 <tr>
-                    <th class="px-4 py-2 border text-left">No Nota</th>
+                    <th class="px-4 py-2 border text-left">Hari</th>
                     <th class="px-4 py-2 border text-left">Tanggal</th>
-                    <th class="px-4 py-2 border text-left">Kasir</th>
-                    <th class="px-4 py-2 border text-right">Total</th>
-                    <th class="px-4 py-2 border text-center">Item</th>
-                    <th class="px-4 py-2 border text-center">Qty Total</th>
+                    <th class="px-4 py-2 border text-right">Total Penjualan</th>
+                    <th class="px-4 py-2 border text-center">Total Obat Terjual</th>
+                    <th class="px-4 py-2 border text-center">Detail</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($data as $row)
-                    <tr class="hover:bg-gray-50">
-                        <td class="border px-4 py-2">{{ $row->no_nota }}</td>
-                        <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('d-m-Y') }}</td>
-                        <td class="border px-4 py-2">{{ $row->kasir->name ?? '-' }}</td>
-                        <td class="border px-4 py-2 text-right font-medium text-blue-600">Rp
-                            {{ number_format($row->total, 0, ',', '.') }}
-                        </td>
-                        <td class="border px-4 py-2">
-                            {{ $row->details->map(fn($d) => $d->obat->nama . ' (' . $d->qty . ')')->join(', ') }}
-                        </td>
+                @php
+                    $dataPerHari = $data->groupBy(fn($d) => \Carbon\Carbon::parse($d->tanggal)->format('Y-m-d'));
+                @endphp
+                @php
+                    \Carbon\Carbon::setLocale('id');
+                @endphp
 
-                        <td class="border px-4 py-2 text-center">{{ $row->total_qty ?? 0 }}</td>
+
+                @foreach($dataPerHari as $tanggal => $rows)
+                    @php
+                        $carbon = \Carbon\Carbon::parse($tanggal);
+                        $tanggalFormat = $carbon->format('d-m-Y');
+                        $hari = $carbon->translatedFormat('l');
+                        $totalHarian = $rows->sum('total');
+                        $totalQtyHarian = $rows->flatMap(fn($r) => $r->details)->sum('qty');
+                    @endphp
+                    <tr class="hover:bg-gray-50">
+                        <td class="border px-4 py-2">{{ $hari }}</td>
+                        <td class="border px-4 py-2">{{ $tanggalFormat }}</td>
+                        <td class="border px-4 py-2 text-right">Rp {{ number_format($totalHarian, 0, ',', '.') }}</td>
+                        <td class="border px-4 py-2 text-center">{{ $totalQtyHarian }}</td>
+                        <td class="border px-4 py-2 text-center">
+                            <button onclick="openModal('{{ $tanggal }}')"
+                                class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-xs">Detail</button>
+                        </td>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="px-4 py-4 text-center text-gray-500">Tidak ada data</td>
-                    </tr>
-                @endforelse
+                @endforeach
             </tbody>
         </table>
     </div>
 
-    {{-- Pagination --}}
-    <div class="mt-4">{{ $data->links() }}</div>
+    {{-- Modal --}}
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white w-11/12 md:w-3/4 lg:w-1/2 p-6 rounded shadow-lg relative">
+            <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-600 hover:text-black">✕</button>
+            <h2 class="text-lg font-bold mb-4">Detail Transaksi</h2>
+            <div id="modalContent">
+                {{-- Isi tabel transaksi harian dimasukkan lewat JS --}}
+            </div>
+        </div>
+    </div>
+
+    @php
+        // Data bersih untuk JS
+        $dataForJs = $dataPerHari->map(function ($rows) {
+            return $rows->map(function ($r) {
+                return [
+                    'no_nota' => $r->no_nota,
+                    'kasir' => $r->kasir->name ?? '-',
+                    'total' => $r->total,
+                    'total_qty' => $r->total_qty ?? 0,
+                    'details' => $r->details->map(function ($d) {
+                        return [
+                            'nama' => $d->obat->nama,
+                            'qty' => $d->qty,
+                        ];
+                    })->toArray(),
+                ];
+            })->toArray();
+        })->toArray();
+    @endphp
+
+    <script>
+        const dataByDate = @json($dataForJs);
+
+        function openModal(tanggal) {
+            let rows = dataByDate[tanggal];
+            let html = `
+                    <table class="w-full text-sm border-collapse">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-2 border text-left">No Nota</th>
+                                <th class="px-4 py-2 border text-left">Kasir</th>
+                                <th class="px-4 py-2 border text-right">Total</th>
+                                <th class="px-4 py-2 border text-center">Item</th>
+                                <th class="px-4 py-2 border text-center">Qty Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+            rows.forEach(r => {
+                let items = r.details.map(d => `${d.nama} (${d.qty})`).join(', ');
+                html += `
+                        <tr>
+                            <td class="border px-4 py-2">${r.no_nota}</td>
+                            <td class="border px-4 py-2">${r.kasir}</td>
+                            <td class="border px-4 py-2 text-right">Rp ${Number(r.total).toLocaleString('id-ID')}</td>
+                            <td class="border px-4 py-2">${items}</td>
+                            <td class="border px-4 py-2 text-center">${r.total_qty}</td>
+                        </tr>
+                    `;
+            });
+
+            html += `</tbody></table>`;
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('detailModal').classList.remove('hidden');
+            document.getElementById('detailModal').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+            document.getElementById('detailModal').classList.remove('flex');
+        }
+    </script>
 
 @endsection

@@ -11,33 +11,30 @@
             <h2 class="font-bold text-2xl">Laporan Penjualan (Harian)</h2>
             <p class="text-gray-500 text-lg">Ringkasan transaksi harian dan total penjualan.</p>
         </a>
-        <a href="{{ route('laporan.penjualan') }}"
-            class="bg-white p-10 shadow-lg rounded-xl hover:shadow-2xl transition duration-300 flex flex-col items-start gap-4">
-            <div class="text-5xl text-indigo-600">🗓️</div>
-            <h2 class="font-bold text-2xl">Laporan Penjualan (Mingguan)</h2>
-            <p class="text-gray-500 text-lg">Ringkasan transaksi per minggu dan total penjualan.</p>
-        </a>
         <a href="{{ route('laporan.penjualan.bulanan') }}"
             class="bg-white p-10 shadow-lg rounded-xl hover:shadow-2xl transition duration-300 flex flex-col items-start gap-4">
             <div class="text-5xl text-green-600">📅</div>
             <h2 class="font-bold text-2xl">Laporan Penjualan (Bulanan)</h2>
             <p class="text-gray-500 text-lg">Ringkasan transaksi bulanan dan total penjualan.</p>
         </a>
-
+        <a href="{{ route('laporan.profit') }}"
+            class="bg-white p-10 shadow-lg rounded-xl hover:shadow-2xl transition duration-300 flex flex-col items-start gap-4">
+            <div class="text-5xl text-teal-600">📊</div>
+            <h2 class="font-bold text-2xl">Laporan Profit</h2>
+            <p class="text-gray-500 text-lg">Ringkasan keuntungan bulanan dari penjualan.</p>
+        </a>
         <a href="{{ route('laporan.stok') }}"
             class="bg-white p-10 shadow-lg rounded-xl hover:shadow-2xl transition duration-300 flex flex-col items-start gap-4">
             <div class="text-5xl text-yellow-600">🛒</div>
             <h2 class="font-bold text-2xl">Laporan Pembelian</h2>
             <p class="text-gray-500 text-lg">Ringkasan pembelian obat dari supplier.</p>
         </a>
-
         <a href="{{ route('laporan.stok') }}"
             class="bg-white p-10 shadow-lg rounded-xl hover:shadow-2xl transition duration-300 flex flex-col items-start gap-4">
             <div class="text-5xl text-pink-600">↩️</div>
             <h2 class="font-bold text-2xl">Laporan Retur</h2>
             <p class="text-gray-500 text-lg">Ringkasan obat yang dikembalikan atau diretur.</p>
         </a>
-
         <a href="{{ route('laporan.stok') }}"
             class="bg-white p-10 shadow-lg rounded-xl hover:shadow-2xl transition duration-300 flex flex-col items-start gap-4">
             <div class="text-5xl text-red-600">📦</div>

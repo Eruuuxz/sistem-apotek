@@ -13,14 +13,6 @@
     <div class="bg-white p-6 shadow rounded-lg">
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <div class="flex gap-3">
-                <a href="{{ route('obat.create') }}"
-                    class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-5 py-2 rounded-lg shadow hover:from-blue-600 hover:to-blue-700 transition flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Tambah Obat
-                </a>
                 @if(request('filter'))
                     <a href="{{ route('obat.index') }}"
                         class="bg-gray-500 text-white px-4 py-2 rounded-lg shadow hover:bg-gray-600 transition flex items-center gap-1">

@@ -4,14 +4,6 @@
 
 @section('content')
     <div class="space-y-6">
-        {{-- Header --}}
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <a href="{{ route('pembelian.create') }}"
-                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-                + Tambah Pembelian
-            </a>
-        </div>
-
         {{-- Tabel Pembelian --}}
         <div class="overflow-x-auto bg-white shadow rounded">
             <table class="w-full table-auto text-sm border-collapse">
