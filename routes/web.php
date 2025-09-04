@@ -50,7 +50,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/supplier/{id}/obat', [PembelianController::class, 'getObatBySupplier']);
         Route::get('pembelian/faktur/{pembelian}', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
         Route::get('pembelian/pdf/{pembelian}', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
-        
+
         Route::resource('retur', ReturController::class);
         Route::get('retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');
 
@@ -67,7 +67,7 @@ Route::middleware(['auth'])->group(function () {
         });
 
         Route::resource('users', UserController::class);
-        
+
     });
 
     // Route untuk Kasir (hanya bisa diakses oleh role 'kasir')
@@ -92,4 +92,4 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

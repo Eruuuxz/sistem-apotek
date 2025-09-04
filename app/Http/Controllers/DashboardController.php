@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\{Obat, Supplier, Penjualan};
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -15,12 +16,13 @@ class DashboardController extends Controller
         $stokMenipis = Obat::whereBetween('stok', [1, 9])->count();
         $stokHabis = Obat::where('stok', 0)->count();
 
-        // data untuk grafik (Day 34/35)
-        $penjualanBulanan = Penjualan::selectRaw("DATE_FORMAT(tanggal,'%Y-%m') as ym, SUM(total) as total")
-            ->groupBy('ym')
-            ->orderBy('ym')
-            ->take(12) // Ambil data 12 bulan terakhir
-            ->get();
+
+
+            $penjualanHarian = Penjualan::selectRaw("DATE(tanggal) as tgl, SUM(total) as total")
+    ->groupBy('tgl')
+    ->orderBy('tgl', 'asc')
+    ->take(7) // Ambil 7 hari terakhir
+    ->get();
 
         // Obat terlaris (top 5)
         $obatTerlaris = DB::table('penjualan_detail')
@@ -37,7 +39,7 @@ class DashboardController extends Controller
             'totalSupplier',
             'penjualanHariIni',
             'stokMenipis',
-            'penjualanBulanan',
+            'penjualanHarian',
             'obatTerlaris',
             'stokHabis'
         ));
