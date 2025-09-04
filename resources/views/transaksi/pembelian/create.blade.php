@@ -77,46 +77,95 @@ document.addEventListener('DOMContentLoaded', function() {
     const tableItems = document.querySelector('#table-items tbody');
     const totalHargaEl = document.getElementById('total-harga');
 
-    function formatRupiah(angka) {
-        return 'Rp ' + angka.toLocaleString('id-ID');
+function formatRupiah(angka) {
+    // ✅ Validasi input
+    if (isNaN(angka) || angka === null || angka === undefined) {
+        return 'Rp 0';
     }
-
-    function hitungSubtotal(row) {
-        let jumlah = parseInt(row.querySelector('.jumlah').value) || 0;
-        let harga = parseFloat(row.querySelector('.harga').value) || 0;
-        row.querySelector('.subtotal').innerText = formatRupiah(jumlah * harga);
-        hitungTotal();
-    }
-
-    function hitungTotal() {
-        let total = 0;
-        tableItems.querySelectorAll('tr').forEach(row => {
-            let subtotal = parseFloat(row.querySelector('.subtotal').innerText.replace(/\D/g, '')) || 0;
-            total += subtotal;
+    
+    // ✅ Ensure it's a number
+    let num = parseFloat(angka);
+    
+    // ✅ Handle negative values
+    if (num < 0) {
+        return '- Rp ' + Math.abs(num).toLocaleString('id-ID', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
         });
-        totalHargaEl.innerText = formatRupiah(total);
     }
+    
+    return 'Rp ' + num.toLocaleString('id-ID', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+}
+
+
+function hitungSubtotal(row) {
+    let jumlah = parseInt(row.querySelector('.jumlah').value) || 0;
+    let harga = parseFloat(row.querySelector('.harga').value) || 0;
+    let subtotal = jumlah * harga;
+    
+    // ✅ Simpan nilai numerik di data attribute
+    row.querySelector('.subtotal').dataset.subtotal = subtotal;
+    row.querySelector('.subtotal').innerText = formatRupiah(subtotal);
+    
+    hitungTotal();
+}
+
+function hitungTotal() {
+    let total = 0;
+    
+    // ✅ Ambil dari data attribute, bukan parsing text
+    tableItems.querySelectorAll('tr').forEach(row => {
+        let subtotalEl = row.querySelector('.subtotal');
+        if (subtotalEl && subtotalEl.dataset.subtotal) {
+            let subtotal = parseFloat(subtotalEl.dataset.subtotal) || 0;
+            total += subtotal;
+        }
+    });
+    
+    totalHargaEl.innerText = formatRupiah(total);
+    
+    // ✅ Debug log untuk monitoring
+    console.log('Total calculated:', total);
+}
+
 
     function tambahItem(obat) {
-        if([...tableItems.querySelectorAll('tr')].some(tr => tr.dataset.id == obat.id)) return;
+    if([...tableItems.querySelectorAll('tr')].some(tr => tr.dataset.id == obat.id)) return;
 
-        let row = document.createElement('tr');
-        row.dataset.id = obat.id;
-        row.classList.add('hover:bg-gray-50');
-        row.innerHTML = `
-            <td class="px-2 py-1 border">${obat.kode} - ${obat.nama}</td>
-            <td class="px-2 py-1 border"><input type="number" name="jumlah[]" value="1" min="1" class="w-full jumlah px-2 py-1 border rounded"></td>
-            <td class="px-2 py-1 border"><input type="number" name="harga[]" value="${obat.harga_dasar}" class="w-full harga px-2 py-1 border rounded bg-gray-100" readonly></td>
-            <td class="px-2 py-1 border text-right subtotal">${formatRupiah(obat.harga_dasar)}</td>
-            <td class="px-2 py-1 border text-center"><button type="button" class="text-red-500 font-bold" onclick="this.closest('tr').remove();hitungTotal()">✖</button></td>
-            <input type="hidden" name="obat_id[]" value="${obat.id}">
-        `;
-        tableItems.appendChild(row);
+    let row = document.createElement('tr');
+    row.dataset.id = obat.id;
+    row.classList.add('hover:bg-gray-50');
+    
+    // ✅ Pastikan harga_dasar adalah number
+    let hargaDasar = parseFloat(obat.harga_dasar) || 0;
+    
+    row.innerHTML = `
+        <td class="px-2 py-1 border">${obat.kode} - ${obat.nama}</td>
+        <td class="px-2 py-1 border">
+            <input type="number" name="jumlah[]" value="1" min="1" 
+                   class="w-full jumlah px-2 py-1 border rounded">
+        </td>
+        <td class="px-2 py-1 border">
+            <input type="number" name="harga[]" value="${hargaDasar}" 
+                   class="w-full harga px-2 py-1 border rounded bg-gray-100" readonly>
+        </td>
+        <td class="px-2 py-1 border text-right subtotal" data-subtotal="${hargaDasar}">
+            ${formatRupiah(hargaDasar)}
+        </td>
+        <td class="px-2 py-1 border text-center">
+            <button type="button" class="text-red-500 font-bold" 
+                    onclick="this.closest('tr').remove();hitungTotal()">✖</button>
+        </td>
+        <input type="hidden" name="obat_id[]" value="${obat.id}">
+    `;
+    tableItems.appendChild(row);
 
-        row.querySelector('.jumlah').addEventListener('input', () => hitungSubtotal(row));
-
-        hitungTotal();
-    }
+    row.querySelector('.jumlah').addEventListener('input', () => hitungSubtotal(row));
+    hitungTotal();
+}
 
     supplierSelect.addEventListener('change', function() {
         const supplierId = this.value;
