@@ -21,6 +21,10 @@ class Retur extends Model
         'keterangan',
     ];
 
+    protected $casts = [
+        'tanggal' => 'datetime', // Tambahkan baris ini
+    ];
+
     public function details(): HasMany
     {
         return $this->hasMany(ReturDetail::class, 'retur_id');

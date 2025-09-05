@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Penjualan, Obat, pembelian};
+use App\Models\{Penjualan, Obat, Pembelian}; // Perbaiki 'pembelian' menjadi 'Pembelian'
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -30,7 +30,7 @@ class LaporanController extends Controller
         $data = Penjualan::with(['kasir'])
             ->withCount('details')
             ->withSum('details as total_qty', 'qty')
-            ->whereDate('tanggal', $tanggal)
+            ->whereDate('tanggal', $tanggal) // Tetap gunakan whereDate untuk filter harian
             ->orderBy('tanggal', 'desc')
             ->paginate(10);
 
@@ -95,7 +95,7 @@ class LaporanController extends Controller
             foreach ($penjualan as $row) {
                 fputcsv($file, [
                     $row->no_nota,
-                    $row->tanggal,
+                    Carbon::parse($row->tanggal)->format('Y-m-d H:i:s'), // Format tanggal dengan jam
                     $row->total,
                     $row->details_count,
                 ], $delimiter);
@@ -131,10 +131,10 @@ class LaporanController extends Controller
             ->whereMonth('tanggal', $bulan)
             ->sum('total');
         $jumlahTransaksi = $data->total();
-        
+
 
         // Hitung bulan sebelumnya & berikutnya
-        $current = \Carbon\Carbon::create($tahun, $bulan, 1);
+        $current = Carbon::create($tahun, $bulan, 1);
         $prevMonth = [
             'bulan' => $current->copy()->subMonth()->month,
             'tahun' => $current->copy()->subMonth()->year,
@@ -159,17 +159,17 @@ class LaporanController extends Controller
     }
 
     public function profitDetailJson($tanggal)
-{
-    $data = Penjualan::with('details.obat', 'kasir')
-        ->whereDate('tanggal', $tanggal)
-        ->get()
-        ->map(function ($row) {
-            $row->total_qty = $row->details->sum('qty');
-            return $row;
-        });
+    {
+        $data = Penjualan::with('details.obat', 'kasir')
+            ->whereDate('tanggal', $tanggal)
+            ->get()
+            ->map(function ($row) {
+                $row->total_qty = $row->details->sum('qty');
+                return $row;
+            });
 
-    return response()->json($data);
-}
+        return response()->json($data);
+    }
 
     public function penjualanBulananPdf(Request $request)
     {
@@ -215,7 +215,7 @@ class LaporanController extends Controller
             foreach ($penjualan as $row) {
                 fputcsv($file, [
                     $row->no_nota,
-                    $row->tanggal,
+                    Carbon::parse($row->tanggal)->format('Y-m-d H:i:s'), // Format tanggal dengan jam
                     $row->total,
                     $row->details_count,
                 ], $delimiter);
@@ -250,28 +250,28 @@ class LaporanController extends Controller
         return view('laporan.stok', compact('data', 'threshold'));
     }
 
-public function profitBulanan(Request $request)
-{
-    $periode = $request->input('periode', now()->format('Y-m'));
-    [$tahun, $bulan] = explode('-', $periode);
+    public function profitBulanan(Request $request)
+    {
+        $periode = $request->input('periode', now()->format('Y-m'));
+        [$tahun, $bulan] = explode('-', $periode);
 
-    // Penjualan
-    $penjualan = Penjualan::with('details.obat')
-        ->whereYear('tanggal', $tahun)
-        ->whereMonth('tanggal', $bulan)
-        ->get();
+        // Penjualan
+        $penjualan = Penjualan::with('details.obat')
+            ->whereYear('tanggal', $tahun)
+            ->whereMonth('tanggal', $bulan)
+            ->get();
 
-    $totalPenjualan = $penjualan->sum('total'); 
-    $totalModal = $penjualan->flatMap->details->sum(fn($d) => $d->qty * $d->obat->harga_dasar);
-    $totalPengeluaran = Pembelian::whereYear('tanggal', $tahun)
-        ->whereMonth('tanggal', $bulan)
-        ->sum('total');
-    $keuntungan = $totalPenjualan - $totalModal - $totalPengeluaran;
-    return view('laporan.profit', compact(
-        'penjualan', 'bulan', 'tahun',
-        'totalPenjualan', 'totalModal', 'keuntungan',
-        'totalPengeluaran'
-    ));
-}
+        $totalPenjualan = $penjualan->sum('total');
+        $totalModal = $penjualan->flatMap->details->sum(fn($d) => $d->qty * $d->obat->harga_dasar);
+        $totalPengeluaran = Pembelian::whereYear('tanggal', $tahun)
+            ->whereMonth('tanggal', $bulan)
+            ->sum('total');
+        $keuntungan = $totalPenjualan - $totalModal - $totalPengeluaran;
+        return view('laporan.profit', compact(
+            'penjualan', 'bulan', 'tahun',
+            'totalPenjualan', 'totalModal', 'keuntungan',
+            'totalPengeluaran'
+        ));
+    }
 
 }

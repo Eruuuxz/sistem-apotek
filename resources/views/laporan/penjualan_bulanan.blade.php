@@ -110,6 +110,7 @@
                     'kasir' => $r->kasir->name ?? '-',
                     'total' => $r->total,
                     'total_qty' => $r->total_qty ?? 0,
+                    'tanggal' => \Carbon\Carbon::parse($r->tanggal)->format('Y-m-d H:i:s'), // Tambahkan format jam
                     'details' => $r->details->map(function ($d) {
                         return [
                             'nama' => $d->obat->nama,
@@ -132,6 +133,7 @@
                             <tr>
                                 <th class="px-4 py-2 border text-left">No Nota</th>
                                 <th class="px-4 py-2 border text-left">Kasir</th>
+                                <th class="px-4 py-2 border text-left">Tanggal & Waktu</th> {{-- Tambahkan header --}}
                                 <th class="px-4 py-2 border text-right">Total</th>
                                 <th class="px-4 py-2 border text-center">Item</th>
                                 <th class="px-4 py-2 border text-center">Qty Total</th>
@@ -146,6 +148,7 @@
                         <tr>
                             <td class="border px-4 py-2">${r.no_nota}</td>
                             <td class="border px-4 py-2">${r.kasir}</td>
+                            <td class="border px-4 py-2">${r.tanggal}</td> {{-- Tampilkan tanggal dengan jam --}}
                             <td class="border px-4 py-2 text-right">Rp ${Number(r.total).toLocaleString('id-ID')}</td>
                             <td class="border px-4 py-2">${items}</td>
                             <td class="border px-4 py-2 text-center">${r.total_qty}</td>

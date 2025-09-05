@@ -26,7 +26,7 @@
                 <h1 class="text-2xl font-bold">FAKTUR PEMBELIAN</h1>
                 <p class="text-sm text-gray-600">Nomor: <span class="font-medium">{{ $p->no_faktur }}</span></p>
                 <p class="text-sm text-gray-600">Tanggal: <span
-                        class="font-medium">{{ \Carbon\Carbon::parse($p->tanggal)->translatedFormat('d F Y') }}</span>
+                        class="font-medium">{{ \Carbon\Carbon::parse($p->tanggal)->translatedFormat('d F Y H:i:s') }}</span> {{-- Tambahkan format jam --}}
                 </p>
             </div>
             <div class="text-right">

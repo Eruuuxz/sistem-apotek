@@ -52,7 +52,7 @@
             <thead class="bg-gray-100">
                 <tr>
                     <th class="px-4 py-2 border text-left">No Nota</th>
-                    <th class="px-4 py-2 border text-left">Tanggal</th>
+                    <th class="px-4 py-2 border text-left">Tanggal & Waktu</th> {{-- Ubah header --}}
                     <th class="px-4 py-2 border text-left">Kasir</th>
                     <th class="px-4 py-2 border text-right">Total</th>
                     <th class="px-4 py-2 border text-center">Item</th>
@@ -63,7 +63,7 @@
                 @forelse($data as $row)
                     <tr class="hover:bg-gray-50">
                         <td class="border px-4 py-2">{{ $row->no_nota }}</td>
-                        <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('d-m-Y') }}</td>
+                        <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('d-m-Y H:i:s') }}</td> {{-- Tambahkan format jam --}}
                         <td class="border px-4 py-2">{{ $row->kasir->name ?? '-' }}</td>
                         <td class="border px-4 py-2 text-right font-medium text-blue-600">Rp
                             {{ number_format($row->total, 0, ',', '.') }}

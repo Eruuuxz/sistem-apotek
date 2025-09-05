@@ -44,7 +44,7 @@
                 <thead class="bg-gray-100">
                     <tr>
                         <th class="border px-4 py-2 text-left">No Retur</th>
-                        <th class="border px-4 py-2 text-left">Tanggal</th>
+                        <th class="border px-4 py-2 text-left">Tanggal & Waktu</th> {{-- Ubah header --}}
                         <th class="border px-4 py-2 text-left">Jenis</th>
                         <th class="border px-4 py-2 text-right">Total</th>
                         <th class="border px-4 py-2 text-center">Keterangan</th>
@@ -55,14 +55,14 @@
                     @forelse($data as $row)
                         <tr class="hover:bg-gray-50">
                             <td class="border px-4 py-2 font-medium">{{ $row->no_retur }}</td>
-                            <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('Y-m-d') }}</td>
+                            <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('Y-m-d H:i:s') }}</td> {{-- Tambahkan format jam --}}
                             <td class="border px-4 py-2 capitalize">{{ $row->jenis }}</td>
                             <td class="border px-4 py-2 text-right font-semibold text-blue-600">Rp
                                 {{ number_format($row->total, 0, ',', '.') }}</td>
                             <td class="border px-4 py-2 text-center">{{ $row->keterangan ?? '-' }}</td>
                             <td class="border px-4 py-2 text-center">
                                 {{-- Contoh tombol aksi, bisa diisi sesuai kebutuhan --}}
-                                <a href="#" class="text-blue-600 hover:underline">Detail</a>
+                                <a href="{{ route('retur.show', $row->id) }}" class="text-blue-600 hover:underline">Detail</a>
                             </td>
                         </tr>
                     @empty

@@ -9,27 +9,26 @@
         <form action="{{ route('pembelian.store') }}" method="POST" class="space-y-6">
             @csrf
 
-            {{-- Informasi Faktur --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block font-semibold mb-1">No Faktur</label>
-                    <input type="text" name="no_faktur" value="{{ $noFaktur }}"
-                        class="border rounded w-full px-3 py-2 bg-gray-100" readonly>
-                </div>
-                <div>
-                    <label class="block font-semibold mb-1">Tanggal</label>
-                    <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" class="border rounded w-full px-3 py-2">
-                </div>
-                <div>
-                    <label class="block font-semibold mb-1">Supplier</label>
-                    <select name="supplier_id" id="supplier-select" class="border rounded w-full px-3 py-2">
-                        <option value="">-- Pilih Supplier --</option>
-                        @foreach($suppliers as $s)
-                            <option value="{{ $s->id }}">{{ $s->nama }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
+    {{-- Informasi Faktur --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <label class="block font-semibold mb-1">No Faktur</label>
+            <input type="text" name="no_faktur" value="{{ $noFaktur }}" class="border rounded w-full px-3 py-2 bg-gray-100" readonly>
+        </div>
+        <div>
+            <label class="block font-semibold mb-1">Tanggal</label>
+            <input type="datetime-local" name="tanggal" value="{{ date('Y-m-d\TH:i:s') }}" class="border rounded w-full px-3 py-2">
+        </div>
+        <div>
+            <label class="block font-semibold mb-1">Supplier</label>
+            <select name="supplier_id" id="supplier-select" class="border rounded w-full px-3 py-2">
+                <option value="">-- Pilih Supplier --</option>
+                @foreach($suppliers as $s)
+                    <option value="{{ $s->id }}">{{ $s->nama }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
 
             {{-- Daftar Obat --}}
             <div>
@@ -82,46 +81,94 @@
             const tableItems = document.getElementById('table-items');
             const totalHargaEl = document.getElementById('total-harga');
 
-            function formatRupiah(angka) {
-                return 'Rp ' + angka.toLocaleString('id-ID');
-            }
+function formatRupiah(angka) {
+    // ✅ Validasi input
+    if (isNaN(angka) || angka === null || angka === undefined) {
+        return 'Rp 0';
+    }
+    
+    // ✅ Ensure it's a number
+    let num = parseFloat(angka);
+    
+    // ✅ Handle negative values
+    if (num < 0) {
+        return '- Rp ' + Math.abs(num).toLocaleString('id-ID', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+    }
+    
+    return 'Rp ' + num.toLocaleString('id-ID', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+}
 
-            function hitungSubtotal(row) {
-                let jumlah = parseInt(row.querySelector('.jumlah').value) || 0;
-                let harga = parseFloat(row.querySelector('.harga').value) || 0;
-                row.querySelector('.subtotal').innerText = formatRupiah(jumlah * harga);
-                hitungTotal();
-            }
 
-            function hitungTotal() {
-                let total = 0;
-                tableItems.querySelectorAll('tr').forEach(row => {
-                    let subtotal = parseFloat(row.querySelector('.subtotal').innerText.replace(/\D/g, '')) || 0;
-                    total += subtotal;
-                });
-                totalHargaEl.innerText = formatRupiah(total);
-            }
+function hitungSubtotal(row) {
+    let jumlah = parseInt(row.querySelector('.jumlah').value) || 0;
+    let harga = parseFloat(row.querySelector('.harga').value) || 0;
+    let subtotal = jumlah * harga;
+    
+    // ✅ Simpan nilai numerik di data attribute
+    row.querySelector('.subtotal').dataset.subtotal = subtotal;
+    row.querySelector('.subtotal').innerText = formatRupiah(subtotal);
+    
+    hitungTotal();
+}
 
-            function tambahItem(obat) {
-                if ([...tableItems.querySelectorAll('tr')].some(tr => tr.dataset.id == obat.id)) return;
+function hitungTotal() {
+    let total = 0;
+    
+    // ✅ Ambil dari data attribute, bukan parsing text
+    tableItems.querySelectorAll('tr').forEach(row => {
+        let subtotalEl = row.querySelector('.subtotal');
+        if (subtotalEl && subtotalEl.dataset.subtotal) {
+            let subtotal = parseFloat(subtotalEl.dataset.subtotal) || 0;
+            total += subtotal;
+        }
+    });
+    
+    totalHargaEl.innerText = formatRupiah(total);
+    
+    // ✅ Debug log untuk monitoring
+    console.log('Total calculated:', total);
+}
 
-                let row = document.createElement('tr');
-                row.dataset.id = obat.id;
-                row.classList.add('hover:bg-gray-50');
-                row.innerHTML = `
-                <td class="px-2 py-1 border">${obat.kode} - ${obat.nama}</td>
-                <td class="px-2 py-1 border"><input type="number" name="jumlah[]" value="1" min="1" class="w-full jumlah px-2 py-1 border rounded"></td>
-                <td class="px-2 py-1 border"><input type="number" name="harga[]" value="${obat.harga_dasar}" class="w-full harga px-2 py-1 border rounded bg-gray-100" readonly></td>
-                <td class="px-2 py-1 border text-right subtotal">${formatRupiah(obat.harga_dasar)}</td>
-                <td class="px-2 py-1 border text-center"><button type="button" class="text-red-500 font-bold hover:text-red-700 transition" onclick="this.closest('tr').remove();hitungTotal()">✖</button></td>
-                <input type="hidden" name="obat_id[]" value="${obat.id}">
-            `;
-                tableItems.appendChild(row);
+    function tambahItem(obat) {
+    if([...tableItems.querySelectorAll('tr')].some(tr => tr.dataset.id == obat.id)) return;
 
-                row.querySelector('.jumlah').addEventListener('input', () => hitungSubtotal(row));
+    let row = document.createElement('tr');
+    row.dataset.id = obat.id;
+    row.classList.add('hover:bg-gray-50');
+    
+    // ✅ Pastikan harga_dasar adalah number
+    let hargaDasar = parseFloat(obat.harga_dasar) || 0;
+    
+    row.innerHTML = `
+        <td class="px-2 py-1 border">${obat.kode} - ${obat.nama}</td>
+        <td class="px-2 py-1 border">
+            <input type="number" name="jumlah[]" value="1" min="1" 
+                   class="w-full jumlah px-2 py-1 border rounded">
+        </td>
+        <td class="px-2 py-1 border">
+            <input type="number" name="harga[]" value="${hargaDasar}" 
+                   class="w-full harga px-2 py-1 border rounded bg-gray-100" readonly>
+        </td>
+        <td class="px-2 py-1 border text-right subtotal" data-subtotal="${hargaDasar}">
+            ${formatRupiah(hargaDasar)}
+        </td>
+        <td class="px-2 py-1 border text-center">
+            <button type="button" class="text-red-500 font-bold" 
+                    onclick="this.closest('tr').remove();hitungTotal()">✖</button>
+        </td>
+        <input type="hidden" name="obat_id[]" value="${obat.id}">
+    `;
+    tableItems.appendChild(row);
 
-                hitungTotal();
-            }
+    row.querySelector('.jumlah').addEventListener('input', () => hitungSubtotal(row));
+    hitungTotal();
+}
 
             supplierSelect.addEventListener('change', function () {
                 const supplierId = this.value;

@@ -52,6 +52,14 @@
                 @enderror
             </div>
 
+        <div class="mb-4">
+            <label class="block mb-1 font-semibold">Tanggal Kadaluarsa</label>
+            <input type="date" name="expired_date" class="border px-3 py-2 w-full @error('expired_date') border-red-500 @enderror" value="{{ old('expired_date', $obat->expired_date ?? '') }}">
+            @error('expired_date')
+                <p class="text-red-500 text-xs italic">{{ $message }}</p>
+            @enderror
+        </div>
+        
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
                 <div>
                     <label class="block mb-2 text-gray-700 font-semibold">Harga Dasar (Rp)</label>

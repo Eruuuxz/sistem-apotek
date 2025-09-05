@@ -10,7 +10,7 @@
                 <thead class="bg-gray-100">
                     <tr>
                         <th class="border px-4 py-2 text-left">No Faktur</th>
-                        <th class="border px-4 py-2 text-left">Tanggal</th>
+                        <th class="border px-4 py-2 text-left">Tanggal & Waktu</th> {{-- Ubah header --}}
                         <th class="border px-4 py-2 text-left">Supplier</th>
                         <th class="border px-4 py-2 text-right">Total</th>
                         <th class="border px-4 py-2 text-center">Aksi</th>
@@ -20,7 +20,7 @@
                     @forelse($data as $row)
                         <tr class="hover:bg-gray-50">
                             <td class="border px-4 py-2 font-medium">{{ $row->no_faktur }}</td>
-                            <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('Y-m-d') }}</td>
+                            <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('Y-m-d H:i:s') }}</td> {{-- Tambahkan format jam --}}
                             <td class="border px-4 py-2">{{ $row->supplier->nama ?? '-' }}</td>
                             <td class="border px-4 py-2 text-right font-semibold text-blue-600">Rp
                                 {{ number_format($row->total, 0, ',', '.') }}</td>

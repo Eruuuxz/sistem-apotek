@@ -47,6 +47,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Transaksi
         Route::resource('pembelian', PembelianController::class);
+        Route::get('/laporan/profit', [LaporanController::class, 'profitBulanan'])->name('profit');
         Route::get('/supplier/{id}/obat', [PembelianController::class, 'getObatBySupplier']);
         Route::get('pembelian/faktur/{pembelian}', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
         Route::get('pembelian/pdf/{pembelian}', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
@@ -70,6 +71,10 @@ Route::middleware(['auth'])->group(function () {
 
         Route::resource('users', UserController::class);
 
+        Route::resource('biaya-operasional', BiayaOperasionalController::class);
+        // Route detail retur
+        Route::get('/retur/{retur}', [\App\Http\Controllers\ReturController::class, 'show'])->name('retur.show');
+    
     });
 
     // Route untuk Kasir (hanya bisa diakses oleh role 'kasir')

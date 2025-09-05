@@ -38,6 +38,7 @@
                         <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(6)">Harga Jual</th>
                         <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(7)">Keuntungan/Unit</th>
                         <th class="px-4 py-3 cursor-pointer" onclick="sortTable(8)">Supplier</th>
+                        <th class="px-2 py-1 cursor-pointer" onclick="sortTable(9)">Kadaluarsa</th>
                         <th class="px-4 py-3">Aksi</th>
                     </tr>
                 </thead>
@@ -64,6 +65,9 @@
                                 {{ number_format($obat->harga_jual - $obat->harga_dasar, 0, ',', '.') }}
                             </td>
                             <td class="border px-4 py-3">{{ $obat->supplier->nama ?? '-' }}</td>
+                            <td class="border px-2 py-1">
+                                {{ $obat->expired_date ? \Carbon\Carbon::parse($obat->expired_date)->format('d-m-Y') : '-' }} <!-- <-- BARU -->
+                            </td>
                             <td class="border px-4 py-3 flex gap-2">
                                 <a href="{{ route('obat.edit', $obat->id) }}" class="text-blue-500 hover:underline">Edit</a>
                                 <form action="{{ route('obat.destroy', $obat->id) }}" method="POST" class="inline delete-form">

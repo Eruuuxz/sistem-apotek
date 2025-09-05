@@ -20,6 +20,10 @@ class Pembelian extends Model
         'total',
     ];
 
+    protected $casts = [
+        'tanggal' => 'datetime',
+    ];
+    
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class, 'supplier_id');

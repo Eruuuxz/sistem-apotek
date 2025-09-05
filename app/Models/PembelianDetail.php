@@ -18,7 +18,7 @@ class PembelianDetail extends Model
         'jumlah',
         'harga_beli',
     ];
-
+    
     public function pembelian(): BelongsTo
     {
         return $this->belongsTo(Pembelian::class, 'pembelian_id');

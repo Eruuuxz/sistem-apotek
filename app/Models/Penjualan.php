@@ -23,6 +23,10 @@ class Penjualan extends Model
         'kembalian',
     ];
 
+    protected $casts = [
+        'tanggal' => 'datetime',
+    ];
+
     public function details(): HasMany
     {
         return $this->hasMany(PenjualanDetail::class, 'penjualan_id');

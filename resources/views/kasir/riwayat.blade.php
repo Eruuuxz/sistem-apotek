@@ -1,3 +1,4 @@
+{{-- File: /views/kasir/riwayat.blade.php --}}
 @extends('layouts.kasir')
 
 @section('title', 'Riwayat Penjualan')
@@ -15,7 +16,7 @@
             <thead class="bg-gray-100 rounded-t-lg">
                 <tr>
                     <th class="px-4 py-2 text-left">No Nota</th>
-                    <th class="px-4 py-2 text-left">Tanggal</th>
+                    <th class="px-4 py-2 text-left">Tanggal & Waktu</th> {{-- Ubah header --}}
                     <th class="px-4 py-2 text-left">Kasir</th>
                     <th class="px-4 py-2 text-right">Total</th>
                     <th class="px-4 py-2 text-center">Aksi</th>
@@ -25,7 +26,7 @@
                 @forelse($data as $row)
                     <tr class="hover:bg-gray-50 transition">
                         <td class="border px-4 py-2">{{ $row->no_nota }}</td>
-                        <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('Y-m-d') }}</td>
+                        <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('Y-m-d H:i:s') }}</td> {{-- Tambahkan format jam --}}
                         <td class="border px-4 py-2">{{ $row->kasir->name ?? '-' }}</td>
                         <td class="border px-4 py-2 text-right">Rp {{ number_format($row->total, 0, ',', '.') }}</td>
                         <td class="border px-4 py-2 text-center flex justify-center gap-2">

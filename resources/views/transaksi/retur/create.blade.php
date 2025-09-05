@@ -17,7 +17,8 @@
                 </div>
                 <div>
                     <label class="block font-medium text-gray-700 mb-1">Tanggal</label>
-                    <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" class="w-full border rounded px-3 py-2">
+                    {{-- Ubah input type menjadi datetime-local jika ingin input tanggal dan waktu --}}
+                    <input type="datetime-local" name="tanggal" value="{{ date('Y-m-d\TH:i:s') }}" class="w-full border rounded px-3 py-2">
                 </div>
                 <div>
                     <label class="block font-medium text-gray-700 mb-1">Jenis Retur</label>
@@ -36,7 +37,7 @@
                     <option value="">-- Pilih Faktur Pembelian --</option>
                     @foreach($pembelian as $p)
                         <option value="{{ $p->id }}">FPB-{{ $p->no_faktur }}
-                            ({{ \Carbon\Carbon::parse($p->tanggal)->format('Y-m-d') }})</option>
+                            ({{ \Carbon\Carbon::parse($p->tanggal)->format('Y-m-d H:i:s') }})</option> {{-- Tambahkan format jam --}}
                     @endforeach
                 </select>
             </div>
@@ -47,7 +48,7 @@
                     <option value="">-- Pilih Nota Penjualan --</option>
                     @foreach($penjualan as $pj)
                         <option value="{{ $pj->id }}">PJ-{{ $pj->no_nota }}
-                            ({{ \Carbon\Carbon::parse($pj->tanggal)->format('Y-m-d') }})</option>
+                            ({{ \Carbon\Carbon::parse($pj->tanggal)->format('Y-m-d H:i:s') }})</option> {{-- Tambahkan format jam --}}
                     @endforeach
                 </select>
             </div>
@@ -147,7 +148,7 @@
                     const data = await res.json();
                     availableItems = data.items;
                     renderAvailableItems();
-                    addItemBtn.style.display = 'block';
+                    addItemBtn.style.display = 'block'; // Tampilkan tombol tambah item setelah data dimuat
                 } catch (err) {
                     console.error(err);
                     alert('Gagal memuat data transaksi.');
@@ -177,6 +178,8 @@
                 </td>
                 <td class="border px-2 py-1">
                     <input type="number" name="harga[]" class="w-full px-2 py-1 border rounded harga" value="${item.harga}" readonly>
+                    <input type="hidden" name="hpp[]" value="${item.hpp_obat || ''}"> <!-- Tambahkan HPP untuk penjualan -->
+                    <input type="hidden" name="harga_beli_item[]" value="${item.harga_dasar_obat || ''}"> <!-- Tambahkan harga_beli untuk pembelian -->
                 </td>
                 <td class="border px-2 py-1">
                     <input type="number" name="qty[]" class="w-full px-2 py-1 border rounded qty" value="1" min="1" max="${item.max_qty}">
@@ -220,9 +223,11 @@
                 fetchTransaksiItems('penjualan', this.value);
             });
 
-            addItemBtn.addEventListener('click', function () {
-                alert('Item akan otomatis dimuat dari transaksi yang dipilih.');
-            });
+            // Tombol tambah item tidak lagi berfungsi untuk menambahkan baris kosong,
+            // melainkan untuk memicu pemuatan item dari transaksi yang dipilih.
+            // Karena item sudah otomatis dimuat saat transaksi dipilih, tombol ini bisa disembunyikan atau diubah fungsinya.
+            // Untuk saat ini, saya akan menyembunyikannya dan membiarkan item dimuat otomatis.
+            addItemBtn.style.display = 'none'; // Sembunyikan tombol ini
 
             window.hapusRow = function (btn) {
                 btn.closest('tr').remove();

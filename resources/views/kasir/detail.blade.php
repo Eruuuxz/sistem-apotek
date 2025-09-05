@@ -1,3 +1,4 @@
+{{-- File: /views/kasir/detail.blade.php --}}
 @extends('layouts.kasir')
 
 @section('title', 'Detail Penjualan')

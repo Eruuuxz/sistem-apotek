@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Pembelian, PembelianDetail, Supplier, Obat}; // Tambahkan PembelianDetail, Supplier, Obat
+use App\Models\{Pembelian, PembelianDetail, Supplier, Obat};
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // Tambahkan ini
-use Illuminate\Validation\Rule;   // Tambahkan ini
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Carbon\Carbon; // Tambahkan ini
 
 class PembelianController extends Controller
 {
@@ -32,7 +33,7 @@ class PembelianController extends Controller
     {
         $r->validate([
             'no_faktur' => ['required', 'max:50', Rule::unique('pembelian', 'no_faktur')],
-            'tanggal' => ['required', 'date'],
+            'tanggal' => ['required', 'date'], // Validasi tetap 'date' karena input HTML type="date"
             'supplier_id' => ['required', 'exists:supplier,id'],
             'obat_id' => ['required', 'array', 'min:1'],
             'obat_id.*' => ['required', 'exists:obat,id'],
@@ -45,7 +46,7 @@ class PembelianController extends Controller
         DB::transaction(function () use ($r) {
             $pembelian = Pembelian::create([
                 'no_faktur' => $r->no_faktur,
-                'tanggal' => $r->tanggal,
+                'tanggal' => Carbon::parse($r->tanggal)->toDateTimeString(), // Ubah ke datetime string
                 'supplier_id' => $r->supplier_id,
                 'total' => 0, // Akan diupdate setelah detail ditambahkan
             ]);
@@ -108,7 +109,7 @@ class PembelianController extends Controller
     {
         $r->validate([
             'no_faktur' => ['required', 'max:50', Rule::unique('pembelian', 'no_faktur')->ignore($pembelian->id)], // Ignore current ID
-            'tanggal' => ['required', 'date'],
+            'tanggal' => ['required', 'date'], // Validasi tetap 'date'
             'supplier_id' => ['required', 'exists:supplier,id'],
             'obat_id' => ['required', 'array', 'min:1'],
             'obat_id.*' => ['required', 'exists:obat,id'],
@@ -133,7 +134,7 @@ class PembelianController extends Controller
             // 3. Update data pembelian utama
             $pembelian->update([
                 'no_faktur' => $r->no_faktur,
-                'tanggal' => $r->tanggal,
+                'tanggal' => Carbon::parse($r->tanggal)->toDateTimeString(), // Ubah ke datetime string
                 'supplier_id' => $r->supplier_id,
                 'total' => 0, // Akan diupdate setelah detail baru ditambahkan
             ]);

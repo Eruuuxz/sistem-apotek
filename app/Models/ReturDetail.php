@@ -18,6 +18,8 @@ class ReturDetail extends Model
         'qty',
         'harga',
         'subtotal',
+        'hpp',
+        'harga_beli',
     ];
 
     public function retur(): BelongsTo
