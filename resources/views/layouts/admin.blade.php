@@ -9,12 +9,13 @@
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
-        <style>
+    <style>
         /* Efek fade untuk halaman */
         body {
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
         }
+
         body.loaded {
             opacity: 1;
         }
@@ -22,10 +23,20 @@
 </head>
 
 <body class="bg-gray-100 flex min-h-screen font-sans">
-    
+
 
     <!-- Sidebar -->
     <aside class="w-64 bg-blue-900 text-white flex flex-col shadow-xl fixed inset-y-0 left-0 z-20">
+        @php
+            $stokHabis = \App\Models\Obat::where('stok', 0)->count();
+            $stokMenipis = \App\Models\Obat::whereBetween('stok', [1, 10])->count();
+
+            $stokExpired = \App\Models\Obat::whereNotNull('expired_date')
+                ->where('expired_date', '<', now())->count();
+
+            $stokHampirExpired = \App\Models\Obat::whereNotNull('expired_date')
+                ->whereBetween('expired_date', [now(), now()->addMonth()])->count();
+        @endphp
         <!-- Brand -->
         <div class="p-6 text-2xl font-bold border-b border-blue-800 flex items-center justify-center tracking-wide">
             Apotek <span class="text-blue-300 ml-1">LIZ Farma 02</span>
@@ -36,8 +47,9 @@
                 @if(Auth::user()->role === 'admin')
 
                     <!-- Dashboard -->
-                    <a href="{{ route('dashboard') }}" class="flex items-center px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors
-                            {{ request()->is('dashboard*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                    <a href="{{ route('dashboard') }}"
+                        class="flex items-center px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors
+                                                                                            {{ request()->is('dashboard*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                         <i data-feather="home" class="w-5 h-5"></i>
                         <span class="ml-3">Dashboard</span>
                     </a>
@@ -46,10 +58,14 @@
                         $stokHabis = \App\Models\Obat::where('stok', 0)->count();
                         $stokMenipis = \App\Models\Obat::where('stok', '<=', 10)->where('stok', '>', 0)->count();
                     @endphp
+
+                    <!-- ================= MASTER ================= -->
+                    <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">MASTER</p>
+
                     <!-- Obat Dropdown -->
                     <div>
-                        <button @click="activeDropdown = (activeDropdown === 'obat' ? null : 'obat')" class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                {{ request()->is('obat*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                        <button @click="activeDropdown = (activeDropdown === 'obat' ? null : 'obat')" class="relative flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
+                               {{ request()->is('obat*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                             <i data-feather="box" class="w-5 h-5"></i>
                             <span class="ml-3 flex-1 text-left">Obat</span>
                             <svg :class="{ 'rotate-180': activeDropdown === 'obat' }"
@@ -57,16 +73,20 @@
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
-                            <div class="flex space-x-1">
-                                @if($stokMenipis > 0)
-                                    <span class="bg-yellow-500 text-xs px-2 py-0.5 rounded-full">{{ $stokMenipis }}</span>
-                                @endif
-                                @if($stokHabis > 0)
-                                    <span class="bg-red-500 text-xs px-2 py-0.5 rounded-full">{{ $stokHabis }}</span>
-                                @endif
-                            </div>
 
+                            {{-- Badge notif total --}}
+                            @php
+                                $totalNotif = $stokMenipis + $stokHabis + $stokHampirExpired + $stokExpired;
+                            @endphp
+                            @if($totalNotif > 0)
+                                <span
+                                    class="absolute -top-1 right-2 flex items-center justify-center bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md">
+                                    <i data-feather="bell" class="w-3 h-3 mr-0.5"></i>
+                                    {{ $totalNotif }}
+                                </span>
+                            @endif
                         </button>
+
 
                         <div x-show="activeDropdown === 'obat'" x-transition:enter="transition ease-out duration-300"
                             x-transition:enter-start="opacity-0 transform -translate-y-2"
@@ -76,20 +96,21 @@
                             x-transition:leave-end="opacity-0 transform -translate-y-2" class="ml-10 mt-1 space-y-1">
 
 
-                            <a href="{{ route('obat.index') }}" class="flex justify-between px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors
-                                    {{ request()->is('obat') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                            <a href="{{ route('obat.index') }}"
+                                class="flex justify-between px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors
+                                                                                                    {{ request()->is('obat') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
                                 Daftar Obat
                             </a>
 
                             <a href="{{ route('obat.create') }}"
                                 class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
-                                    {{ request()->is('obat/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                                                                                                    {{ request()->is('obat/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
                                 Tambah Obat
                             </a>
 
                             <a href="{{ route('obat.index', ['filter' => 'menipis']) }}"
-                                class="block px-4 py-2 rounded hover:bg-yellow-600 hover:text-white transition-colors 
-                                    {{ request()->fullUrlIs('*obat*filter=menipis*') ? 'bg-yellow-700 text-white font-semibold' : 'text-gray-300' }}">
+                                class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
+                                                                                                    {{ request()->fullUrlIs('*obat*filter=menipis*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
                                 Stok Menipis
                                 @if($stokMenipis > 0)
                                     <span class="bg-yellow-500 text-xs px-2 py-0.5 rounded-full">{{ $stokMenipis }}</span>
@@ -97,20 +118,40 @@
                             </a>
 
                             <a href="{{ route('obat.index', ['filter' => 'habis']) }}"
-                                class="block px-4 py-2 rounded hover:bg-red-600 hover:text-white transition-colors 
-                                    {{ request()->fullUrlIs('*obat*filter=habis*') ? 'bg-red-700 text-white font-semibold' : 'text-gray-300' }}">
+                                class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
+                                                                                                    {{ request()->fullUrlIs('*obat*filter=habis*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
                                 Stok Habis
                                 @if($stokHabis > 0)
                                     <span class="bg-red-500 text-xs px-2 py-0.5 rounded-full">{{ $stokHabis }}</span>
                                 @endif
                             </a>
+
+                            <a href="{{ route('obat.index', ['filter' => 'kadaluarsa']) }}"
+                                class="flex justify-between items-center px-4 py-2 rounded hover:bg-orange-600 hover:text-white transition-colors 
+                                                        {{ request()->fullUrlIs('*obat*filter=kadaluarsa*') ? 'bg-orange-700 text-white font-semibold' : 'text-gray-300' }}">
+                                <span>Kadaluarsa</span>
+                                <div class="flex space-x-1">
+                                    @if($stokHampirExpired > 0)
+                                        <span class="bg-orange-500 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                                            {{ $stokHampirExpired }}
+                                        </span>
+                                    @endif
+                                    @if($stokExpired > 0)
+                                        <span class="bg-red-900 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                                            {{ $stokExpired }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </a>
+
                         </div>
                     </div>
 
                     <!-- Supplier Dropdown -->
                     <div>
-                        <button @click="activeDropdown = (activeDropdown === 'supplier' ? null : 'supplier')" class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                {{ request()->is('supplier*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                        <button @click="activeDropdown = (activeDropdown === 'supplier' ? null : 'supplier')"
+                            class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
+                                                                                                {{ request()->is('supplier*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                             <i data-feather="users" class="w-5 h-5"></i>
                             <span class="ml-3 flex-1 text-left">Supplier</span>
                             <svg :class="{ 'rotate-180': activeDropdown === 'supplier' }"
@@ -130,11 +171,13 @@
                             </a>
                         </div>
                     </div>
-
+                    <!-- ================= TRANSAKSI ================= -->
+                    <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">Transaksi</p>
                     <!-- Pembelian Dropdown -->
                     <div>
-                        <button @click="activeDropdown = (activeDropdown === 'pembelian' ? null : 'pembelian')" class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                {{ request()->is('pembelian*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                        <button @click="activeDropdown = (activeDropdown === 'pembelian' ? null : 'pembelian')"
+                            class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
+                                                                                                {{ request()->is('pembelian*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                             <i data-feather="shopping-cart" class="w-5 h-5"></i>
                             <span class="ml-3 flex-1 text-left">Pembelian</span>
                             <svg :class="{ 'rotate-180': activeDropdown === 'pembelian' }"
@@ -157,8 +200,9 @@
 
                     <!-- Retur Dropdown -->
                     <div>
-                        <button @click="activeDropdown = (activeDropdown === 'retur' ? null : 'retur')" class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                {{ request()->is('retur*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                        <button @click="activeDropdown = (activeDropdown === 'retur' ? null : 'retur')"
+                            class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
+                                                                                                {{ request()->is('retur*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                             <i data-feather="corner-up-left" class="w-5 h-5"></i>
                             <span class="ml-3 flex-1 text-left">Retur Barang</span>
                             <svg :class="{ 'rotate-180': activeDropdown === 'retur' }"
@@ -178,6 +222,8 @@
                             </a>
                         </div>
                     </div>
+                    <!-- ================= LAPORAN ================= -->
+                    <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">Laporan</p>
 
                     <!-- Laporan -->
                     <a href="{{ route('laporan.index') }}"
@@ -185,11 +231,14 @@
                         <i data-feather="bar-chart-2" class="w-5 h-5"></i>
                         <span class="ml-3 flex-1">Laporan</span>
                     </a>
+                    <!-- ================= USER ================= -->
+                    <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">User</p>
 
                     <!-- Management Kasir Dropdown -->
                     <div>
-                        <button @click="activeDropdown = (activeDropdown === 'users' ? null : 'users')" class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                {{ request()->is('users*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                        <button @click="activeDropdown = (activeDropdown === 'users' ? null : 'users')"
+                            class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
+                                                                                                {{ request()->is('users*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                             <i data-feather="user-plus" class="w-5 h-5"></i>
                             <span class="ml-3 flex-1 text-left">Management Kasir</span>
                             <svg :class="{ 'rotate-180': activeDropdown === 'users' }"
@@ -294,12 +343,12 @@
 
     <script>
         // Tambah class "loaded" setelah halaman selesai dimuat
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             document.body.classList.add("loaded");
 
             // Tambah animasi saat klik link internal
             document.querySelectorAll("a").forEach(link => {
-                link.addEventListener("click", function(e) {
+                link.addEventListener("click", function (e) {
                     const target = this.getAttribute("href");
                     if (target && target.startsWith("http") === false && !this.hasAttribute("target")) {
                         e.preventDefault();

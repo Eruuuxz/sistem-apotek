@@ -14,13 +14,19 @@ class ObatController extends Controller
 
         // filter stok
         if ($request->filter === 'menipis') {
-            $query->whereBetween('stok', [1, 9]);
+            $query->whereBetween('stok', [1, 10]);
         } elseif ($request->filter === 'habis') {
             $query->where('stok', 0);
         } elseif ($request->filter === 'tersedia') {
             $query->where('stok', '>', 0);
+            // Filter obat yang kadaluarsa dalam 1 bulan
+        } elseif ($request->filter === 'kadaluarsa') {
+            $query->whereNotNull('expired_date')
+                ->where(function ($q) {
+                    $q->where('expired_date', '<', now()) // sudah lewat
+                        ->orWhereBetween('expired_date', [now(), now()->addMonth()]); // hampir expired
+                });
         }
-
         $obats = $query->get(); // gunakan hasil query yang difilter
 
         return view('master.obat.index', compact('obats'));
@@ -40,7 +46,7 @@ class ObatController extends Controller
             'nama' => 'required|string|max:255',
             'kategori' => 'required|string|max:255',
             'stok' => 'required|integer|min:0',
-            'expired_date' => 'nullable|date|after_or_equal:today', 
+            'expired_date' => 'nullable|date|after_or_equal:today',
             'harga_dasar' => 'required|numeric|min:0',
             'persen_untung' => 'required|numeric|min:0',
             'harga_jual' => 'required|numeric|min:0',

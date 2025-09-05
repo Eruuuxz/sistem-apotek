@@ -13,16 +13,17 @@ class DashboardController extends Controller
         $totalObat = Obat::where('stok', '>', 0)->count();
         $totalSupplier = Supplier::count();
         $penjualanHariIni = Penjualan::whereDate('tanggal', now()->toDateString())->sum('total');
-        $stokMenipis = Obat::whereBetween('stok', [1, 9])->count();
+        $stokMenipis = Obat::whereBetween('stok', [1, 10])->count();
         $stokHabis = Obat::where('stok', 0)->count();
 
 
 
-            $penjualanHarian = Penjualan::selectRaw("DATE(tanggal) as tgl, SUM(total) as total")
-    ->groupBy('tgl')
-    ->orderBy('tgl', 'asc')
-    ->take(7) // Ambil 7 hari terakhir
-    ->get();
+
+        $penjualanHarian = Penjualan::selectRaw("DATE(tanggal) as tgl, SUM(total) as total")
+            ->groupBy('tgl')
+            ->orderBy('tgl', 'asc')
+            ->take(7) // Ambil 7 hari terakhir
+            ->get();
 
         // Obat terlaris (top 5)
         $obatTerlaris = DB::table('penjualan_detail')

@@ -33,7 +33,7 @@
                 <h2 class="text-lg font-semibold text-gray-600">Stok Menipis</h2>
                 <p class="text-3xl font-bold text-yellow-600 mt-2">{{ $stokMenipis }}</p>
             </div>
-            @if($stokMenipis > 0)
+            @if($stokMenipis)
                 <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-semibold">Perhatian</span>
             @endif
         </a>
@@ -52,88 +52,88 @@
     </div>
 
     <!-- Grafik -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Grafik Penjualan Harian -->
-    <div class="lg:col-span-2 bg-white p-4 shadow rounded">
-        <h2 class="text-lg font-semibold text-gray-600 mb-4">Grafik Penjualan 7 Hari Terakhir</h2>
-        <canvas id="penjualanHarianChart" height="120"></canvas>
-    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Grafik Penjualan Harian -->
+        <div class="lg:col-span-2 bg-white p-4 shadow rounded">
+            <h2 class="text-lg font-semibold text-gray-600 mb-4">Grafik Penjualan 7 Hari Terakhir</h2>
+            <canvas id="penjualanHarianChart" height="120"></canvas>
+        </div>
 
-    <!-- Grafik Obat Terlaris -->
-    <div class="bg-white p-4 shadow rounded">
-        <h2 class="text-lg font-semibold text-gray-600 mb-4">Obat Terlaris</h2>
-        <canvas id="obatTerlarisChart" height="220"></canvas>
+        <!-- Grafik Obat Terlaris -->
+        <div class="bg-white p-4 shadow rounded">
+            <h2 class="text-lg font-semibold text-gray-600 mb-4">Obat Terlaris</h2>
+            <canvas id="obatTerlarisChart" height="220"></canvas>
+        </div>
     </div>
-</div>
 
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Data penjualan harian
-    const harianLabels = @json($penjualanHarian->pluck('tgl')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d M')));
-    const harianData   = @json($penjualanHarian->pluck('total'));
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Data penjualan harian
+        const harianLabels = @json($penjualanHarian->pluck('tgl')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d M')));
+        const harianData = @json($penjualanHarian->pluck('total'));
 
-    const ctxHarian = document.getElementById('penjualanHarianChart').getContext('2d');
-    const gradientHarian = ctxHarian.createLinearGradient(0, 0, 0, 400);
-    gradientHarian.addColorStop(0, 'rgba(37, 99, 235, 0.8)');
-    gradientHarian.addColorStop(1, 'rgba(37, 99, 235, 0.1)');
+        const ctxHarian = document.getElementById('penjualanHarianChart').getContext('2d');
+        const gradientHarian = ctxHarian.createLinearGradient(0, 0, 0, 400);
+        gradientHarian.addColorStop(0, 'rgba(37, 99, 235, 0.8)');
+        gradientHarian.addColorStop(1, 'rgba(37, 99, 235, 0.1)');
 
-    new Chart(ctxHarian, {
-        type: 'line',
-        data: {
-            labels: harianLabels,
-            datasets: [{
-                label: 'Penjualan (Rp)',
-                data: harianData,
-                fill: true,
-                backgroundColor: gradientHarian,
-                borderColor: 'rgba(37, 99, 235, 1)',
-                tension: 0.3,
-                borderWidth: 2,
-                pointRadius: 4,
-                pointBackgroundColor: 'rgba(37, 99, 235, 1)',
-                pointHoverRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { callback: v => 'Rp ' + Number(v).toLocaleString('id-ID') }
+        new Chart(ctxHarian, {
+            type: 'line',
+            data: {
+                labels: harianLabels,
+                datasets: [{
+                    label: 'Penjualan (Rp)',
+                    data: harianData,
+                    fill: true,
+                    backgroundColor: gradientHarian,
+                    borderColor: 'rgba(37, 99, 235, 1)',
+                    tension: 0.3,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: 'rgba(37, 99, 235, 1)',
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: v => 'Rp ' + Number(v).toLocaleString('id-ID') }
+                    }
                 }
             }
-        }
-    });
+        });
 
-    // Data obat terlaris
-    const obatLabels = @json($obatTerlaris->pluck('nama'));
-    const obatData   = @json($obatTerlaris->pluck('total_terjual'));
+        // Data obat terlaris
+        const obatLabels = @json($obatTerlaris->pluck('nama'));
+        const obatData = @json($obatTerlaris->pluck('total_terjual'));
 
-    const ctxObat = document.getElementById('obatTerlarisChart').getContext('2d');
-    const gradientObat = ctxObat.createLinearGradient(0, 0, 0, 400);
-    gradientObat.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
-    gradientObat.addColorStop(1, 'rgba(54, 162, 235, 0.3)');
+        const ctxObat = document.getElementById('obatTerlarisChart').getContext('2d');
+        const gradientObat = ctxObat.createLinearGradient(0, 0, 0, 400);
+        gradientObat.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
+        gradientObat.addColorStop(1, 'rgba(54, 162, 235, 0.3)');
 
-    new Chart(ctxObat, {
-        type: 'bar',
-        data: {
-            labels: obatLabels,
-            datasets: [{
-                label: 'Jumlah Terjual',
-                data: obatData,
-                backgroundColor: gradientObat,
-                borderRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-        }
-    });
-</script>
+        new Chart(ctxObat, {
+            type: 'bar',
+            data: {
+                labels: obatLabels,
+                datasets: [{
+                    label: 'Jumlah Terjual',
+                    data: obatData,
+                    backgroundColor: gradientObat,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    </script>
 @endpush

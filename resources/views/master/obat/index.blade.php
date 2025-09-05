@@ -44,9 +44,10 @@
                 </thead>
                 <tbody id="tabel_obat">
                     @foreach ($obats as $obat)
-                        <tr
-                            class="hover:bg-gray-50 transition
-                                                @if($obat->stok == 0) bg-red-50 @elseif($obat->stok > 0 && $obat->stok < 10) bg-yellow-50 @endif">
+                        <tr class="hover:bg-gray-50 transition
+                                        @if($obat->stok == 0) bg-red-50 
+                                        @elseif($obat->stok > 0 && $obat->stok <= 10) bg-yellow-50 
+                                        @endif">
                             <td class="border px-4 py-3">{{ $obat->kode }}</td>
                             <td class="border px-4 py-3">{{ $obat->nama }}</td>
                             <td class="border px-4 py-3">{{ $obat->kategori }}</td>
@@ -54,7 +55,7 @@
                                 {{ $obat->stok }}
                                 @if($obat->stok == 0)
                                     <span class="ml-2 px-2 py-1 text-xs bg-red-600 text-white rounded-full">Habis</span>
-                                @elseif($obat->stok > 0 && $obat->stok < 10)
+                                @elseif($obat->stok > 0 && $obat->stok <= 10)
                                     <span class="ml-2 px-2 py-1 text-xs bg-yellow-500 text-white rounded-full">Menipis</span>
                                 @endif
                             </td>
@@ -65,9 +66,26 @@
                                 {{ number_format($obat->harga_jual - $obat->harga_dasar, 0, ',', '.') }}
                             </td>
                             <td class="border px-4 py-3">{{ $obat->supplier->nama ?? '-' }}</td>
-                            <td class="border px-2 py-1">
-                                {{ $obat->expired_date ? \Carbon\Carbon::parse($obat->expired_date)->format('d-m-Y') : '-' }} <!-- <-- BARU -->
+                            <td class="border px-4 py-3 text-center">
+                                @if($obat->expired_date)
+                                    @php $expDate = \Carbon\Carbon::parse($obat->expired_date); @endphp
+
+                                    <span>{{ $expDate->format('d-m-Y') }}</span>
+
+                                    @if($expDate->isPast())
+                                        <span
+                                            class="ml-1 px-2 py-0.5 text-[10px] bg-red-900 text-white rounded whitespace-nowrap">Expired</span>
+                                    @elseif($expDate->isBefore(now()->addMonth()))
+                                        <span
+                                            class="ml-1 px-2 py-0.5 text-[10px] bg-orange-500 text-white rounded whitespace-nowrap">Hampir
+                                            Expired</span>
+                                    @endif
+                                @else
+                                    -
+                                @endif
                             </td>
+
+
                             <td class="border px-4 py-3 flex gap-2">
                                 <a href="{{ route('obat.edit', $obat->id) }}" class="text-blue-500 hover:underline">Edit</a>
                                 <form action="{{ route('obat.destroy', $obat->id) }}" method="POST" class="inline delete-form">
@@ -76,13 +94,13 @@
                                     <button type="button" class="text-red-500 hover:underline delete-btn">Hapus</button>
                                 </form>
                             </td>
-
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
     </div>
+
     <!-- Popup Konfirmasi -->
     <div id="confirm-popup" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white p-6 rounded shadow-lg w-80 text-center">
@@ -95,14 +113,73 @@
     </div>
 
     <script>
+        let sortDirection = {};
+
+        function sortTable(colIndex, forceAsc = false) {
+            const table = document.querySelector("table");
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+
+            // toggle arah sort
+            if (forceAsc) {
+                sortDirection[colIndex] = true;
+            } else {
+                sortDirection[colIndex] = !sortDirection[colIndex];
+            }
+
+            // Reset icon semua header
+            table.querySelectorAll("th").forEach((th, i) => {
+                th.innerHTML = th.innerHTML.replace(/ ▲| ▼/g, "");
+                if (i === colIndex) {
+                    th.innerHTML += sortDirection[colIndex] ? " ▲" : " ▼";
+                }
+            });
+
+            rows.sort((a, b) => {
+                let valA = a.cells[colIndex].innerText.trim();
+                let valB = b.cells[colIndex].innerText.trim();
+
+                // --- Kolom Kadaluarsa ---
+                if (colIndex === 9) {
+                    valA = valA.split(" ")[0];
+                    valB = valB.split(" ")[0];
+                    let dateA = valA === "-" ? null : new Date(valA.split("-").reverse().join("-"));
+                    let dateB = valB === "-" ? null : new Date(valB.split("-").reverse().join("-"));
+
+                    if (!dateA && !dateB) return 0;
+                    if (!dateA && dateB) return -1; // kosong di atas
+                    if (dateA && !dateB) return 1;
+                    return (dateA - dateB) * (sortDirection[colIndex] ? 1 : -1);
+                }
+
+                // --- Angka ---
+                let numA = parseFloat(valA.replace(/[Rp\s.,%]/g, ""));
+                let numB = parseFloat(valB.replace(/[Rp\s.,%]/g, ""));
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return (numA - numB) * (sortDirection[colIndex] ? 1 : -1);
+                }
+
+                // --- Teks ---
+                valA = valA.toLowerCase();
+                valB = valB.toLowerCase();
+                if (!valA && !valB) return 0;
+                if (!valA && valB) return -1; // kosong di atas
+                if (valA && !valB) return 1;
+                if (valA < valB) return sortDirection[colIndex] ? -1 : 1;
+                if (valA > valB) return sortDirection[colIndex] ? 1 : -1;
+                return 0;
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
+            // popup konfirmasi hapus
             const popup = document.getElementById("confirm-popup");
             const cancelBtn = document.getElementById("cancel-btn");
             const confirmBtn = document.getElementById("confirm-btn");
-
             let formToSubmit = null;
 
-            // Saat klik tombol hapus
             document.querySelectorAll(".delete-btn").forEach(btn => {
                 btn.addEventListener("click", function () {
                     formToSubmit = this.closest("form");
@@ -111,43 +188,25 @@
                 });
             });
 
-            // Klik batal
             cancelBtn.addEventListener("click", () => {
                 popup.classList.add("hidden");
                 popup.classList.remove("flex");
                 formToSubmit = null;
             });
 
-            // Klik hapus
             confirmBtn.addEventListener("click", () => {
                 if (formToSubmit) formToSubmit.submit();
             });
-        });
-    </script>
 
-    <script>
-        let sortDirection = {};
-        function sortTable(colIndex) {
-            const table = document.querySelector("table");
-            const tbody = table.tBodies[0];
-            const rows = Array.from(tbody.querySelectorAll("tr"));
-            sortDirection[colIndex] = !sortDirection[colIndex];
+            // --- Default sort by Kadaluarsa ASC saat load ---
+            sortTable(9, true);
 
-            rows.sort((a, b) => {
-                let valA = a.cells[colIndex].innerText.trim().replace(/[Rp.,%]/g, "").toLowerCase();
-                let valB = b.cells[colIndex].innerText.trim().replace(/[Rp.,%]/g, "").toLowerCase();
-                let numA = parseFloat(valA) || valA;
-                let numB = parseFloat(valB) || valB;
-                return (numA < numB ? -1 : numA > numB ? 1 : 0) * (sortDirection[colIndex] ? 1 : -1);
-            });
-
-            rows.forEach(row => tbody.appendChild(row));
-        }
-
-        document.getElementById("searchInput").addEventListener("keyup", function () {
-            let filter = this.value.toLowerCase();
-            document.querySelectorAll("#tabel_obat tr").forEach(row => {
-                row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
+            // fitur search
+            document.getElementById("searchInput").addEventListener("keyup", function () {
+                let filter = this.value.toLowerCase();
+                document.querySelectorAll("#tabel_obat tr").forEach(row => {
+                    row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
+                });
             });
         });
     </script>
