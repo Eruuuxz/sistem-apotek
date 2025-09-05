@@ -17,6 +17,7 @@ class PenjualanDetail extends Model
         'obat_id',
         'qty',
         'harga',
+        'hpp',
         'subtotal', 
     ];
 

@@ -96,12 +96,14 @@ class PenjualanController extends Controller
         foreach($cart as $item){
             // Pastikan id obat ada, kalau tidak ambil dari kode
             $obat_id = $item['id'] ?? Obat::where('kode', $item['kode'])->value('id');
-
+            $obat = Obat::find($obat_id); // Ambil objek obat untuk mendapatkan harga_dasar
+            
             PenjualanDetail::create([
                 'penjualan_id' => $penjualan->id,
                 'obat_id' => $obat_id,
                 'qty' => (int)$item['qty'], // Pastikan qty adalah integer
                 'harga' => (float)$item['harga'], // Pastikan harga adalah float
+                'hpp' => (float)$obat->harga_dasar,
                 'subtotal' => (float)$item['qty'] * (float)$item['harga'] // Pastikan subtotal dihitung dengan float
             ]);
 

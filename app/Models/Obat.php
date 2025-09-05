@@ -18,6 +18,7 @@ class Obat extends Model
         'nama',
         'kategori',
         'stok',
+        'expired_date',
         'min_stok', 
         'harga_dasar',
         'persen_untung',

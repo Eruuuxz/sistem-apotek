@@ -67,7 +67,8 @@ Route::middleware(['auth'])->group(function () {
         });
 
         Route::resource('users', UserController::class);
-        
+
+        Route::resource('biaya-operasional', BiayaOperasionalController::class);
     });
 
     // Route untuk Kasir (hanya bisa diakses oleh role 'kasir')
