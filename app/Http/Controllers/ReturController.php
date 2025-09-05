@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Retur, ReturDetail, Pembelian, Penjualan, Obat}; 
+use App\Models\{Retur, ReturDetail, Pembelian, Penjualan, Obat};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon; // Tambahkan ini
 
 class ReturController extends Controller
 {
@@ -40,21 +41,23 @@ class ReturController extends Controller
     {
         if ($jenis === 'pembelian') {
             $src = Pembelian::with('detail.obat')->findOrFail($id);
-            $items = $src->detail->map(fn ($d) => [
+            $items = $src->detail->map(fn($d) => [
                 'id' => $d->obat_id,
                 'kode' => $d->obat->kode,
                 'nama' => $d->obat->nama,
-                'harga' => $d->harga_beli, // Sesuaikan dengan harga_beli di PembelianDetail
-                'max_qty' => $d->jumlah
+                'harga' => $d->harga_beli, // Harga beli dari detail pembelian
+                'max_qty' => $d->jumlah,
+                'harga_dasar_obat' => $d->obat->harga_dasar, // Tambahkan harga_dasar dari obat
             ]);
         } else { // jenis === 'penjualan'
-            $src = Penjualan::with('detail.obat')->findOrFail($id); 
-            $items = $src->detail->map(fn ($d) => [
-                'id' => $d->obat_id, 
-                'kode' => $d->obat->kode, 
-                'nama' => $d->obat->nama, 
-                'harga' => $d->harga,
-                'max_qty' => $d->qty
+            $src = Penjualan::with('details.obat')->findOrFail($id);
+            $items = $src->details->map(fn($d) => [
+                'id' => $d->obat_id,
+                'kode' => $d->obat->kode,
+                'nama' => $d->obat->nama,
+                'harga' => $d->harga, // Harga jual dari detail penjualan
+                'max_qty' => $d->qty,
+                'hpp_obat' => $d->hpp, // HPP dari detail penjualan
             ]);
         }
         return response()->json(['items' => $items]);
@@ -63,42 +66,58 @@ class ReturController extends Controller
     public function store(Request $r)
     {
         $r->validate([
-            'no_retur'   => ['required', 'max:50', Rule::unique('retur', 'no_retur')],
-            'tanggal'   => ['required', 'date'],
-            'jenis'   => ['required', 'in:pembelian,penjualan'],
+            'no_retur' => ['required', 'max:50', Rule::unique('retur', 'no_retur')],
+            'tanggal' => ['required', 'date'], // Validasi tetap 'date' karena input HTML type="datetime-local" akan divalidasi sebagai date
+            'jenis' => ['required', 'in:pembelian,penjualan'],
             'transaksi_id' => ['required', 'integer'],
-            'item_id'   => ['required', 'array', 'min:1'],
+            'item_id' => ['required', 'array', 'min:1'],
             'item_id.*' => ['required', 'integer'],
-            'qty'   => ['required', 'array', 'min:1'],
-            'qty.*'   => ['required', 'integer', 'min:1'],
-            'harga'   => ['required', 'array', 'min:1'],
-            'harga.*'   => ['required', 'numeric', 'min:0'],
+            'qty' => ['required', 'array', 'min:1'],
+            'qty.*' => ['required', 'integer', 'min:1'],
+            'harga' => ['required', 'array', 'min:1'],
+            'harga.*' => ['required', 'numeric', 'min:0'],
             'keterangan' => ['nullable', 'string', 'max:255'],
+            // Tambahkan validasi untuk hpp dan harga_beli jika diperlukan dari frontend
+            'hpp.*' => ['nullable', 'numeric', 'min:0'],
+            'harga_beli_item.*' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         DB::transaction(function () use ($r) {
             $retur = Retur::create([
-                'no_retur'   => $r->no_retur,
-                'tanggal'   => $r->tanggal,
-                'jenis'   => $r->jenis,
+                'no_retur' => $r->no_retur,
+                'tanggal' => Carbon::parse($r->tanggal)->toDateTimeString(), // Ubah ke datetime string
+                'jenis' => $r->jenis,
                 'transaksi_id' => $r->transaksi_id,
-                'total'   => 0, // Akan diupdate setelah detail ditambahkan
+                'total' => 0, // Akan diupdate setelah detail ditambahkan
                 'keterangan' => $r->keterangan ?? null,
             ]);
 
             $total = 0;
             foreach ($r->item_id as $i => $id) {
-                $qty = (int)$r->qty[$i];
-                $harga = (float)$r->harga[$i];
+                $qty = (int) $r->qty[$i];
+                $harga = (float) $r->harga[$i];
                 $sub = $qty * $harga;
 
-                ReturDetail::create([
+                $detailData = [
                     'retur_id' => $retur->id,
-                    'obat_id' => $id, 
+                    'obat_id' => $id,
                     'qty' => $qty,
                     'harga' => $harga,
                     'subtotal' => $sub
-                ]);
+                ];
+
+                // Tambahkan HPP atau Harga Beli berdasarkan jenis retur
+                if ($r->jenis === 'pembelian') {
+                    // Untuk retur pembelian, harga yang relevan adalah harga_beli
+                    // Ambil harga_beli dari input tersembunyi atau dari obat jika tidak ada
+                    $detailData['harga_beli'] = (float) ($r->harga_beli_item[$i] ?? Obat::find($id)->harga_dasar);
+                } else { // jenis === 'penjualan'
+                    // Untuk retur penjualan, harga yang relevan adalah HPP
+                    // Ambil HPP dari input tersembunyi atau dari obat jika tidak ada
+                    $detailData['hpp'] = (float) ($r->hpp[$i] ?? Obat::find($id)->harga_dasar);
+                }
+
+                ReturDetail::create($detailData);
 
                 if ($r->jenis === 'pembelian') {
                     // retur ke supplier: stok OBAT BERKURANG
@@ -108,7 +127,7 @@ class ReturController extends Controller
                     }
                 } else {
                     // retur dari customer: stok OBAT BERTAMBAH
-                    $obat = Obat::find($id); 
+                    $obat = Obat::find($id);
                     if ($obat) {
                         $obat->increment('stok', $qty);
                     }
@@ -116,8 +135,19 @@ class ReturController extends Controller
                 $total += $sub;
             }
             $retur->update(['total' => $total]);
-        });
 
+            // Hapus bagian ini karena sudah dihandle oleh Carbon::parse di atas
+            // if ($r->filled('tanggal')) {
+            //     $retur->tanggal = $r->tanggal;
+            //     $retur->save();
+            // }
+        });
         return redirect()->route('retur.index')->with('success', 'Retur tersimpan');
+    }
+
+    public function show($id)
+    {
+    $retur = Retur::with('details.obat')->findOrFail($id);
+    return view('transaksi.retur.show', compact('retur'));
     }
 }

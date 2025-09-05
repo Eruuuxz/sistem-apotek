@@ -8,7 +8,7 @@
         public function up(): void
         {
             Schema::table('penjualan_detail', function (Blueprint $table) {
-                $table->decimal('hpp', 15, 2)->after('harga'); // Tambahkan ini
+                $table->decimal('hpp', 15, 2)->after('harga')->default(0);
             });
         }   
         public function down(): void
@@ -18,4 +18,3 @@
             });
         }
     };
-    

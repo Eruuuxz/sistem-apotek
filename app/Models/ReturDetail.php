@@ -11,13 +11,15 @@ class ReturDetail extends Model
     use HasFactory;
 
     protected $table = 'retur_detail';
-    
+
     protected $fillable = [
         'retur_id',
         'obat_id',
         'qty',
         'harga',
         'subtotal',
+        'hpp',
+        'harga_beli',
     ];
 
     public function retur(): BelongsTo

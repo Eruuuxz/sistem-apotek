@@ -12,7 +12,7 @@ class Obat extends Model
     use HasFactory;
 
     protected $table = 'obat';
-    
+
     protected $fillable = [
         'kode',
         'nama',

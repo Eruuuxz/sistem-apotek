@@ -12,7 +12,7 @@ class Penjualan extends Model
     use HasFactory;
 
     protected $table = 'penjualan';
-    
+
     protected $fillable = [
         'no_nota',
         'tanggal',
@@ -21,6 +21,10 @@ class Penjualan extends Model
         'total',
         'bayar',
         'kembalian',
+    ];
+
+    protected $casts = [
+        'tanggal' => 'datetime',
     ];
 
     public function details(): HasMany

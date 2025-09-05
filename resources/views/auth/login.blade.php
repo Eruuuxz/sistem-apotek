@@ -1,20 +1,21 @@
 {{-- File: resources/views/auth/login.blade.php --}}
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Sistem Apotek</title>
     @vite('resources/css/app.css')
 </head>
+
 <body class="bg-gradient-to-br from-blue-100 via-white to-green-100 flex items-center justify-center min-h-screen">
     <div class="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-md">
-        
+
         {{-- Header --}}
         <div class="text-center mb-6">
-            <img src="{{ asset('images/logo-apotek.png') }}" 
-                 alt="Logo Apotek" 
-                 class="w-20 h-20 mx-auto mb-4 rounded-full shadow-md">
+            <img src="{{ asset('images/logo-apotek.png') }}" alt="Logo Apotek"
+                class="w-20 h-20 mx-auto mb-4 rounded-full shadow-md">
             <h1 class="text-2xl font-bold text-gray-800">
                 Login {{ isset($role) ? ucfirst($role) : '' }}
             </h1>
@@ -33,12 +34,8 @@
             {{-- Email --}}
             <div>
                 <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                <input id="email" 
-                       type="email" 
-                       name="email" 
-                       value="{{ old('email') }}" 
-                       required autofocus 
-                       class="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
+                    class="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
                 @error('email')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -47,11 +44,8 @@
             {{-- Password --}}
             <div>
                 <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                <input id="password" 
-                       type="password" 
-                       name="password" 
-                       required 
-                       class="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                <input id="password" type="password" name="password" required
+                    class="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
                 @error('password')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -69,11 +63,12 @@
             </div>
 
             {{-- Tombol Login --}}
-            <button type="submit" 
-                    class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+            <button type="submit"
+                class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
                 Login
             </button>
         </form>
     </div>
 </body>
+
 </html>

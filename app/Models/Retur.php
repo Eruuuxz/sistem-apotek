@@ -11,7 +11,7 @@ class Retur extends Model
     use HasFactory;
 
     protected $table = 'retur';
-    
+
     protected $fillable = [
         'no_retur',
         'tanggal',
@@ -19,6 +19,10 @@ class Retur extends Model
         'transaksi_id',
         'total',
         'keterangan',
+    ];
+
+    protected $casts = [
+        'tanggal' => 'datetime', // Tambahkan baris ini
     ];
 
     public function details(): HasMany

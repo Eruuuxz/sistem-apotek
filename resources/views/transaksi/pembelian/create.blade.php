@@ -17,7 +17,7 @@
         </div>
         <div>
             <label class="block font-semibold mb-1">Tanggal</label>
-            <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" class="border rounded w-full px-3 py-2">
+            <input type="datetime-local" name="tanggal" value="{{ date('Y-m-d\TH:i:s') }}" class="border rounded w-full px-3 py-2">
         </div>
         <div>
             <label class="block font-semibold mb-1">Supplier</label>
@@ -130,7 +130,6 @@ function hitungTotal() {
     // ✅ Debug log untuk monitoring
     console.log('Total calculated:', total);
 }
-
 
     function tambahItem(obat) {
     if([...tableItems.querySelectorAll('tr')].some(tr => tr.dataset.id == obat.id)) return;

@@ -9,8 +9,8 @@ class SupplierController extends Controller
 {
     public function index()
     {
-    $suppliers = Supplier::all();
-    return view('master.supplier.index', compact('suppliers'));
+        $suppliers = Supplier::all();
+        return view('master.supplier.index', compact('suppliers'));
     }
 
     public function create()
@@ -59,4 +59,3 @@ class SupplierController extends Controller
         return redirect('/supplier')->with('success', 'Supplier berhasil dihapus');
     }
 }
-

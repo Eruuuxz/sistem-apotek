@@ -47,10 +47,11 @@ Route::middleware(['auth'])->group(function () {
 
         // Transaksi
         Route::resource('pembelian', PembelianController::class);
+        Route::get('/laporan/profit', [LaporanController::class, 'profitBulanan'])->name('profit');
         Route::get('/supplier/{id}/obat', [PembelianController::class, 'getObatBySupplier']);
         Route::get('pembelian/faktur/{pembelian}', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
         Route::get('pembelian/pdf/{pembelian}', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
-        
+
         Route::resource('retur', ReturController::class);
         Route::get('retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');
 
@@ -64,11 +65,16 @@ Route::middleware(['auth'])->group(function () {
             Route::get('penjualan-bulanan/pdf', [LaporanController::class, 'penjualanBulananPdf'])->name('penjualan.bulanan.pdf');
             Route::get('penjualan-bulanan/excel', [LaporanController::class, 'penjualanBulananExcel'])->name('penjualan.bulanan.excel');
             Route::get('stok', [LaporanController::class, 'stok'])->name('stok');
+            Route::get('profit', [LaporanController::class, 'profitBulanan'])->name('profit');
+            Route::get('/laporan/profit/detail/{tanggal}', [LaporanController::class, 'profitDetailJson']);
         });
 
         Route::resource('users', UserController::class);
 
         Route::resource('biaya-operasional', BiayaOperasionalController::class);
+        // Route detail retur
+        Route::get('/retur/{retur}', [\App\Http\Controllers\ReturController::class, 'show'])->name('retur.show');
+    
     });
 
     // Route untuk Kasir (hanya bisa diakses oleh role 'kasir')
@@ -93,4 +99,4 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

@@ -103,12 +103,12 @@
             <div class="left-details">
                 <div>No Faktur: <strong>{{ $penjualan->no_nota }}</strong></div>
                 <div>Kasir: {{ $penjualan->kasir->name ?? '-' }}</div>
-                <div>Tgl: {{ \Carbon\Carbon::parse($penjualan->tanggal)->format('d-m-Y') }}</div> {{-- Format tanggal --}}
+                <div>Tgl: {{ \Carbon\Carbon::parse($penjualan->tanggal)->format('d-m-Y H:i:s') }}</div> {{-- Format tanggal dengan jam --}}
             </div>
             <div class="right-details">
-                <div>Apotek Simpang Cimareme</div>
-                <div>Jl. Raya Cimareme RT 01 RW 02</div>
-                <div>Ds. Cimareme, Kec. Ngamprah</div>
+                <div>Apotek LIZ Farma 02</div>
+                <div>JL. RAYA BATUJAJAR NO. 321 RT.001 RW.005</div>
+                <div>KEL. BATUJAJAR BARAT KEC. BATUJAJAR</div>
             </div>
         </div>
 
@@ -158,7 +158,7 @@
             </div>
             <div class="sign">
                 Hormat Kami,<br><br><br>
-                <div class="name">(Apotek Simpang Cimareme)</div>
+                <div class="name">(Apotek LIZ Farma 02)</div>
             </div>
         </div>
     </div>

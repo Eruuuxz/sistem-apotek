@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Penjualan, PenjualanDetail, Obat}; 
+use App\Models\{Penjualan, PenjualanDetail, Obat};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon; // Tambahkan ini
 
 class PenjualanController extends Controller
 {
@@ -20,20 +21,21 @@ class PenjualanController extends Controller
     public function addToCart(Request $r)
     {
         $obat = Obat::where('kode', $r->kode)->first();
-        if(!$obat) return back()->with('error', 'Obat tidak ditemukan');
+        if (!$obat)
+            return back()->with('error', 'Obat tidak ditemukan');
 
         $cart = session('cart', []);
         $key = array_search($obat->kode, array_column($cart, 'kode'));
-        if($key !== false) {
+        if ($key !== false) {
             $cart[$key]['qty'] += 1;
         } else {
-            $cart[] = [
+            $cart[$o->kode] = [ // Perbaiki ini, harusnya $o->kode
                 'id' => $obat->id,
                 'kode' => $obat->kode,
                 'nama' => $obat->nama,
                 'harga' => $obat->harga_jual,
                 'qty' => 1,
-                'stok' => $obat->stok
+                'stok' => $obat->stok // Simpan stok saat ini untuk referensi
             ];
         }
         session(['cart' => $cart]);
@@ -43,8 +45,8 @@ class PenjualanController extends Controller
     public function updateCart(Request $r)
     {
         $cart = session('cart', []);
-        foreach($cart as &$item){
-            if($item['kode'] == $r->kode){
+        foreach ($cart as &$item) {
+            if ($item['kode'] == $r->kode) {
                 $item['qty'] = min($r->qty, $item['stok']);
             }
         }
@@ -61,89 +63,90 @@ class PenjualanController extends Controller
     }
 
     public function checkout(Request $r)
-{
-    $cart = session('cart', []);
-    if(empty($cart)) return back()->with('error','Keranjang kosong');
+    {
+        $cart = session('cart', []);
+        if (empty($cart))
+            return back()->with('error', 'Keranjang kosong');
 
-    // Pastikan total dihitung sebagai float/decimal
-    $total = collect($cart)->sum(fn($i) => (float)$i['harga'] * (int)$i['qty']);
+        // Pastikan total dihitung sebagai float/decimal
+        $total = collect($cart)->sum(fn($i) => (float)$i['harga'] * (int)$i['qty']);
 
-    // Pastikan bayar dikonversi ke float/decimal dari input
-    $bayar = (float)$r->bayar;
+        // Pastikan bayar dikonversi ke float/decimal dari input
+        $bayar = (float)$r->bayar;
 
-    if($bayar < $total) {
-        // Menggunakan number_format untuk pesan error yang lebih jelas
-        $kekurangan = $total - $bayar;
-        return back()->with('error','Pembayaran kurang Rp ' . number_format($kekurangan, 0, ',', '.'));
-    }
+        if($bayar < $total) {
+            // Menggunakan number_format untuk pesan error yang lebih jelas
+            $kekurangan = $total - $bayar;
+            return back()->with('error','Pembayaran kurang Rp ' . number_format($kekurangan, 0, ',', '.'));
+        }
 
-    DB::transaction(function() use ($cart, $r, $total, $bayar, &$penjualan){
-        // Generate no_nota unik
-        $no = 'PJ-'.date('Ymd').'-'.str_pad(Penjualan::whereDate('tanggal', date('Y-m-d'))->count()+1,3,'0',STR_PAD_LEFT);
-        $kembalian = $bayar - $total; // Perhitungan kembalian
+        DB::transaction(function() use ($cart, $r, $total, $bayar, &$penjualan){
+            // Generate no_nota unik
+            $no = 'PJ-'.date('Ymd').'-'.str_pad(Penjualan::whereDate('tanggal', date('Y-m-d'))->count()+1,3,'0',STR_PAD_LEFT);
+            $kembalian = $bayar - $total; // Perhitungan kembalian
 
-        // Simpan Penjualan
-        $penjualan = Penjualan::create([
-            'no_nota' => $no,
-            'tanggal' => now()->toDateString(),
-            'user_id' => Auth::id(),
-            'total' => $total,
-            'bayar' => $bayar,
-            'kembalian' => $kembalian
-        ]);
-
-        // Simpan detail penjualan & update stok
-        foreach($cart as $item){
-            // Pastikan id obat ada, kalau tidak ambil dari kode
-            $obat_id = $item['id'] ?? Obat::where('kode', $item['kode'])->value('id');
-            $obat = Obat::find($obat_id); // Ambil objek obat untuk mendapatkan harga_dasar
-            
-            PenjualanDetail::create([
-                'penjualan_id' => $penjualan->id,
-                'obat_id' => $obat_id,
-                'qty' => (int)$item['qty'], // Pastikan qty adalah integer
-                'harga' => (float)$item['harga'], // Pastikan harga adalah float
-                'hpp' => (float)$obat->harga_dasar,
-                'subtotal' => (float)$item['qty'] * (float)$item['harga'] // Pastikan subtotal dihitung dengan float
+            // Simpan Penjualan
+            $penjualan = Penjualan::create([
+                'no_nota' => $no,
+                'tanggal' => Carbon::now()->toDateTimeString(), // Menggunakan waktu saat ini
+                'user_id' => Auth::id(),
+                'total' => $total,
+                'bayar' => $bayar,
+                'kembalian' => $kembalian
             ]);
 
-            if($obat_id) {
-                Obat::find($obat_id)->decrement('stok', $item['qty']);
+            // Simpan detail penjualan & update stok
+            foreach($cart as $item){
+                // Pastikan id obat ada, kalau tidak ambil dari kode
+                $obat_id = $item['id'] ?? Obat::where('kode', $item['kode'])->value('id');
+                $obat = Obat::find($obat_id); // Ambil objek obat untuk mendapatkan harga_dasar
+
+                PenjualanDetail::create([
+                    'penjualan_id' => $penjualan->id,
+                    'obat_id' => $obat_id,
+                    'qty' => (int)$item['qty'], // Pastikan qty adalah integer
+                    'harga' => (float)$item['harga'], // Pastikan harga adalah float
+                    'hpp' => (float)$obat->harga_dasar,
+                    'subtotal' => (float)$item['qty'] * (float)$item['harga'] // Pastikan subtotal dihitung dengan float
+                ]);
+
+                if ($obat_id) {
+                    Obat::find($obat_id)->decrement('stok', $item['qty']);
+                }
             }
-        }
-    });
+        });
 
-    session()->forget('cart');
+        session()->forget('cart');
 
-    return redirect()->route('penjualan.struk', $penjualan->id);
-}
+        return redirect()->route('penjualan.struk', $penjualan->id);
+    }
 
     public function struk($id)
     {
-        $penjualan = Penjualan::with('details.obat','kasir')->findOrFail($id);
+        $penjualan = Penjualan::with('details.obat', 'kasir')->findOrFail($id);
         return view('kasir.struk', compact('penjualan'));
     }
 
     public function strukPdf($id)
     {
-        $penjualan = Penjualan::with('details.obat','kasir')->findOrFail($id);
-        $pdf = Pdf::loadView('kasir.struk', compact('penjualan'))->setPaper('A6','landscape');
-        return $pdf->stream('faktur-'.$penjualan->no_nota.'.pdf');
+        $penjualan = Penjualan::with('details.obat', 'kasir')->findOrFail($id);
+        $pdf = Pdf::loadView('kasir.struk', compact('penjualan'))->setPaper('A6', 'landscape');
+        return $pdf->stream('faktur-' . $penjualan->no_nota . '.pdf');
     }
     public function riwayatKasir()
-{
-    $data = Penjualan::with('details.obat')
-        ->where('user_id', Auth::id()) // hanya penjualan kasir yang login
-        ->orderBy('tanggal', 'desc')
-        ->paginate(10);
+    {
+        $data = Penjualan::with('details.obat')
+            ->where('user_id', Auth::id()) // hanya penjualan kasir yang login
+            ->orderBy('tanggal', 'desc')
+            ->paginate(10);
 
-    return view('kasir.riwayat', compact('data'));
-}
-public function show($id)
-{
-    // Ambil penjualan beserta detail dan kasir
-    $p = Penjualan::with('details.obat', 'kasir')->findOrFail($id);
+        return view('kasir.riwayat', compact('data'));
+    }
+    public function show($id)
+    {
+        // Ambil penjualan beserta detail dan kasir
+        $p = Penjualan::with('details.obat', 'kasir')->findOrFail($id);
 
-    return view('kasir.detail', compact('p'));
-}
+        return view('kasir.detail', compact('p'));
+    }
 }

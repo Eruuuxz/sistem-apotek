@@ -3,48 +3,69 @@
 @section('title', 'Edit Supplier')
 
 @section('content')
-<h1 class="text-2xl font-bold mb-4">Edit Supplier</h1>
 
-<form action="{{ route('supplier.update', $supplier->id) }}" method="POST" class="bg-white p-6 shadow rounded w-1/2">
-    @csrf
-    @method('PUT')
-    <div class="mb-4">
-        <label class="block mb-1">Kode Supplier</label>
-        <input type="text" name="kode" class="w-full border px-3 py-2 @error('kode') border-red-500 @enderror" value="{{ old('kode', $supplier->kode) }}" required>
-        @error('kode')
-            <p class="text-red-500 text-xs italic">{{ $message }}</p>
-        @enderror
+    <div class="bg-white p-6 shadow rounded w-full md:w-1/2 mx-auto">
+        <form action="{{ route('supplier.update', $supplier->id) }}" method="POST" class="space-y-4">
+            @csrf
+            @method('PUT')
+
+            <div>
+                <label class="block mb-1 font-medium text-gray-700">Kode Supplier</label>
+                <input type="text" name="kode"
+                    class="w-full border px-3 py-2 rounded @error('kode') border-red-500 @enderror"
+                    value="{{ old('kode', $supplier->kode) }}" required>
+                @error('kode')
+                    <p class="text-red-500 text-xs italic mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label class="block mb-1 font-medium text-gray-700">Nama Supplier</label>
+                <input type="text" name="nama"
+                    class="w-full border px-3 py-2 rounded @error('nama') border-red-500 @enderror"
+                    value="{{ old('nama', $supplier->nama) }}" required>
+                @error('nama')
+                    <p class="text-red-500 text-xs italic mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label class="block mb-1 font-medium text-gray-700">Alamat</label>
+                <input type="text" name="alamat"
+                    class="w-full border px-3 py-2 rounded @error('alamat') border-red-500 @enderror"
+                    value="{{ old('alamat', $supplier->alamat) }}">
+                @error('alamat')
+                    <p class="text-red-500 text-xs italic mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label class="block mb-1 font-medium text-gray-700">Kota</label>
+                <input type="text" name="kota"
+                    class="w-full border px-3 py-2 rounded @error('kota') border-red-500 @enderror"
+                    value="{{ old('kota', $supplier->kota) }}">
+                @error('kota')
+                    <p class="text-red-500 text-xs italic mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label class="block mb-1 font-medium text-gray-700">Telepon</label>
+                <input type="text" name="telepon"
+                    class="w-full border px-3 py-2 rounded @error('telepon') border-red-500 @enderror"
+                    value="{{ old('telepon', $supplier->telepon) }}">
+                @error('telepon')
+                    <p class="text-red-500 text-xs italic mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="flex gap-2 mt-4">
+                <button type="submit"
+                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Update</button>
+                <a href="{{ route('supplier.index') }}"
+                    class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition">Batal</a>
+            </div>
+        </form>
     </div>
-    <div class="mb-4">
-        <label class="block mb-1">Nama Supplier</label>
-        <input type="text" name="nama" class="w-full border px-3 py-2 @error('nama') border-red-500 @enderror" value="{{ old('nama', $supplier->nama) }}" required>
-        @error('nama')
-            <p class="text-red-500 text-xs italic">{{ $message }}</p>
-        @enderror
-    </div>
-    <div class="mb-4">
-        <label class="block mb-1">Alamat</label>
-        <input type="text" name="alamat" class="w-full border px-3 py-2 @error('alamat') border-red-500 @enderror" value="{{ old('alamat', $supplier->alamat) }}">
-        @error('alamat')
-            <p class="text-red-500 text-xs italic">{{ $message }}</p>
-        @enderror
-    </div>
-    <div class="mb-4">
-        <label class="block mb-1">Kota</label>
-        <input type="text" name="kota" class="w-full border px-3 py-2 @error('kota') border-red-500 @enderror" value="{{ old('kota', $supplier->kota) }}">
-        @error('kota')
-            <p class="text-red-500 text-xs italic">{{ $message }}</p>
-        @enderror
-    </div>
-    <div class="mb-4">
-        <label class="block mb-1">Telepon</label>
-        <input type="text" name="telepon" class="w-full border px-3 py-2 @error('telepon') border-red-500 @enderror" value="{{ old('telepon', $supplier->telepon) }}">
-        @error('telepon')
-            <p class="text-red-500 text-xs italic">{{ $message }}</p>
-        @enderror
-    </div>
-    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Update</button>
-    <a href="{{ route('supplier.index') }}" class="bg-gray-400 text-white px-4 py-2 rounded">Batal</a>
-</form>
+
 @endsection
-

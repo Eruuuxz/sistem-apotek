@@ -11,7 +11,7 @@ class PenjualanDetail extends Model
     use HasFactory;
 
     protected $table = 'penjualan_detail';
-    
+
     protected $fillable = [
         'penjualan_id',
         'obat_id',

@@ -3,11 +3,9 @@
 @section('title', 'Dashboard')
 
 @section('content')
-    <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
-
     <!-- Ringkasan Data -->
-    <div class="grid grid-cols-5 gap-4 mb-8">
-        <!-- Total Obat -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <!-- Obat Tersedia -->
         <a href="{{ route('obat.index', ['filter' => 'tersedia']) }}"
             class="bg-white p-4 shadow rounded hover:shadow-md transition block">
             <h2 class="text-lg font-semibold text-gray-600">Obat Tersedia</h2>
@@ -30,99 +28,112 @@
 
         <!-- Stok Menipis -->
         <a href="{{ route('obat.index', ['filter' => 'menipis']) }}"
-            class="bg-white p-4 shadow rounded hover:bg-yellow-50 transition">
-            <h2 class="text-lg font-semibold text-gray-600">Stok Menipis</h2>
-            <p class="text-3xl font-bold text-yellow-600 mt-2">{{ $stokMenipis }}</p>
+            class="bg-white p-4 shadow rounded hover:bg-yellow-50 transition flex items-center justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-600">Stok Menipis</h2>
+                <p class="text-3xl font-bold text-yellow-600 mt-2">{{ $stokMenipis }}</p>
+            </div>
+            @if($stokMenipis > 0)
+                <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-semibold">Perhatian</span>
+            @endif
         </a>
 
         <!-- Stok Habis -->
         <a href="{{ route('obat.index', ['filter' => 'habis']) }}"
-            class="bg-white p-4 shadow rounded hover:bg-red-50 transition">
-            <h2 class="text-lg font-semibold text-gray-600">Stok Habis</h2>
-            <p class="text-3xl font-bold text-red-600 mt-2">{{ $stokHabis }}</p>
+            class="bg-white p-4 shadow rounded hover:bg-red-50 transition flex items-center justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-600">Stok Habis</h2>
+                <p class="text-3xl font-bold text-red-600 mt-2">{{ $stokHabis }}</p>
+            </div>
+            @if($stokHabis > 0)
+                <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-semibold">Segera Order</span>
+            @endif
         </a>
     </div>
 
     <!-- Grafik -->
-    <div class="grid grid-cols-2 gap-4">
-        <!-- Grafik Penjualan -->
-        <div class="bg-white p-6 shadow rounded">
-            <h2 class="text-lg font-semibold text-gray-600 mb-4">Grafik Penjualan Bulanan</h2>
-            <canvas id="penjualanChart" height="100"></canvas>
-        </div>
-
-        <!-- Grafik Stok Menipis -->
-        <div class="bg-white p-4 shadow rounded">
-            <h2 class="text-lg font-semibold text-gray-600">Obat Terlaris</h2>
-            <canvas id="obatTerlarisChart" height="200"></canvas>
-        </div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Grafik Penjualan Harian -->
+    <div class="lg:col-span-2 bg-white p-4 shadow rounded">
+        <h2 class="text-lg font-semibold text-gray-600 mb-4">Grafik Penjualan 7 Hari Terakhir</h2>
+        <canvas id="penjualanHarianChart" height="120"></canvas>
     </div>
+
+    <!-- Grafik Obat Terlaris -->
+    <div class="bg-white p-4 shadow rounded">
+        <h2 class="text-lg font-semibold text-gray-600 mb-4">Obat Terlaris</h2>
+        <canvas id="obatTerlarisChart" height="220"></canvas>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // data dari controller → ke JS
-        const penjualanSeries = @json($penjualanBulanan->pluck('total'));
-        const penjualanLabels = @json($penjualanBulanan->pluck('ym')); // format YYYY-MM
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Data penjualan harian
+    const harianLabels = @json($penjualanHarian->pluck('tgl')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d M')));
+    const harianData   = @json($penjualanHarian->pluck('total'));
 
-        // Chart Penjualan Bulanan
-        const ctxPenjualan = document.getElementById('penjualanChart').getContext('2d');
-        new Chart(ctxPenjualan, {
-            type: 'bar',
-            data: {
-                labels: penjualanLabels,
-                datasets: [{
-                    label: 'Penjualan (Rp)',
-                    data: penjualanSeries,
-                    backgroundColor: 'rgba(37, 99, 235, 0.7)'
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: v => 'Rp ' + Number(v).toLocaleString('id-ID')
-                        }
-                    }
+    const ctxHarian = document.getElementById('penjualanHarianChart').getContext('2d');
+    const gradientHarian = ctxHarian.createLinearGradient(0, 0, 0, 400);
+    gradientHarian.addColorStop(0, 'rgba(37, 99, 235, 0.8)');
+    gradientHarian.addColorStop(1, 'rgba(37, 99, 235, 0.1)');
+
+    new Chart(ctxHarian, {
+        type: 'line',
+        data: {
+            labels: harianLabels,
+            datasets: [{
+                label: 'Penjualan (Rp)',
+                data: harianData,
+                fill: true,
+                backgroundColor: gradientHarian,
+                borderColor: 'rgba(37, 99, 235, 1)',
+                tension: 0.3,
+                borderWidth: 2,
+                pointRadius: 4,
+                pointBackgroundColor: 'rgba(37, 99, 235, 1)',
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => 'Rp ' + Number(v).toLocaleString('id-ID') }
                 }
             }
-        });
+        }
+    });
 
-        const ctxObatTerlaris = document.getElementById('obatTerlarisChart').getContext('2d');
-        new Chart(ctxObatTerlaris, {
-            type: 'bar', // bisa ganti 'pie' kalau mau
-            data: {
-                labels: @json($obatTerlaris->pluck('nama')),
-                datasets: [{
-                    label: 'Jumlah Terjual',
-                    data: @json($obatTerlaris->pluck('total_terjual')),
-                    backgroundColor: [
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 99, 132, 0.7)',
-                        'rgba(255, 206, 86, 0.7)',
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(153, 102, 255, 0.7)'
-                    ],
-                    borderColor: 'rgba(0,0,0,0.1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 }
-                    }
-                }
-            }
-        });
-    </script>
+    // Data obat terlaris
+    const obatLabels = @json($obatTerlaris->pluck('nama'));
+    const obatData   = @json($obatTerlaris->pluck('total_terjual'));
+
+    const ctxObat = document.getElementById('obatTerlarisChart').getContext('2d');
+    const gradientObat = ctxObat.createLinearGradient(0, 0, 0, 400);
+    gradientObat.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
+    gradientObat.addColorStop(1, 'rgba(54, 162, 235, 0.3)');
+
+    new Chart(ctxObat, {
+        type: 'bar',
+        data: {
+            labels: obatLabels,
+            datasets: [{
+                label: 'Jumlah Terjual',
+                data: obatData,
+                backgroundColor: gradientObat,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+</script>
 @endpush
