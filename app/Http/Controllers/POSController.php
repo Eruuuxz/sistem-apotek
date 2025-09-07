@@ -23,20 +23,19 @@ class POSController extends Controller
     {
         $keyword = $request->get('q');
 
-        $obat = Obat::where('nama', 'like', $keyword . '%') // cari awalan huruf
-            ->orWhere('kode', 'like', $keyword . '%') // bisa juga berdasarkan kode
+        $obat = Obat::where('nama', 'like', '%'. $keyword . '%') // cari di mana saja dalam nama
+            ->orWhere('kode', 'like', '%'. $keyword . '%') // // cari di mana saja dalam kode
             ->orderBy('nama')
             ->get(['id', 'kode', 'nama', 'harga_jual', 'stok']);
 
         return response()->json($obat);
     }
 
-
     public function add(Request $r)
     {
         $r->validate(['kode' => 'required']);
 
-        $o = Obat::where('kode', $r->kode)->first();
+        $o = Obat::where('kode', $r->kode)->where('stok', '>', 0)->orderBy('expired_date', 'asc')->first();
 
         if (!$o) {
             return back()->with('error', 'Obat tidak ditemukan');
