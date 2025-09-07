@@ -79,16 +79,26 @@ Route::middleware(['auth'])->group(function () {
 
     // Route untuk Kasir (hanya bisa diakses oleh role 'kasir')
     Route::middleware('role:kasir')->group(function () {
-        // POS (Point of Sale)
-        Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
-        Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
-        Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
-        Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
-        Route::post('/pos/checkout', [PenjualanController::class, 'checkout'])->name('pos.checkout');
-        Route::get('/penjualan/success/{id}', [PenjualanController::class, 'success'])->name('penjualan.success');
-        Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
-        Route::get('/kasir/riwayat', [PenjualanController::class, 'riwayatKasir'])->name('kasir.riwayat');
-        Route::get('/penjualan/{id}', [PenjualanController::class, 'show'])->name('penjualan.show');
+// POS
+Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
+Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
+Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
+Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
+Route::post('/pos/checkout', [PenjualanController::class, 'checkout'])->name('pos.checkout');
+Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
+
+// Print Options
+Route::get('/pos/print/{id}', [PenjualanController::class, 'printOptions'])->name('pos.print.options');
+Route::get('/pos/print/faktur/{id}', [PenjualanController::class, 'printFaktur'])->name('pos.print.faktur'); // struk.blade.php
+Route::get('/pos/print/kwitansi/{id}', [PenjualanController::class, 'printKwitansi'])->name('pos.print.kwitansi');
+Route::get('/pos/print/struk-pdf/{id}', [PenjualanController::class, 'strukPdf'])->name('pos.print.struk.pdf');
+
+// Riwayat & Success
+Route::get('/kasir/riwayat', [PenjualanController::class, 'riwayatKasir'])->name('kasir.riwayat');
+Route::get('/kasir/success/{id}', [PenjualanController::class, 'success'])->name('kasir.success');
+Route::get('/penjualan/{id}', [PenjualanController::class, 'show'])->name('penjualan.show');
+
+
     });
 
     // Riwayat Penjualan (bisa diakses oleh role 'kasir' dan 'admin')

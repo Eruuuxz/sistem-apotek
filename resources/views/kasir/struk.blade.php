@@ -94,21 +94,33 @@
 </head>
 
 <body onload="window.print()">
-    <div class="invoice-container">
-        <div class="header">
-            <h3>STRUK PENJUALAN</h3>
-        </div>
+<div class="header" style="display: flex; justify-content: space-between; align-items: center; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:10px;">
+    <!-- Logo -->
+    <div style="width: 20%;">
+        <img src="{{ public_path('images/logo-apotek.png') }}" alt="Logo Apotek" style="max-width:70px;">
+    </div>
+
+    <!-- Judul -->
+    <div style="text-align: center; flex: 1;">
+        <h2 style="margin:0; font-size:18px; font-weight:bold; text-transform:uppercase;">
+            FAKTUR PENJUALAN
+        </h2>
+    </div>
+
+    <!-- Info Toko -->
+    <div style="width: 40%; text-align:right; font-size:11px;">
+        <strong>Apotek LIZ Farma 02</strong><br>
+        JL. RAYA BATUJAJAR NO. 321 RT.001 RW.005<br>
+        KEL. BATUJAJAR BARAT KEC. BATUJAJAR
+    </div>
+</div>
+
 
         <div class="details-section">
             <div class="left-details">
                 <div>No Faktur: <strong>{{ $penjualan->no_nota }}</strong></div>
                 <div>Kasir: {{ $penjualan->kasir->name ?? '-' }}</div>
                 <div>Tgl: {{ \Carbon\Carbon::parse($penjualan->tanggal)->format('d-m-Y H:i:s') }}</div> {{-- Format tanggal dengan jam --}}
-            </div>
-            <div class="right-details">
-                <div>Apotek LIZ Farma 02</div>
-                <div>JL. RAYA BATUJAJAR NO. 321 RT.001 RW.005</div>
-                <div>KEL. BATUJAJAR BARAT KEC. BATUJAJAR</div>
             </div>
         </div>
 

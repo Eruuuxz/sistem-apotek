@@ -9,10 +9,6 @@
         <p class="mb-6">Total: <strong>Rp {{ number_format($penjualan->total, 0, ',', '.') }}</strong></p>
 
         <div class="flex justify-center gap-4">
-            <a href="{{ route('penjualan.struk.pdf', $penjualan->id) }}" target="_blank"
-                class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">
-                Cetak Struk
-            </a>
             <a href="{{ route('pos.index') }}" class="bg-gray-500 text-white px-4 py-2 rounded shadow hover:bg-gray-600">
                 Kembali ke POS
             </a>

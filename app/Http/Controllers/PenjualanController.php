@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon; // Tambahkan ini
+use Carbon\Carbon;
 
 class PenjualanController extends Controller
 {
@@ -21,23 +21,25 @@ class PenjualanController extends Controller
     public function addToCart(Request $r)
     {
         $obat = Obat::where('kode', $r->kode)->first();
-        if (!$obat)
+        if (!$obat) {
             return back()->with('error', 'Obat tidak ditemukan');
+        }
 
         $cart = session('cart', []);
-        $key = array_search($obat->kode, array_column($cart, 'kode'));
-        if ($key !== false) {
-            $cart[$key]['qty'] += 1;
+
+        if (isset($cart[$obat->kode])) {
+            $cart[$obat->kode]['qty'] += 1;
         } else {
-            $cart[$o->kode] = [ // Perbaiki ini, harusnya $o->kode
-                'id' => $obat->id,
-                'kode' => $obat->kode,
-                'nama' => $obat->nama,
+            $cart[$obat->kode] = [
+                'id'    => $obat->id,
+                'kode'  => $obat->kode,
+                'nama'  => $obat->nama,
                 'harga' => $obat->harga_jual,
-                'qty' => 1,
-                'stok' => $obat->stok // Simpan stok saat ini untuk referensi
+                'qty'   => 1,
+                'stok'  => $obat->stok,
             ];
         }
+
         session(['cart' => $cart]);
         return back();
     }
@@ -57,57 +59,50 @@ class PenjualanController extends Controller
     public function removeCart(Request $r)
     {
         $cart = session('cart', []);
-        $cart = array_filter($cart, fn($item) => $item['kode'] != $r->kode);
-        session(['cart' => array_values($cart)]);
+        unset($cart[$r->kode]);
+        session(['cart' => $cart]);
         return back();
     }
 
     public function checkout(Request $r)
     {
         $cart = session('cart', []);
-        if (empty($cart))
+        if (empty($cart)) {
             return back()->with('error', 'Keranjang kosong');
-
-        // Pastikan total dihitung sebagai float/decimal
-        $total = collect($cart)->sum(fn($i) => (float)$i['harga'] * (int)$i['qty']);
-
-        // Pastikan bayar dikonversi ke float/decimal dari input
-        $bayar = (float)$r->bayar;
-
-        if($bayar < $total) {
-            // Menggunakan number_format untuk pesan error yang lebih jelas
-            $kekurangan = $total - $bayar;
-            return back()->with('error','Pembayaran kurang Rp ' . number_format($kekurangan, 0, ',', '.'));
         }
 
-        DB::transaction(function() use ($cart, $r, $total, $bayar, &$penjualan){
-            // Generate no_nota unik
-            $no = 'PJ-'.date('Ymd').'-'.str_pad(Penjualan::whereDate('tanggal', date('Y-m-d'))->count()+1,3,'0',STR_PAD_LEFT);
-            $kembalian = $bayar - $total; // Perhitungan kembalian
+        $total = collect($cart)->sum(fn($i) => (float)$i['harga'] * (int)$i['qty']);
+        $bayar = (float)$r->bayar;
 
-            // Simpan Penjualan
+        if ($bayar < $total) {
+            $kekurangan = $total - $bayar;
+            return back()->with('error', 'Pembayaran kurang Rp ' . number_format($kekurangan, 0, ',', '.'));
+        }
+
+        DB::transaction(function () use ($cart, $total, $bayar, &$penjualan) {
+            $no = 'PJ-' . date('Ymd') . '-' . str_pad(Penjualan::whereDate('tanggal', date('Y-m-d'))->count() + 1, 3, '0', STR_PAD_LEFT);
+            $kembalian = $bayar - $total;
+
             $penjualan = Penjualan::create([
-                'no_nota' => $no,
-                'tanggal' => Carbon::now()->toDateTimeString(), // Menggunakan waktu saat ini
-                'user_id' => Auth::id(),
-                'total' => $total,
-                'bayar' => $bayar,
-                'kembalian' => $kembalian
+                'no_nota'   => $no,
+                'tanggal'   => Carbon::now()->toDateTimeString(),
+                'user_id'   => Auth::id(),
+                'total'     => $total,
+                'bayar'     => $bayar,
+                'kembalian' => $kembalian,
             ]);
 
-            // Simpan detail penjualan & update stok
-            foreach($cart as $item){
-                // Pastikan id obat ada, kalau tidak ambil dari kode
+            foreach ($cart as $item) {
                 $obat_id = $item['id'] ?? Obat::where('kode', $item['kode'])->value('id');
-                $obat = Obat::find($obat_id); // Ambil objek obat untuk mendapatkan harga_dasar
+                $obat    = Obat::find($obat_id);
 
                 PenjualanDetail::create([
                     'penjualan_id' => $penjualan->id,
-                    'obat_id' => $obat_id,
-                    'qty' => (int)$item['qty'], // Pastikan qty adalah integer
-                    'harga' => (float)$item['harga'], // Pastikan harga adalah float
-                    'hpp' => (float)$obat->harga_dasar,
-                    'subtotal' => (float)$item['qty'] * (float)$item['harga'] // Pastikan subtotal dihitung dengan float
+                    'obat_id'      => $obat_id,
+                    'qty'          => (int)$item['qty'],
+                    'harga'        => (float)$item['harga'],
+                    'hpp'          => (float)($obat->harga_dasar ?? 0),
+                    'subtotal'     => (float)$item['qty'] * (float)$item['harga'],
                 ]);
 
                 if ($obat_id) {
@@ -118,35 +113,57 @@ class PenjualanController extends Controller
 
         session()->forget('cart');
 
-        return redirect()->route('penjualan.struk', $penjualan->id);
+        return redirect()->route('pos.print.options', $penjualan->id);
     }
 
-    public function struk($id)
+    // --- Print Options ---
+    public function printOptions($id)
+    {
+        $penjualan = Penjualan::findOrFail($id);
+        return view('kasir.print-options', compact('penjualan'));
+    }
+
+    public function printFaktur($id)
     {
         $penjualan = Penjualan::with('details.obat', 'kasir')->findOrFail($id);
         return view('kasir.struk', compact('penjualan'));
     }
 
+    public function printKwitansi($id)
+    {
+        $penjualan = Penjualan::with('kasir')->findOrFail($id);
+        return view('kasir.kwitansi', compact('penjualan'));
+    }
+
+    // --- Struk PDF ---
     public function strukPdf($id)
     {
         $penjualan = Penjualan::with('details.obat', 'kasir')->findOrFail($id);
         $pdf = Pdf::loadView('kasir.struk', compact('penjualan'))->setPaper('A6', 'landscape');
         return $pdf->stream('faktur-' . $penjualan->no_nota . '.pdf');
     }
+
+    // --- Riwayat & Detail ---
     public function riwayatKasir()
     {
         $data = Penjualan::with('details.obat')
-            ->where('user_id', Auth::id()) // hanya penjualan kasir yang login
+            ->where('user_id', Auth::id())
             ->orderBy('tanggal', 'desc')
             ->paginate(10);
 
         return view('kasir.riwayat', compact('data'));
     }
+
     public function show($id)
     {
-        // Ambil penjualan beserta detail dan kasir
         $p = Penjualan::with('details.obat', 'kasir')->findOrFail($id);
-
         return view('kasir.detail', compact('p'));
+    }
+
+    // --- Success Page ---
+    public function success($id)
+    {
+        $penjualan = Penjualan::with('kasir')->findOrFail($id);
+        return view('kasir.success', compact('penjualan'));
     }
 }
