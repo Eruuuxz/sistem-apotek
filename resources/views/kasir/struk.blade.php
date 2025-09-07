@@ -146,6 +146,19 @@
             <div>Kasir: {{ $penjualan->kasir->name ?? '-' }}</div>
             <div>Tgl: {{ \Carbon\Carbon::parse($penjualan->tanggal)->format('d-m-Y H:i:s') }}</div>
         </div>
+        {{-- Informasi Pelanggan --}}
+        <div class="right-details">
+            @if($penjualan->nama_pelanggan)
+                <div>Pelanggan: <strong>{{ $penjualan->nama_pelanggan }}</strong></div>
+            @endif
+            @if($penjualan->alamat_pelanggan)
+                <div>Alamat: {{ $penjualan->alamat_pelanggan }}</div>
+            @endif
+            @if($penjualan->telepon_pelanggan)
+                <div>Telp: {{ $penjualan->telepon_pelanggan }}</div>
+            @endif
+        </div>
+        {{-- End Informasi Pelanggan --}}
     </div>
 
     <table>

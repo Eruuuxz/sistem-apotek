@@ -16,11 +16,13 @@ class Penjualan extends Model
     protected $fillable = [
         'no_nota',
         'tanggal',
-        'kasir_nama',
         'user_id',
         'total',
         'bayar',
         'kembalian',
+        'nama_pelanggan',    
+        'alamat_pelanggan',  
+        'telepon_pelanggan', 
     ];
 
     protected $casts = [

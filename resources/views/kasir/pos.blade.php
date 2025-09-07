@@ -1,3 +1,4 @@
+{{-- File: /views/kasir/pos.blade.php --}}
 @extends('layouts.kasir')
 
 @section('title', 'POS Kasir')
@@ -97,6 +98,29 @@
                     <input type="text" name="kasir_nama" class="w-full border rounded-lg px-3 py-2 bg-gray-100"
                         value="{{ Auth::user()->name }}" readonly>
                 </div>
+                {{-- Input data pelanggan --}}
+                <div>
+                    <label for="nama_pelanggan" class="block text-sm font-medium text-gray-700">Nama Pelanggan <span class="text-red-600">*</span></label>
+                    <input type="text" id="nama_pelanggan" name="nama_pelanggan" class="w-full border rounded-lg px-3 py-2" placeholder="Nama Pelanggan" required value="{{ old('nama_pelanggan') }}">
+                    @error('nama_pelanggan')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label for="alamat_pelanggan" class="block text-sm font-medium text-gray-700">Alamat Pelanggan (Opsional)</label>
+                    <textarea id="alamat_pelanggan" name="alamat_pelanggan" rows="3" class="w-full border rounded-lg px-3 py-2" placeholder="Alamat Pelanggan">{{ old('alamat_pelanggan') }}</textarea>
+                    @error('alamat_pelanggan')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label for="telepon_pelanggan" class="block text-sm font-medium text-gray-700">No. Telepon Pelanggan (Opsional, harus unik jika diisi)</label>
+                    <input type="text" id="telepon_pelanggan" name="telepon_pelanggan" class="w-full border rounded-lg px-3 py-2" placeholder="No. Telepon Pelanggan" value="{{ old('telepon_pelanggan') }}">
+                    @error('telepon_pelanggan')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                {{-- End Input data pelanggan --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Total</label>
                     <input type="text" id="total"

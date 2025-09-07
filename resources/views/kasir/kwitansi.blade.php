@@ -122,8 +122,23 @@
                 <span>No:</span> {{ $penjualan->no_nota }}
             </div>
             <div class="field">
-                <span>Telah terima dari:</span> ....................................
+                <span>Telah terima dari:</span>
+                @if($penjualan->nama_pelanggan)
+                    {{ $penjualan->nama_pelanggan }}
+                @else
+                    ....................................
+                @endif
             </div>
+            @if($penjualan->alamat_pelanggan)
+                <div class="field">
+                    <span>Alamat:</span> {{ $penjualan->alamat_pelanggan }}
+                </div>
+            @endif
+            @if($penjualan->telepon_pelanggan)
+                <div class="field">
+                    <span>Telp:</span> {{ $penjualan->telepon_pelanggan }}
+                </div>
+            @endif
             <div class="field">
                 <span>Uang sejumlah:</span> Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}
             </div>

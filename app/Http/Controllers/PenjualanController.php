@@ -66,6 +66,14 @@ class PenjualanController extends Controller
 
     public function checkout(Request $r)
     {
+        $validated = $r->validate([
+            'nama_pelanggan'    => 'required|string|max:255',
+            'alamat_pelanggan'  => 'nullable|string|max:1000',
+            'telepon_pelanggan' => 'nullable|string|max:20',
+            'bayar'             => 'required|numeric|min:0',
+            'total_hidden'      => 'required|numeric|min:0',
+        ]);
+
         $cart = session('cart', []);
         if (empty($cart)) {
             return back()->with('error', 'Keranjang kosong');
@@ -79,17 +87,20 @@ class PenjualanController extends Controller
             return back()->with('error', 'Pembayaran kurang Rp ' . number_format($kekurangan, 0, ',', '.'));
         }
 
-        DB::transaction(function () use ($cart, $total, $bayar, &$penjualan) {
+        DB::transaction(function () use ($cart, $total, $bayar, $r, &$penjualan) {
             $no = 'PJ-' . date('Ymd') . '-' . str_pad(Penjualan::whereDate('tanggal', date('Y-m-d'))->count() + 1, 3, '0', STR_PAD_LEFT);
             $kembalian = $bayar - $total;
 
             $penjualan = Penjualan::create([
-                'no_nota'   => $no,
-                'tanggal'   => Carbon::now()->toDateTimeString(),
-                'user_id'   => Auth::id(),
-                'total'     => $total,
-                'bayar'     => $bayar,
-                'kembalian' => $kembalian,
+                'no_nota'           => $no,
+                'tanggal'           => \Carbon\Carbon::now()->toDateTimeString(),
+                'user_id'           => \Auth::id(),
+                'total'             => $total,
+                'bayar'             => $bayar,
+                'kembalian'         => $kembalian,
+                'nama_pelanggan'    => $r->nama_pelanggan,
+                'alamat_pelanggan'  => $r->alamat_pelanggan,
+                'telepon_pelanggan' => $r->telepon_pelanggan,
             ]);
 
             foreach ($cart as $item) {
