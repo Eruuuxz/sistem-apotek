@@ -31,7 +31,6 @@ class POSController extends Controller
         return response()->json($obat);
     }
 
-
     public function add(Request $r)
     {
         $r->validate(['kode' => 'required']);
