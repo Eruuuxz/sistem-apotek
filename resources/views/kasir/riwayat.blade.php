@@ -29,11 +29,12 @@
                         <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('Y-m-d H:i:s') }}</td> {{-- Tambahkan format jam --}}
                         <td class="border px-4 py-2">{{ $row->kasir->name ?? '-' }}</td>
                         <td class="border px-4 py-2 text-right">Rp {{ number_format($row->total, 0, ',', '.') }}</td>
-                        <td class="border px-4 py-2 text-center flex justify-center gap-2">
-                            <a href="{{ route('penjualan.show', $row->id) }}" class="text-blue-500 hover:underline">Detail</a>
-                            <span class="text-gray-300">|</span>
-                            <a href="{{ route('penjualan.struk', $row->id) }}" class="text-green-600 hover:underline">Cetak</a>
-                        </td>
+<td class="border px-4 py-2 text-center flex justify-center gap-2">
+    <a href="{{ route('penjualan.show', $row->id) }}" class="text-blue-500 hover:underline">Detail</a>
+    <span class="text-gray-300">|</span>
+    <a href="{{ route('pos.print.faktur', $row->id) }}" class="text-green-600 hover:underline">Cetak</a>
+</td>
+
                     </tr>
                 @empty
                     <tr>

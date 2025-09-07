@@ -50,7 +50,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/laporan/profit', [LaporanController::class, 'profitBulanan'])->name('profit');
         Route::get('/supplier/{id}/obat', [PembelianController::class, 'getObatBySupplier']);
         Route::get('pembelian/faktur/{pembelian}', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
-        Route::get('pembelian/pdf/{pembelian}', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
+        Route::get('pembelian/pdf/{pembelian}', [PembelianController::class, 'pdf'])->name('pembelian.faktur');
 
         Route::resource('retur', ReturController::class);
         Route::get('retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');

@@ -55,7 +55,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Grafik Penjualan Harian -->
         <div class="lg:col-span-2 bg-white p-4 shadow rounded">
-            <h2 class="text-lg font-semibold text-gray-600 mb-4">Grafik Penjualan 7 Hari Terakhir</h2>
+            <h2 class="text-lg font-semibold text-gray-600 mb-4">Penjualan 7 Hari Terakhir</h2>
             <canvas id="penjualanHarianChart" height="120"></canvas>
         </div>
 

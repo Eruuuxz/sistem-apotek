@@ -251,27 +251,40 @@ class LaporanController extends Controller
     }
 
     public function profitBulanan(Request $request)
-    {
-        $periode = $request->input('periode', now()->format('Y-m'));
-        [$tahun, $bulan] = explode('-', $periode);
+{
+    $periode = $request->input('periode', now()->format('Y-m'));
+    [$tahun, $bulan] = explode('-', $periode);
 
-        // Penjualan
-        $penjualan = Penjualan::with('details.obat')
-            ->whereYear('tanggal', $tahun)
-            ->whereMonth('tanggal', $bulan)
-            ->get();
+    // Penjualan
+    $penjualan = Penjualan::with('details.obat')
+        ->whereYear('tanggal', $tahun)
+        ->whereMonth('tanggal', $bulan)
+        ->get();
 
-        $totalPenjualan = $penjualan->sum('total');
-        $totalModal = $penjualan->flatMap->details->sum(fn($d) => $d->qty * $d->obat->harga_dasar);
-        $totalPengeluaran = Pembelian::whereYear('tanggal', $tahun)
-            ->whereMonth('tanggal', $bulan)
-            ->sum('total');
-        $keuntungan = $totalPenjualan - $totalModal - $totalPengeluaran;
-        return view('laporan.profit', compact(
-            'penjualan', 'bulan', 'tahun',
-            'totalPenjualan', 'totalModal', 'keuntungan',
-            'totalPengeluaran'
-        ));
-    }
+    $totalPenjualan = $penjualan->sum('total');
+    $totalModal = $penjualan->flatMap->details->sum(fn($d) => $d->qty * $d->obat->harga_dasar);
+    $totalPengeluaran = Pembelian::whereYear('tanggal', $tahun)
+        ->whereMonth('tanggal', $bulan)
+        ->sum('total');
+    $keuntungan = $totalPenjualan - $totalModal;
+
+    // Hitung bulan sebelumnya & berikutnya
+    $current = Carbon::create($tahun, $bulan, 1);
+    $prevMonth = [
+        'bulan' => $current->copy()->subMonth()->month,
+        'tahun' => $current->copy()->subMonth()->year,
+    ];
+    $nextMonth = [
+        'bulan' => $current->copy()->addMonth()->month,
+        'tahun' => $current->copy()->addMonth()->year,
+    ];
+
+    return view('laporan.profit', compact(
+        'penjualan', 'bulan', 'tahun',
+        'totalPenjualan', 'totalModal', 'keuntungan',
+        'totalPengeluaran', 'prevMonth', 'nextMonth'
+    ));
+}
+
 
 }

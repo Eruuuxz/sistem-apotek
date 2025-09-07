@@ -16,18 +16,25 @@ class DashboardController extends Controller
         $stokMenipis = Obat::whereBetween('stok', [1, 10])->count();
         $stokHabis = Obat::where('stok', 0)->count();
 
+        //penjualan 7 hari terakhir
+        $startDate = Carbon::now()->subDays(6)->startOfDay(); // 6 hari lalu + hari ini = 7 hari
+        $endDate = Carbon::now()->endOfDay();
 
-
-
-        $penjualanHarian = Penjualan::selectRaw("DATE(tanggal) as tgl, SUM(total) as total")
+        $penjualanHarian = Penjualan::selectRaw('DATE(tanggal) as tgl, SUM(total) as total')
+            ->whereBetween('tanggal', [$startDate, $endDate])
             ->groupBy('tgl')
             ->orderBy('tgl', 'asc')
-            ->take(7) // Ambil 7 hari terakhir
             ->get();
 
-        // Obat terlaris (top 5)
+            //obat terlaris bulan ini
+        $bulanIni = Carbon::now()->month;
+        $tahunIni = Carbon::now()->year;
+
         $obatTerlaris = DB::table('penjualan_detail')
+            ->join('penjualan', 'penjualan_detail.penjualan_id', '=', 'penjualan.id')
             ->join('obat', 'penjualan_detail.obat_id', '=', 'obat.id')
+            ->whereYear('penjualan.tanggal', $tahunIni)
+            ->whereMonth('penjualan.tanggal', $bulanIni)
             ->select('obat.nama', DB::raw('SUM(penjualan_detail.qty) as total_terjual'))
             ->groupBy('obat.nama')
             ->orderByDesc('total_terjual')

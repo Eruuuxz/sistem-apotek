@@ -8,98 +8,131 @@
     <style>
         @page {
             size: A5 landscape;
-            margin: 15px;
+            margin: 10mm;
         }
 
         body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
+            font-family: "Times New Roman", serif;
+            font-size: 13px;
             margin: 0;
             padding: 0;
         }
 
         .kwitansi-container {
             border: 2px solid #000;
-            padding: 10px;
             display: flex;
-            justify-content: space-between;
-            align-items: stretch;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
         }
 
-        .left-section {
-            width: 25%;
-            border-right: 2px solid #000;
-            text-align: center;
-            padding: 10px;
-        }
+       .left-section {
+    width: 20%;
+    border-right: 2px solid #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    box-sizing: border-box;
+}
 
-        .left-section img {
-            max-width: 90px;
-            margin-top: 15px;
-        }
+.left-box {
+    border: 2px solid #000;
+    border-radius: 15px;
+    padding: 5px;
+    flex: 1;                /* biar panjang ke atas-bawah */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-        .left-section .apotek {
-            font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
+.vertical-text {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1.5;
+}
 
+.logo img {
+    max-width: 70px;
+    margin-top: 10px;
+}
+
+
+        /* Bagian kanan */
         .right-section {
-            width: 75%;
-            padding: 10px;
+            width: 80%;
+            padding: 15px 20px;
+            box-sizing: border-box;
+            border: 2px solid #000;
+            border-radius: 20px;
+            margin: 10px;
         }
 
         .field {
-            margin: 10px 0;
+            margin: 8px 0;
+            font-size: 13px;
         }
 
         .field span {
             display: inline-block;
-            min-width: 120px;
+            min-width: 150px;
+            font-weight: bold;
         }
 
         .amount-box {
             border: 2px solid #000;
-            padding: 20px;
-            width: 200px;
+            padding: 12px 20px;
+            display: inline-block;
+            min-width: 200px;
             text-align: center;
             font-weight: bold;
-            font-size: 14px;
-            margin-top: 20px;
-        }
-
-        .footer {
-            margin-top: 40px;
-            text-align: right;
-            font-size: 12px;
+            font-size: 16px;
+            margin-top: 25px;
+            border-radius: 12px;
         }
     </style>
 </head>
 
 <body onload="window.print()">
     <div class="kwitansi-container">
-        <!-- Bagian kiri: Logo + info apotek -->
-        <div class="left-section">
-            <div class="apotek">APOTEK LIZ FARMA 02</div>
-            <div>JL. RAYA BATUJAJAR NO. 321<br>RT.001 RW.005<br>
-                KEL. BATUJAJAR BARAT, KEC. BATUJAJAR</div>
-            <img src="{{ public_path('images/logo-apotek.png') }}" alt="Logo Apotek">
+        <!-- Bagian kiri -->
+<!-- Bagian kiri -->
+<div class="left-section">
+    <div class="left-box">
+        <div class="vertical-text">
+            APOTEK LIZ FARMA 02<br>
+            JL. RAYA BATUJAJAR NO. 321<br>
+            RT.001 RW.005<br>
+            KEL. BATUJAJAR BARAT, KEC. BATUJAJAR
         </div>
+    </div>
+    <div class="logo">
+        <img src="{{ asset('images/ilus.jpg') }}" alt="Logo Apotek">
+    </div>
+</div>
 
-        <!-- Bagian kanan: isi kwitansi -->
+
+        <!-- Bagian kanan -->
         <div class="right-section">
-            <div class="field"><span>No:</span> <strong>{{ $kwitansi->nomor ?? '-' }}</strong></div>
-            <div class="field"><span>Telah terima dari:</span> {{ $kwitansi->nama ?? '...................................' }}</div>
-            <div class="field"><span>Uang sejumlah:</span> Rp {{ number_format($kwitansi->jumlah ?? 0, 0, ',', '.') }}</div>
-            <div class="field"><span>Untuk pembayaran:</span> {{ $kwitansi->keterangan ?? '...................................' }}</div>
-
-            <div class="amount-box">
-                Rp {{ number_format($kwitansi->jumlah ?? 0, 0, ',', '.') }}
+            <div class="field">
+                <span>No:</span> {{ $penjualan->no_nota }}
+            </div>
+            <div class="field">
+                <span>Telah terima dari:</span> ....................................
+            </div>
+            <div class="field">
+                <span>Uang sejumlah:</span> Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}
+            </div>
+            <div class="field">
+                <span>Untuk pembayaran:</span> ....................................
             </div>
 
-            <div class="footer">
-                Cimareme, {{ \Carbon\Carbon::now()->format('d-m-Y') }} <br><br><br>
-                (________________________)
+            <div class="amount-box">
+                Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}
             </div>
         </div>
     </div>

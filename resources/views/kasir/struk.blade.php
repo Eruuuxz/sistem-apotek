@@ -12,7 +12,7 @@
         }
 
         body {
-            font-family: Arial;
+            font-family: Arial, sans-serif;
             font-size: 11px;
             margin: 0;
             padding: 0;
@@ -23,19 +23,45 @@
             padding: 10px;
         }
 
+        /* === HEADER === */
         .header {
-            text-align: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
-        }
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #000;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
 
-        .header h3 {
-            margin: 0;
-            font-size: 16px;
-            text-transform: uppercase;
-        }
+.header-logo {
+    width: 20%;
+    text-align: left;
+}
 
+.header-logo img {
+    max-width: 70px;
+}
+
+.header-title {
+    width: 40%;
+    text-align: center;
+}
+
+.header-title h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.header-info {
+    width: 40%;
+    text-align: right;
+    font-size: 11px;
+}
+
+
+        /* === DETAIL === */
         .details-section {
             display: flex;
             justify-content: space-between;
@@ -94,21 +120,19 @@
 </head>
 
 <body onload="window.print()">
-<div class="header" style="display: flex; justify-content: space-between; align-items: center; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:10px;">
+    <div class="header">
     <!-- Logo -->
-    <div style="width: 20%;">
-        <img src="{{ public_path('images/logo-apotek.png') }}" alt="Logo Apotek" style="max-width:70px;">
+    <div class="header-logo">
+        <img src="{{ asset('images/logo-apotek.png') }}" alt="Logo Apotek">
     </div>
 
     <!-- Judul -->
-    <div style="text-align: center; flex: 1;">
-        <h2 style="margin:0; font-size:18px; font-weight:bold; text-transform:uppercase;">
-            FAKTUR PENJUALAN
-        </h2>
+    <div class="header-title">
+        <h2>FAKTUR PENJUALAN</h2>
     </div>
 
     <!-- Info Toko -->
-    <div style="width: 40%; text-align:right; font-size:11px;">
+    <div class="header-info">
         <strong>Apotek LIZ Farma 02</strong><br>
         JL. RAYA BATUJAJAR NO. 321 RT.001 RW.005<br>
         KEL. BATUJAJAR BARAT KEC. BATUJAJAR
@@ -116,64 +140,62 @@
 </div>
 
 
-        <div class="details-section">
-            <div class="left-details">
-                <div>No Faktur: <strong>{{ $penjualan->no_nota }}</strong></div>
-                <div>Kasir: {{ $penjualan->kasir->name ?? '-' }}</div>
-                <div>Tgl: {{ \Carbon\Carbon::parse($penjualan->tanggal)->format('d-m-Y H:i:s') }}</div> {{-- Format tanggal dengan jam --}}
-            </div>
+    <div class="details-section">
+        <div class="left-details">
+            <div>No Faktur: <strong>{{ $penjualan->no_nota }}</strong></div>
+            <div>Kasir: {{ $penjualan->kasir->name ?? '-' }}</div>
+            <div>Tgl: {{ \Carbon\Carbon::parse($penjualan->tanggal)->format('d-m-Y H:i:s') }}</div>
         </div>
+    </div>
 
-        <table>
-            <thead>
+    <table>
+        <thead>
+            <tr>
+                <th style="width:5%">NO</th>
+                <th>KETERANGAN</th>
+                <th style="width:15%">BANYAKNYA</th>
+                <th style="width:20%">HARGA SATUAN</th>
+                <th style="width:20%">JUMLAH</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($penjualan->details ?? [] as $index => $item)
                 <tr>
-                    <th style="width:5%">NO</th>
-                    <th>KETERANGAN</th>
-                    <th style="width:15%">BANYAKNYA</th>
-                    <th style="width:20%">HARGA SATUAN</th>
-                    <th style="width:20%">JUMLAH</th>
+                    <td style="text-align:center">{{ $index + 1 }}</td>
+                    <td>{{ $item->obat->nama ?? '-' }}</td>
+                    <td style="text-align:center">{{ $item->qty }}</td>
+                    <td style="text-align:right">Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                    <td style="text-align:right">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
                 </tr>
-            </thead>
-            <tbody>
-                @forelse($penjualan->details ?? [] as $index => $item)
-                    <tr>
-                        <td style="text-align:center">{{ $index + 1 }}</td>
-                        <td>{{ $item->obat->nama ?? '-' }}</td>
-                        <td style="text-align:center">{{ $item->qty }}</td>
-                        <td style="text-align:right">Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
-                        <td style="text-align:right">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" style="text-align:center">Tidak ada item penjualan.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+            @empty
+                <tr>
+                    <td colspan="5" style="text-align:center">Tidak ada item penjualan.</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
 
-        <div class="totals">
-            <div>Sub Total: Rp {{ number_format($penjualan->total, 0, ',', '.') }}</div>
-            <div>Bayar: Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}</div>
-            <div>
-                @if ($penjualan->kembalian >= 0)
-                    Kembalian: Rp {{ number_format($penjualan->kembalian, 0, ',', '.') }}
-                @else
-                    Kekurangan: Rp {{ number_format(abs($penjualan->kembalian), 0, ',', '.') }}
-                @endif
-            </div>
+    <div class="totals">
+        <div>Sub Total: Rp {{ number_format($penjualan->total, 0, ',', '.') }}</div>
+        <div>Bayar: Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}</div>
+        <div>
+            @if ($penjualan->kembalian >= 0)
+                Kembalian: Rp {{ number_format($penjualan->kembalian, 0, ',', '.') }}
+            @else
+                Kekurangan: Rp {{ number_format(abs($penjualan->kembalian), 0, ',', '.') }}
+            @endif
         </div>
+    </div>
 
-        <div class="footer-section">
-            <div class="sign">
-                Penerima,<br><br><br>
-                <div class="name">(________________)</div>
-            </div>
-            <div class="sign">
-                Hormat Kami,<br><br><br>
-                <div class="name">(Apotek LIZ Farma 02)</div>
-            </div>
+    <div class="footer-section">
+        <div class="sign">
+            Penerima,<br><br><br>
+            <div class="name">(________________)</div>
+        </div>
+        <div class="sign">
+            Hormat Kami,<br><br><br>
+            <div class="name">(Apotek LIZ Farma 02)</div>
         </div>
     </div>
 </body>
-
 </html>

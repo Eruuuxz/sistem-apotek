@@ -4,12 +4,80 @@
 <head>
     <meta charset="UTF-8">
     <title>Faktur Pembelian - {{ $p->no_faktur }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+
+        h1, h2, h3 {
+            margin: 0;
+            padding: 0;
+        }
+
+        .header, .footer {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .header .left, .header .right {
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        .header .left {
+            width: 60%;
+        }
+
+        .header .right {
+            width: 38%;
+            text-align: right;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 6px;
+        }
+
+        th {
+            background-color: #eee;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .no-print {
+            display: none;
+        }
+
         @media print {
-            @page {
-                size: A4;
-                margin: 10mm;
+            body {
+                background: #fff;
             }
 
             .no-print {
@@ -19,78 +87,69 @@
     </style>
 </head>
 
-<body class="p-8 bg-gray-100">
-    <div class="bg-white p-6 rounded shadow max-w-3xl mx-auto">
-        <div class="flex justify-between items-center border-b pb-4 mb-4">
-            <div>
-                <h1 class="text-2xl font-bold">FAKTUR PEMBELIAN</h1>
-                <p class="text-sm text-gray-600">Nomor: <span class="font-medium">{{ $p->no_faktur }}</span></p>
-                <p class="text-sm text-gray-600">Tanggal: <span
-                        class="font-medium">{{ \Carbon\Carbon::parse($p->tanggal)->translatedFormat('d F Y H:i:s') }}</span> {{-- Tambahkan format jam --}}
-                </p>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="left">
+                <h1>FAKTUR PEMBELIAN</h1>
+                <p>Nomor: <strong>{{ $p->no_faktur }}</strong></p>
+                <p>Tanggal: <strong>{{ \Carbon\Carbon::parse($p->tanggal)->format('d F Y H:i:s') }}</strong></p>
             </div>
-            <div class="text-right">
-                <h2 class="text-lg font-bold">APOTEK SEHAT SELALU</h2>
-                <p class="text-sm text-gray-600">Jl. Kesehatan No. 10, Bandung</p>
-                <p class="text-sm text-gray-600">Telp: (022) 123456</p>
+            <div class="right">
+                <h2>APOTEK LIZ Farma 02</h2>
+                <p>JL. RAYA BATUJAJAR NO. 321 RT.001 RW.005</p>
+                <p>Telp: (022) 123456</p>
             </div>
         </div>
 
-        <div class="mb-4">
-            <h3 class="font-bold">Supplier:</h3>
+        <div>
+            <h3>Supplier:</h3>
             <p>{{ $p->supplier->nama ?? '-' }}</p>
             <p>{{ $p->supplier->alamat ?? '-' }}</p>
             <p>Telp: {{ $p->supplier->telepon ?? '-' }}</p>
         </div>
 
-        <table class="w-full text-sm border-collapse border border-gray-300 mb-4">
+        <table>
             <thead>
-                <tr class="bg-gray-200">
-                    <th class="border border-gray-300 px-3 py-2 text-left">No</th>
-                    <th class="border border-gray-300 px-3 py-2 text-left">Nama Obat</th>
-                    <th class="border border-gray-300 px-3 py-2 text-right">Jumlah</th>
-                    <th class="border border-gray-300 px-3 py-2 text-right">Harga Satuan</th>
-                    <th class="border border-gray-300 px-3 py-2 text-right">Subtotal</th>
+                <tr>
+                    <th>No</th>
+                    <th>Nama Obat</th>
+                    <th>Jumlah</th>
+                    <th>Harga Satuan</th>
+                    <th>Subtotal</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($p->detail as $i => $d)
-                    <tr>
-                        <td class="border border-gray-300 px-3 py-2">{{ $i + 1 }}</td>
-                        <td class="border border-gray-300 px-3 py-2">{{ $d->obat->nama ?? '-' }}</td>
-                        <td class="border border-gray-300 px-3 py-2 text-right">{{ $d->jumlah }}</td>
-                        <td class="border border-gray-300 px-3 py-2 text-right">Rp
-                            {{ number_format($d->harga_beli, 0, ',', '.') }}</td>
-                        <td class="border border-gray-300 px-3 py-2 text-right">Rp
-                            {{ number_format($d->jumlah * $d->harga_beli, 0, ',', '.') }}</td>
-                    </tr>
+                <tr>
+                    <td class="text-center">{{ $i + 1 }}</td>
+                    <td>{{ $d->obat->nama ?? '-' }}</td>
+                    <td class="text-center">{{ $d->jumlah }}</td>
+                    <td class="text-right">Rp {{ number_format($d->harga_beli,0,',','.') }}</td>
+                    <td class="text-right">Rp {{ number_format($d->jumlah * $d->harga_beli,0,',','.') }}</td>
+                </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="4" class="border border-gray-300 px-3 py-2 text-right font-bold">Total</td>
-                    <td class="border border-gray-300 px-3 py-2 text-right font-bold">Rp
-                        {{ number_format($p->total, 0, ',', '.') }}</td>
+                    <td colspan="4" class="text-right"><strong>Total</strong></td>
+                    <td class="text-right"><strong>Rp {{ number_format($p->total,0,',','.') }}</strong></td>
                 </tr>
             </tfoot>
         </table>
 
-        <div class="flex justify-between mt-8">
-            <div class="text-center">
-                <p class="mb-16">Diterima Oleh,</p>
-                <p class="font-medium">Admin Apotek</p>
+        <div class="footer" style="margin-top:40px;">
+            <div style="width:45%; display:inline-block; text-align:center;">
+                <p>Diterima Oleh,</p>
+                <br><br>
+                <p><strong>Admin Apotek</strong></p>
             </div>
-            <div class="text-center">
-                <p class="mb-16">Hormat Kami,</p>
-                <p class="font-medium">{{ $p->supplier->nama ?? 'Supplier' }}</p>
+            <div style="width:45%; display:inline-block; text-align:center;">
+                <p>Hormat Kami,</p>
+                <br><br>
+                <p><strong>{{ $p->supplier->nama ?? 'Supplier' }}</strong></p>
             </div>
         </div>
-    </div>
-
-    <div class="text-center mt-4 no-print flex justify-center gap-2">
-        <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded shadow">Cetak Faktur</button>
-        <a href="{{ route('pembelian.pdf', $p->id) }}" class="bg-green-600 text-white px-4 py-2 rounded shadow">Unduh
-            PDF</a>
     </div>
 </body>
 
