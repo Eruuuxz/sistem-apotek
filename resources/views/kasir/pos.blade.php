@@ -89,61 +89,88 @@
         </div>
 
         <!-- Ringkasan Pembayaran -->
-        <div class="bg-white shadow-lg rounded-2xl p-5">
-            <h2 class="text-lg font-semibold mb-4">Ringkasan</h2>
+        <div class="bg-white shadow-lg rounded-2xl p-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2">Ringkasan</h2>
             <form action="{{ route('pos.checkout') }}" method="POST" class="space-y-4">
                 @csrf
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Nama Kasir</label>
-                    <input type="text" name="kasir_nama" class="w-full border rounded-lg px-3 py-2 bg-gray-100"
+                <div class="grid grid-cols-3 items-center gap-2">
+                    <label class="text-sm font-medium text-gray-700">Nama Kasir</label>
+                    <input type="text" name="kasir_nama" class="col-span-2 w-full border rounded-lg px-3 py-2 bg-gray-100"
                         value="{{ Auth::user()->name }}" readonly>
                 </div>
+
                 {{-- Input data pelanggan --}}
-                <div>
-                    <label for="nama_pelanggan" class="block text-sm font-medium text-gray-700">Nama Pelanggan <span class="text-red-600">*</span></label>
-                    <input type="text" id="nama_pelanggan" name="nama_pelanggan" class="w-full border rounded-lg px-3 py-2" placeholder="Nama Pelanggan" required value="{{ old('nama_pelanggan') }}">
-                    @error('nama_pelanggan')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
+                <div class="grid grid-cols-3 items-start gap-2">
+                    <label for="nama_pelanggan" class="text-sm font-medium text-gray-700 mt-2">Nama Pelanggan <span
+                            class="text-red-600">*</span></label>
+                    <div class="col-span-2">
+                        <input type="text" id="nama_pelanggan" name="nama_pelanggan"
+                            class="w-full border rounded-lg px-3 py-2" placeholder="Nama Pelanggan" required
+                            value="{{ old('nama_pelanggan') }}">
+                        @error('nama_pelanggan')
+                            <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
-                <div>
-                    <label for="alamat_pelanggan" class="block text-sm font-medium text-gray-700">Alamat Pelanggan (Opsional)</label>
-                    <textarea id="alamat_pelanggan" name="alamat_pelanggan" rows="3" class="w-full border rounded-lg px-3 py-2" placeholder="Alamat Pelanggan">{{ old('alamat_pelanggan') }}</textarea>
-                    @error('alamat_pelanggan')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
+
+                <div class="grid grid-cols-3 items-start gap-2">
+                    <label for="alamat_pelanggan" class="text-sm font-medium text-gray-700 mt-2">Alamat</label>
+                    <div class="col-span-2">
+                        <textarea id="alamat_pelanggan" name="alamat_pelanggan" rows="2"
+                            class="w-full border rounded-lg px-3 py-2"
+                            placeholder="Alamat Pelanggan">{{ old('alamat_pelanggan') }}</textarea>
+                        @error('alamat_pelanggan')
+                            <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
-                <div>
-                    <label for="telepon_pelanggan" class="block text-sm font-medium text-gray-700">No. Telepon Pelanggan (Opsional, harus unik jika diisi)</label>
-                    <input type="text" id="telepon_pelanggan" name="telepon_pelanggan" class="w-full border rounded-lg px-3 py-2" placeholder="No. Telepon Pelanggan" value="{{ old('telepon_pelanggan') }}">
-                    @error('telepon_pelanggan')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
+
+                <div class="grid grid-cols-3 items-start gap-2">
+                    <label for="telepon_pelanggan" class="text-sm font-medium text-gray-700 mt-2">Telepon</label>
+                    <div class="col-span-2">
+                        <input type="text" id="telepon_pelanggan" name="telepon_pelanggan"
+                            class="w-full border rounded-lg px-3 py-2" placeholder="No. Telepon Pelanggan"
+                            value="{{ old('telepon_pelanggan') }}">
+                        @error('telepon_pelanggan')
+                            <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
                 {{-- End Input data pelanggan --}}
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Total</label>
-                    <input type="text" id="total"
-                        class="w-full border rounded-lg px-3 py-2 text-right font-bold bg-gray-100"
-                        value="Rp {{ number_format($total, 0, ',', '.') }}" readonly>
-                    <input type="hidden" name="total_hidden" value="{{ $total }}">
+
+                <div class="grid grid-cols-3 items-center gap-2">
+                    <label class="text-sm font-medium text-gray-700">Total</label>
+                    <div class="col-span-2">
+                        <input type="text" id="total"
+                            class="w-full border rounded-lg px-3 py-2 text-right font-bold bg-gray-100"
+                            value="Rp {{ number_format($total, 0, ',', '.') }}" readonly>
+                        <input type="hidden" name="total_hidden" value="{{ $total }}">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Bayar</label>
-                    <input type="text" id="bayar_display" class="w-full border rounded-lg px-3 py-2 text-right"
-                        placeholder="Rp 0" oninput="formatBayar()" required>
-                    <input type="hidden" name="bayar" id="bayar">
+
+                <div class="grid grid-cols-3 items-center gap-2">
+                    <label class="text-sm font-medium text-gray-700">Bayar</label>
+                    <div class="col-span-2">
+                        <input type="text" id="bayar_display" class="w-full border rounded-lg px-3 py-2 text-right"
+                            placeholder="Rp 0" oninput="formatBayar()" required>
+                        <input type="hidden" name="bayar" id="bayar">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Kembalian</label>
+
+                <div class="grid grid-cols-3 items-center gap-2">
+                    <label class="text-sm font-medium text-gray-700">Kembalian</label>
                     <input type="text" id="kembalian"
-                        class="w-full border rounded-lg px-3 py-2 text-right font-bold bg-gray-100" value="0" readonly>
+                        class="col-span-2 w-full border rounded-lg px-3 py-2 text-right font-bold bg-gray-100" value="0"
+                        readonly>
                 </div>
+
                 <button type="submit"
-                    class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition">Simpan & Cetak
-                    Struk</button>
+                    class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition font-medium">
+                    Simpan & Cetak Struk
+                </button>
             </form>
         </div>
+
     </div>
     </div>
 @endsection
@@ -173,12 +200,12 @@
             let selectedIndex = -1;
 
             function highlightText(text, query) {
-                const regex = new RegExp(`(${query})`, 'gi');
+                const regex = new RegExp((${query}), 'gi');
                 return text.replace(regex, '<span class="bg-yellow-200">$1</span>');
             }
 
             function fetchSuggestions(q) {
-                fetch(`/pos/search?q=${encodeURIComponent(q)}`)
+                fetch(/pos/search?q=${encodeURIComponent(q)})
                     .then(res => res.json())
                     .then(data => {
                         suggestionBox.innerHTML = "";
@@ -192,7 +219,7 @@
                         data.forEach(item => {
                             const li = document.createElement('li');
                             li.className = "px-3 py-2 hover:bg-gray-100 cursor-pointer";
-                            li.innerHTML = `${highlightText(item.nama, q)} <span class="text-sm text-gray-500">(${item.kode})</span>`;
+                            li.innerHTML = ${highlightText(item.nama, q)} <span class="text-sm text-gray-500">(${item.kode})</span>;
 
                             li.onclick = () => {
                                 searchBox.value = item.kode;

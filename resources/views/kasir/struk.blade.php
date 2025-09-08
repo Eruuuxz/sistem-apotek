@@ -4,211 +4,187 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Struk Penjualan</title>
+    <title>Faktur Penjualan</title>
     <style>
-        @page {
-            size: A6 landscape;
-            margin: 10px;
-        }
-
         body {
             font-family: Arial, sans-serif;
             font-size: 11px;
-            margin: 0;
-            padding: 0;
+            margin: 20px;
         }
 
         .invoice-container {
             border: 2px solid #000;
-            padding: 10px;
+            padding: 15px;
         }
 
-        /* === HEADER === */
-        .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 2px solid #000;
-    padding-bottom: 8px;
-    margin-bottom: 10px;
-}
-
-.header-logo {
-    width: 20%;
-    text-align: left;
-}
-
-.header-logo img {
-    max-width: 70px;
-}
-
-.header-title {
-    width: 40%;
-    text-align: center;
-}
-
-.header-title h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-.header-info {
-    width: 40%;
-    text-align: right;
-    font-size: 11px;
-}
-
-
-        /* === DETAIL === */
-        .details-section {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .details-section .right-details {
+        .details td.text-right {
             text-align: right;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11px;
             margin-bottom: 10px;
         }
 
-        table,
         th,
         td {
-            border: 2px solid #000;
-        }
-
-        th,
-        td {
+            border: 1px solid #000;
             padding: 5px;
+            font-size: 11px;
         }
 
         th {
             text-align: center;
+            background: #f5f5f5;
         }
 
-        .totals {
-            text-align: right;
-            margin-top: 10px;
-            line-height: 1.5;
-        }
-
-        .footer-section {
+        .header {
             display: flex;
             justify-content: space-between;
-            margin-top: 30px;
+            border-bottom: 2px solid #000;
+            margin-bottom: 10px;
         }
 
-        .footer-section .sign {
-            text-align: center;
-            width: 45%;
+        .header-left {
+            width: 70%;
         }
 
-        .footer-section .sign .name {
-            margin-top: 60px;
+        .header-left img {
+            max-width: 70px;
+            vertical-align: middle;
+        }
+
+        .header-left .info {
+            display: inline-block;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .header-right {
+            text-align: right;
+            font-size: 20px;
             font-weight: bold;
-            text-decoration: underline;
+        }
+
+        .details {
+            margin-bottom: 10px;
+        }
+
+        .details td {
+            border: none;
+            padding: 3px;
+        }
+
+        .totals td {
+            border: none;
+            padding: 3px;
+            text-align: right;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 11px;
+        }
+
+        .sign {
+            display: inline-block;
+            width: 45%;
+            text-align: center;
+            margin-top: 30px;
         }
     </style>
 </head>
 
 <body onload="window.print()">
-    <div class="header">
-    <!-- Logo -->
-    <div class="header-logo">
-        <img src="{{ asset('images/logo-apotek.png') }}" alt="Logo Apotek">
-    </div>
 
-    <!-- Judul -->
-    <div class="header-title">
-        <h2>FAKTUR PENJUALAN</h2>
-    </div>
+    <div class="invoice-container">
+        {{-- HEADER --}}
+        <div class="header">
+            <div class="header-left">
+                <img src="{{ asset('images/logo-apotek.png') }}" alt="Logo">
+                <div class="info">
+                    <strong>Apotek LIZ Farma 02</strong><br>
+                    JL. RAYA BATUJAJAR NO. 321 RT.001 RW.005<br>
+                    KEL. BATUJAJAR BARAT KEC. BATUJAJAR<br>
+                    Telp. 08125457845, Email : support@vmedis.com<br>
+                    Website : vmedis.com
+                </div>
+            </div>
+            <div class="header-right">FAKTUR</div>
+        </div>
 
-    <!-- Info Toko -->
-    <div class="header-info">
-        <strong>Apotek LIZ Farma 02</strong><br>
-        JL. RAYA BATUJAJAR NO. 321 RT.001 RW.005<br>
-        KEL. BATUJAJAR BARAT KEC. BATUJAJAR
+        {{-- DETAIL --}}
+        <table class="details" width="100%">
+            <tr>
+                <td><strong>Nama Pelanggan</strong> : {{ $penjualan->nama_pelanggan ?? '-' }}</td>
+                <td class="text-right"><strong>Kasir</strong> : {{ $penjualan->kasir->name ?? '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>No. Telp</strong> : {{ $penjualan->telepon_pelanggan ?? '-' }}</td>
+                <td class="text-right"><strong>Tanggal</strong> :
+                    {{ \Carbon\Carbon::parse($penjualan->tanggal)->format('d-m-Y H:i:s') }}</td>
+            </tr>
+            <tr>
+                <td><strong>Alamat</strong> : {{ $penjualan->alamat_pelanggan ?? '-' }}</td>
+                <td class="text-right"><strong>No. Faktur</strong> : {{ $penjualan->no_nota }}</td>
+            </tr>
+        </table>
+
+
+        {{-- TABEL BARANG --}}
+        <table>
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Nama Barang</th>
+                    <th>Qty</th>
+                    <th>Expired Date</th>
+                    <th>Harga</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($penjualan->details ?? [] as $i => $item)
+                    <tr>
+                        <td align="center">{{ $i + 1 }}</td>
+                        <td>{{ $item->obat->nama ?? '-' }}</td>
+                        <td align="center">{{ $item->qty }}</td>
+                        <td>
+                            @if($item->obat->expired_date)
+                                (ED {{ \Carbon\Carbon::parse($item->obat->expired_date)->format('d-m-Y') }})
+                            @else
+                                (ED -)
+                            @endif
+                        </td>
+                        <td align="right">{{ number_format($item->harga, 0, ',', '.') }}</td>
+                        <td align="right">{{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        {{-- TOTAL --}}
+        <table class="totals" width="100%">
+            <tr>
+                <td><strong>Total : Rp {{ number_format($penjualan->total, 0, ',', '.') }}</strong></td>
+            </tr>
+        </table>
+
+        {{-- CATATAN --}}
+<div class="footer">
+    <p><strong>Catatan:</strong><br>
+    Terimakasih telah berkunjung. Semoga sehat selalu.<br>
+    Maaf, barang yang sudah dibeli tidak dapat ditukar atau dikembalikan.</p>
+
+    <div style="text-align: right; margin-top: 50px; margin-right: 50px;">
+        Kasir<br><br><br>
+        __________________<br>
     </div>
 </div>
 
-
-    <div class="details-section">
-        <div class="left-details">
-            <div>No Faktur: <strong>{{ $penjualan->no_nota }}</strong></div>
-            <div>Kasir: {{ $penjualan->kasir->name ?? '-' }}</div>
-            <div>Tgl: {{ \Carbon\Carbon::parse($penjualan->tanggal)->format('d-m-Y H:i:s') }}</div>
-        </div>
-        {{-- Informasi Pelanggan --}}
-        <div class="right-details">
-            @if($penjualan->nama_pelanggan)
-                <div>Pelanggan: <strong>{{ $penjualan->nama_pelanggan }}</strong></div>
-            @endif
-            @if($penjualan->alamat_pelanggan)
-                <div>Alamat: {{ $penjualan->alamat_pelanggan }}</div>
-            @endif
-            @if($penjualan->telepon_pelanggan)
-                <div>Telp: {{ $penjualan->telepon_pelanggan }}</div>
-            @endif
-        </div>
-        {{-- End Informasi Pelanggan --}}
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th style="width:5%">NO</th>
-                <th>KETERANGAN</th>
-                <th style="width:15%">BANYAKNYA</th>
-                <th style="width:20%">HARGA SATUAN</th>
-                <th style="width:20%">JUMLAH</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($penjualan->details ?? [] as $index => $item)
-                <tr>
-                    <td style="text-align:center">{{ $index + 1 }}</td>
-                    <td>{{ $item->obat->nama ?? '-' }}</td>
-                    <td style="text-align:center">{{ $item->qty }}</td>
-                    <td style="text-align:right">Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
-                    <td style="text-align:right">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="5" style="text-align:center">Tidak ada item penjualan.</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
-
-    <div class="totals">
-        <div>Sub Total: Rp {{ number_format($penjualan->total, 0, ',', '.') }}</div>
-        <div>Bayar: Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}</div>
-        <div>
-            @if ($penjualan->kembalian >= 0)
-                Kembalian: Rp {{ number_format($penjualan->kembalian, 0, ',', '.') }}
-            @else
-                Kekurangan: Rp {{ number_format(abs($penjualan->kembalian), 0, ',', '.') }}
-            @endif
-        </div>
-    </div>
-
-    <div class="footer-section">
-        <div class="sign">
-            Penerima,<br><br><br>
-            <div class="name">(________________)</div>
-        </div>
-        <div class="sign">
-            Hormat Kami,<br><br><br>
-            <div class="name">(Apotek LIZ Farma 02)</div>
-        </div>
-    </div>
 </body>
+
 </html>

@@ -65,38 +65,31 @@
                 @enderror
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-                <div>
-                    <label class="block mb-2 text-gray-700 font-semibold">Harga Dasar (Rp)</label>
-                    <input type="number" id="harga_dasar" name="harga_dasar" placeholder="0"
-                        value="{{ old('harga_dasar', $obat->harga_dasar) }}" required
-                        class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none focus:shadow-md transition @error('harga_dasar') border-red-500 @enderror"
-                        oninput="hitungHargaJual()">
-                    @error('harga_dasar')
-                        <p class="text-red-500 text-xs mt-1 italic">{{ $message }}</p>
-                    @enderror
-                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+<div class="mb-5">
+    <label class="block mb-2 text-gray-700 font-semibold">Harga dasar</label>
+    <input type="number" id="harga_dasar" name="harga_dasar"
+        step="0.01"
+        value="{{ old('harga_dasar', $obat->harga_dasar ?? '') }}"
+        class="w-full border rounded-lg px-4 py-2">
+</div>
 
-                <div>
-                    <label class="block mb-2 text-gray-700 font-semibold">Persentase Untung (%)</label>
-                    <input type="number" id="persen_untung" name="persen_untung" placeholder="0"
-                        value="{{ old('persen_untung', $obat->persen_untung) }}" required
-                        class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none focus:shadow-md transition @error('persen_untung') border-red-500 @enderror"
-                        oninput="hitungHargaJual()">
-                    @error('persen_untung')
-                        <p class="text-red-500 text-xs mt-1 italic">{{ $message }}</p>
-                    @enderror
-                </div>
+<div class="mb-5">
+    <label class="block mb-2 text-gray-700 font-semibold">Persen Untung (%)</label>
+    <input type="number" id="persen_untung" name="persen_untung"
+        step="0.01"
+        value="{{ old('persen_untung', $obat->persen_untung ?? '') }}"
+        class="w-full border rounded-lg px-4 py-2">
+</div>
 
-                <div>
-                    <label class="block mb-2 text-gray-700 font-semibold">Harga Jual (Rp)</label>
-                    <input type="number" id="harga_jual" name="harga_jual" readonly
-                        value="{{ old('harga_jual', $obat->harga_jual) }}"
-                        class="w-full border rounded-lg px-4 py-2 font-bold bg-gray-100 focus:outline-none">
-                    @error('harga_jual')
-                        <p class="text-red-500 text-xs mt-1 italic">{{ $message }}</p>
-                    @enderror
-                </div>
+<div class="mb-5">
+    <label class="block mb-2 text-gray-700 font-semibold">Harga Jual</label>
+    <input type="number" id="harga_jual" name="harga_jual"
+        step="0.01"
+        value="{{ old('harga_jual', $obat->harga_jual ?? '') }}"
+        class="w-full border rounded-lg px-4 py-2">
+</div>
+
             </div>
 
             <div class="mb-5">
@@ -135,12 +128,40 @@
 @endsection
 
 @push('scripts')
-    <script>
-        function hitungHargaJual() {
-            let hargaDasar = parseFloat(document.getElementById('harga_dasar').value) || 0;
-            let persen = parseFloat(document.getElementById('persen_untung').value) || 0;
-            document.getElementById('harga_jual').value = (hargaDasar + (hargaDasar * persen / 100)).toFixed(0);
+<script>
+    const hargaDasar = document.getElementById('harga_dasar');
+    const persenUntung = document.getElementById('persen_untung');
+    const hargaJual = document.getElementById('harga_jual');
+
+    // Hitung Harga Jual kalau Harga Dasar & Persen Untung diisi
+    function updateHargaJual() {
+        let dasar = parseFloat(hargaDasar.value) || 0;
+        let persen = parseFloat(persenUntung.value) || 0;
+        if (dasar > 0) {
+            hargaJual.value = Math.round(dasar + (dasar * persen / 100));
+        } else {
+            hargaJual.value = '';
         }
-        document.addEventListener('DOMContentLoaded', hitungHargaJual);
-    </script>
+    }
+
+    // Hitung Persen Untung kalau Harga Jual diubah manual
+    function updatePersenUntung() {
+        let dasar = parseFloat(hargaDasar.value) || 0;
+        let jual = parseFloat(hargaJual.value) || 0;
+        if (dasar > 0 && jual > 0) {
+            persenUntung.value = ((jual - dasar) / dasar * 100).toFixed(2);
+        }
+    }
+
+    hargaDasar.addEventListener('input', updateHargaJual);
+    persenUntung.addEventListener('input', updateHargaJual);
+    hargaJual.addEventListener('input', updatePersenUntung);
+
+    // supaya langsung terisi saat halaman load (edit mode)
+    document.addEventListener('DOMContentLoaded', () => {
+        if (hargaDasar.value) {
+            updateHargaJual();
+        }
+    });
+</script>
 @endpush

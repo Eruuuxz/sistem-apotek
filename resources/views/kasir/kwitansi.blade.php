@@ -129,16 +129,6 @@
                     ....................................
                 @endif
             </div>
-            @if($penjualan->alamat_pelanggan)
-                <div class="field">
-                    <span>Alamat:</span> {{ $penjualan->alamat_pelanggan }}
-                </div>
-            @endif
-            @if($penjualan->telepon_pelanggan)
-                <div class="field">
-                    <span>Telp:</span> {{ $penjualan->telepon_pelanggan }}
-                </div>
-            @endif
             <div class="field">
                 <span>Uang sejumlah:</span> Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}
             </div>
