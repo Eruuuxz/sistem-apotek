@@ -177,39 +177,59 @@
 
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Inisialisasi kembalian saat halaman dimuat
+        // Fungsi untuk memformat input bayar dan menghitung kembalian
+        function formatBayar() {
+            let input = document.getElementById('bayar_display');
+            let hidden = document.getElementById('bayar');
+
+            // Ambil hanya angka
+            let value = input.value.replace(/\D/g, '');
+            if (!value) {
+                hidden.value = 0;
+                input.value = "";
+                hitungKembalian();
+                return;
+            }
+
+            // Simpan angka asli ke hidden input
+            hidden.value = parseInt(value, 10);
+
+            // Format ke Rupiah
+            input.value = 'Rp ' + parseInt(value, 10).toLocaleString('id-ID');
+
+            // Update kembalian
             hitungKembalian();
-        });
+        }
 
         function hitungKembalian() {
-            // Ambil nilai total dari hidden input untuk perhitungan yang akurat
             let total = parseFloat(document.querySelector('input[name="total_hidden"]').value) || 0;
             let bayar = parseFloat(document.getElementById('bayar').value) || 0;
             let kembalian = bayar - total;
 
-            // Format kembalian ke Rupiah
-            document.getElementById('kembalian').value = 'Rp ' + kembalian.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            document.getElementById('kembalian').value = 'Rp ' +
+                (kembalian > 0 ? kembalian.toLocaleString('id-ID') : "0");
         }
-    </script>
-    <script>
+
         document.addEventListener('DOMContentLoaded', function () {
+            // Inisialisasi kembalian saat halaman dimuat
+            hitungKembalian();
+
             const searchBox = document.getElementById('search');
             const suggestionBox = document.getElementById('suggestions');
             let timer;
             let selectedIndex = -1;
 
             function highlightText(text, query) {
-                const regex = new RegExp((${query}), 'gi');
+                const regex = new RegExp(`(${query})`, 'gi');
                 return text.replace(regex, '<span class="bg-yellow-200">$1</span>');
             }
 
             function fetchSuggestions(q) {
-                fetch(/pos/search?q=${encodeURIComponent(q)})
+                fetch(`/pos/search?q=${encodeURIComponent(q)}`)
                     .then(res => res.json())
                     .then(data => {
                         suggestionBox.innerHTML = "";
-                        selectedIndex = -1;
+                        selectedIndex = -1; // Reset selected index
 
                         if (data.length === 0) {
                             suggestionBox.classList.add('hidden');
@@ -219,19 +239,23 @@
                         data.forEach(item => {
                             const li = document.createElement('li');
                             li.className = "px-3 py-2 hover:bg-gray-100 cursor-pointer";
-                            li.innerHTML = ${highlightText(item.nama, q)} <span class="text-sm text-gray-500">(${item.kode})</span>;
+                            li.innerHTML = `${highlightText(item.nama, q)} <span class="text-sm text-gray-500">(${item.kode})</span>`;
 
                             li.onclick = () => {
-                                searchBox.value = item.kode;
+                                searchBox.value = item.kode; // Set input value to item's kode
                                 suggestionBox.innerHTML = "";
                                 suggestionBox.classList.add('hidden');
-                                searchBox.form.submit();
+                                searchBox.form.submit(); // Submit the form to add item to cart
                             };
 
                             suggestionBox.appendChild(li);
                         });
 
                         suggestionBox.classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Error fetching suggestions:', error);
+                        suggestionBox.classList.add('hidden');
                     });
             }
 
@@ -239,6 +263,10 @@
                 items.forEach((li, idx) => {
                     li.classList.toggle('bg-blue-100', idx === selectedIndex);
                 });
+                // Scroll to selected item if it's out of view
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    items[selectedIndex].scrollIntoView({ block: 'nearest' });
+                }
             }
 
             searchBox.addEventListener('keyup', function (e) {
@@ -250,14 +278,23 @@
                     if (e.key === "ArrowDown") {
                         selectedIndex = (selectedIndex + 1) % items.length;
                         updateSelection(items);
+                        e.preventDefault(); // Prevent default scroll behavior
                         return;
                     } else if (e.key === "ArrowUp") {
                         selectedIndex = (selectedIndex - 1 + items.length) % items.length;
                         updateSelection(items);
+                        e.preventDefault(); // Prevent default scroll behavior
                         return;
                     } else if (e.key === "Enter") {
                         if (selectedIndex >= 0 && selectedIndex < items.length) {
-                            items[selectedIndex].click();
+                            items[selectedIndex].click(); // Simulate click on selected item
+                            e.preventDefault(); // Prevent form submission if Enter is pressed on a selected item
+                            return;
+                        }
+                        // If Enter is pressed without selecting an item, submit the form with current searchBox value
+                        if (q.length > 0) {
+                            searchBox.form.submit();
+                            e.preventDefault();
                             return;
                         }
                     }
@@ -281,42 +318,24 @@
                     suggestionBox.classList.add('hidden');
                 }
             });
+
+            // Sembunyikan suggestion box saat input fokus hilang (blur)
+            searchBox.addEventListener('blur', function() {
+                // Beri sedikit delay agar click event pada suggestion item sempat tereksekusi
+                setTimeout(() => {
+                    if (!suggestionBox.contains(document.activeElement)) {
+                        suggestionBox.classList.add('hidden');
+                    }
+                }, 100);
+            });
+
+            // Tampilkan kembali suggestion box saat input fokus
+            searchBox.addEventListener('focus', function() {
+                const q = this.value.trim();
+                if (q.length > 0 && suggestionBox.children.length > 0) {
+                    suggestionBox.classList.remove('hidden');
+                }
+            });
         });
     </script>
-    @push('scripts')
-        <script>
-            function formatBayar() {
-                let input = document.getElementById('bayar_display');
-                let hidden = document.getElementById('bayar');
-
-                // Ambil hanya angka
-                let value = input.value.replace(/\D/g, '');
-                if (!value) {
-                    hidden.value = 0;
-                    input.value = "";
-                    hitungKembalian();
-                    return;
-                }
-
-                // Simpan angka asli ke hidden input
-                hidden.value = parseInt(value, 10);
-
-                // Format ke Rupiah
-                input.value = hidden.value.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' });
-
-                // Update kembalian
-                hitungKembalian();
-            }
-
-            function hitungKembalian() {
-                let total = parseFloat(document.querySelector('input[name="total_hidden"]').value) || 0;
-                let bayar = parseFloat(document.getElementById('bayar').value) || 0;
-                let kembalian = bayar - total;
-
-                document.getElementById('kembalian').value = 'Rp ' +
-                    (kembalian > 0 ? kembalian.toLocaleString('id-ID') : "0");
-            }
-        </script>
-    @endpush
-
 @endpush
