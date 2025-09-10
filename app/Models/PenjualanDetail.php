@@ -18,7 +18,8 @@ class PenjualanDetail extends Model
         'qty',
         'harga',
         'hpp',
-        'subtotal', 
+        'subtotal',
+        'no_ktp', 
     ];
 
     public function penjualan(): BelongsTo
