@@ -24,6 +24,9 @@ class Penjualan extends Model
         'nama_pelanggan',    
         'alamat_pelanggan',  
         'telepon_pelanggan', 
+        'diskon_type',
+        'diskon_value',
+        'diskon_amount',
     ];
 
     protected $casts = [
@@ -42,5 +45,9 @@ class Penjualan extends Model
     public function cabang()
     {
         return $this->belongsTo(Cabang::class, 'cabang_id');
-    }    
+    } 
+    public function getSubtotalAttribute()
+    {
+        return $this->total + $this->diskon_amount;
+    }
 }

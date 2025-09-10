@@ -73,11 +73,13 @@ class PenjualanController extends Controller
             'alamat_pelanggan'  => 'nullable|string|max:1000',
             'telepon_pelanggan' => 'nullable|string|max:20',
             'bayar'             => 'required|numeric|min:0',
-            'total_hidden'      => 'required|numeric|min:0',
-            'items'             => 'required|array', // Tambahkan validasi untuk items
+            'items'             => 'required|array',
             'items.*.obat_id'   => 'required|exists:obat,id',
             'items.*.qty'       => 'required|integer|min:1',
-            'items.*.no_ktp'    => 'nullable|string|max:20', // Validasi no_ktp per item
+            'items.*.no_ktp'    => 'nullable|string|max:20',
+            // Validasi diskon
+            'diskon_type'       => 'nullable|in:fixed,percent',
+            'diskon_value'      => 'nullable|numeric|min:0',
         ]);
 
         $cart = session('cart', []);
@@ -85,45 +87,64 @@ class PenjualanController extends Controller
             return back()->with('error', 'Keranjang kosong');
         }
 
-        $total = collect($cart)->sum(fn($i) => (float)$i['harga'] * (int)$i['qty']);
-        $bayar = (float)$r->bayar;
+        // Hitung total sebelum diskon
+        $totalItems = collect($cart)->sum(fn($i) => (float)$i['harga'] * (int)$i['qty']);
 
-        if ($bayar < $total) {
-            $kekurangan = $total - $bayar;
-            return back()->with('error', 'Pembayaran kurang Rp ' . number_format($kekurangan, 0, ',', '.'));
+        // Hitung diskon
+        $diskonType = $r->input('diskon_type', null);
+        $diskonValue = (float) $r->input('diskon_value', 0);
+        $diskonAmount = 0.0;
+
+        if ($diskonType === 'percent') {
+            $diskonValue = min(max($diskonValue, 0), 100);
+            $diskonAmount = round($totalItems * ($diskonValue / 100), 2);
+        } elseif ($diskonType === 'fixed') {
+            $diskonAmount = round(max(0, $diskonValue), 2);
         }
 
-        // Validasi Psikotropika
+        // Pastikan diskon tidak melebihi total
+        $diskonAmount = min($diskonAmount, $totalItems);
+
+        // Total akhir setelah diskon
+        $totalFinal = round($totalItems - $diskonAmount, 2);
+
+        // Validasi bayar cukup
+        if ((float)$r->input('bayar') < $totalFinal) {
+            return back()->with('error', 'Pembayaran kurang dari total setelah diskon.');
+        }
+
+        // Validasi psikotropika
         foreach ($r->items as $item) {
             $obat = Obat::find($item['obat_id']);
             if ($obat && $obat->is_psikotropika && empty($item['no_ktp'])) {
-                return response()->json([
-                    'error' => "Obat {$obat->nama} adalah psikotropika, wajib isi No KTP."
-                ], 422);
+                return back()->with('error', "Obat {$obat->nama} adalah psikotropika, wajib isi No KTP.");
             }
         }
 
-        DB::transaction(function () use ($cart, $total, $bayar, $r, &$penjualan) {
+        DB::transaction(function () use ($cart, $totalItems, $totalFinal, $diskonType, $diskonValue, $diskonAmount, $r, &$penjualan) {
             $no = 'PJ-' . date('Ymd') . '-' . str_pad(Penjualan::whereDate('tanggal', date('Y-m-d'))->count() + 1, 3, '0', STR_PAD_LEFT);
-            $kembalian = $bayar - $total;
+            $kembalian = (float)$r->input('bayar') - $totalFinal;
             $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id') ?? Cabang::first()->id;
 
             $penjualan = Penjualan::create([
                 'no_nota'           => $no,
-                'tanggal'           => \Carbon\Carbon::now()->toDateTimeString(),
+                'tanggal'           => now()->toDateTimeString(),
                 'user_id'           => Auth::id(),
                 'cabang_id'         => $cabangId,
-                'total'             => $total,
-                'bayar'             => $bayar,
+                'total'             => $totalFinal,
+                'bayar'             => (float)$r->input('bayar'),
                 'kembalian'         => $kembalian,
                 'nama_pelanggan'    => $r->nama_pelanggan,
                 'alamat_pelanggan'  => $r->alamat_pelanggan,
                 'telepon_pelanggan' => $r->telepon_pelanggan,
+                'diskon_type'       => $diskonType,
+                'diskon_value'      => $diskonValue,
+                'diskon_amount'     => $diskonAmount,
             ]);
 
             foreach ($cart as $item) {
                 $obat_id = $item['id'] ?? Obat::where('kode', $item['kode'])->value('id');
-                $obat    = Obat::find($obat_id);
+                $obat = Obat::find($obat_id);
 
                 // Cari no_ktp yang sesuai dari request berdasarkan obat_id
                 $noKtpForThisItem = null;
@@ -141,7 +162,7 @@ class PenjualanController extends Controller
                     'harga'        => (float)$item['harga'],
                     'hpp'          => (float)($obat->harga_dasar ?? 0),
                     'subtotal'     => (float)$item['qty'] * (float)$item['harga'],
-                    'no_ktp'       => $noKtpForThisItem, // Simpan no_ktp di detail
+                    'no_ktp'       => $noKtpForThisItem,
                 ]);
 
                 if ($obat_id) {
@@ -154,7 +175,7 @@ class PenjualanController extends Controller
 
         return redirect()->route('pos.print.options', $penjualan->id);
     }
-
+    
     // --- Print Options ---
     public function printOptions($id)
     {

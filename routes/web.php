@@ -89,6 +89,9 @@ Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove')
 Route::post('/pos/checkout', [PenjualanController::class, 'checkout'])->name('pos.checkout');
 Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
 
+// Quick Search Obat (API)
+Route::get('/api/obat/search', [ObatController::class, 'search'])->name('api.obat.search');
+
 // Print Options
 Route::get('/pos/print/{id}', [PenjualanController::class, 'printOptions'])->name('pos.print.options');
 Route::get('/pos/print/faktur/{id}', [PenjualanController::class, 'printFaktur'])->name('pos.print.faktur'); // struk.blade.php

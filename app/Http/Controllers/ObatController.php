@@ -88,5 +88,21 @@ class ObatController extends Controller
         $obat->delete();
         return redirect('/obat')->with('success', 'Obat berhasil dihapus');
     }
+
+    public function search(Request $r)
+    {
+        $q = trim($r->input('q', ''));
+
+        $results = \App\Models\Obat::query()
+            ->select(['id', 'kode', 'nama', 'stok', 'harga_jual', 'is_psikotropika'])
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where('nama', 'like', "%{$q}%")
+                    ->orWhere('kode', 'like', "%{$q}%");
+            })
+            ->limit(12)
+            ->get();
+
+        return response()->json($results);
+    }
 }
 
