@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Penjualan, PenjualanDetail, Obat};
+use App\Models\{Penjualan, PenjualanDetail, Obat, Cabang};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -90,11 +90,13 @@ class PenjualanController extends Controller
         DB::transaction(function () use ($cart, $total, $bayar, $r, &$penjualan) {
             $no = 'PJ-' . date('Ymd') . '-' . str_pad(Penjualan::whereDate('tanggal', date('Y-m-d'))->count() + 1, 3, '0', STR_PAD_LEFT);
             $kembalian = $bayar - $total;
-
+            $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id') ?? Cabang::first()->id;
+        
             $penjualan = Penjualan::create([
                 'no_nota'           => $no,
                 'tanggal'           => \Carbon\Carbon::now()->toDateTimeString(),
-                'user_id'           => \Auth::id(),
+                'user_id'           => Auth::id(),
+                'cabang_id'         => $cabangId,
                 'total'             => $total,
                 'bayar'             => $bayar,
                 'kembalian'         => $kembalian,
@@ -157,13 +159,17 @@ class PenjualanController extends Controller
     // --- Riwayat & Detail ---
     public function riwayatKasir()
     {
+        $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id');
+
         $data = Penjualan::with('details.obat')
             ->where('user_id', Auth::id())
+            ->where('cabang_id', $cabangId)
             ->orderBy('tanggal', 'desc')
             ->paginate(10);
 
         return view('kasir.riwayat', compact('data'));
     }
+
 
     public function show($id)
     {

@@ -17,6 +17,7 @@ class Penjualan extends Model
         'no_nota',
         'tanggal',
         'user_id',
+        'cabang_id',
         'total',
         'bayar',
         'kembalian',
@@ -38,4 +39,8 @@ class Penjualan extends Model
     {
         return $this->belongsTo(\App\Models\User::class, 'user_id');
     }
+    public function cabang()
+    {
+        return $this->belongsTo(Cabang::class, 'cabang_id');
+    }    
 }

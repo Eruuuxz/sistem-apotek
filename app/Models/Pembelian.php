@@ -17,6 +17,7 @@ class Pembelian extends Model
         'no_faktur',
         'tanggal',
         'supplier_id',
+        'cabang_id',
         'total',
     ];
 
@@ -32,5 +33,10 @@ class Pembelian extends Model
     public function detail(): HasMany
     {
         return $this->hasMany(PembelianDetail::class, 'pembelian_id');
+    }
+
+    public function cabang()
+    {
+        return $this->belongsTo(Cabang::class, 'cabang_id');
     }
 }

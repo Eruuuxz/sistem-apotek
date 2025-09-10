@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             ObatSeeder::class,
             AdminUserSeeder::class, 
             PelangganSeeder::class,
+            AssignAdminToCabangSeeder::class,
         ]);
     }
 }

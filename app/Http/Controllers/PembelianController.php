@@ -2,21 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Pembelian, PembelianDetail, Supplier, Obat};
+use App\Models\{Pembelian, PembelianDetail, Supplier, Obat, Cabang};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon; // Tambahkan ini
+use Illuminate\Support\Facades\Auth;
 
 class PembelianController extends Controller
 {
-    public function index()
+public function index()
     {
-        // Ambil semua pembelian dengan supplier & detail barangnya
-        // Menggunakan paginasi dan relasi supplier
-        $data = Pembelian::with('supplier')->latest()->paginate(10);
+        $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id');
+
+        $data = Pembelian::with('supplier')
+            ->where('cabang_id', $cabangId)
+            ->latest()
+            ->paginate(10);
+
         return view('transaksi.pembelian.index', compact('data'));
     }
+
 
     public function create()
     {
@@ -43,13 +49,16 @@ class PembelianController extends Controller
             'harga.*' => ['required', 'numeric', 'min:0'],
         ]);
 
-        DB::transaction(function () use ($r) {
+        DB::transaction(function () use ($r, &$pembelian) {
+            $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id') ?? Cabang::first()->id;
+            
             $pembelian = Pembelian::create([
-                'no_faktur' => $r->no_faktur,
-                'tanggal' => Carbon::parse($r->tanggal)->toDateTimeString(), // Ubah ke datetime string
-                'supplier_id' => $r->supplier_id,
-                'total' => 0, // Akan diupdate setelah detail ditambahkan
-            ]);
+            'no_faktur' => $r->no_faktur,
+            'tanggal' => Carbon::parse($r->tanggal)->toDateTimeString(),
+            'supplier_id' => $r->supplier_id,
+            'cabang_id' => $cabangId,
+            'total' => 0,
+        ]);
 
             $total = 0;
             foreach ($r->obat_id as $i => $obatId) {
@@ -120,6 +129,8 @@ class PembelianController extends Controller
         ]);
 
         DB::transaction(function () use ($r, $pembelian) {
+            $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id') ?? Cabang::first()->id;
+            
             // 1. Kembalikan stok obat dari detail pembelian lama
             foreach ($pembelian->detail as $detail) {
                 $obat = Obat::find($detail->obat_id);
@@ -134,9 +145,10 @@ class PembelianController extends Controller
             // 3. Update data pembelian utama
             $pembelian->update([
                 'no_faktur' => $r->no_faktur,
-                'tanggal' => Carbon::parse($r->tanggal)->toDateTimeString(), // Ubah ke datetime string
+                'tanggal' => Carbon::parse($r->tanggal)->toDateTimeString(),
                 'supplier_id' => $r->supplier_id,
-                'total' => 0, // Akan diupdate setelah detail baru ditambahkan
+                'cabang_id' => $cabangId,
+                'total' => 0,
             ]);
 
             // 4. Tambahkan detail pembelian baru dan update stok
