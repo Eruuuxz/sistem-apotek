@@ -12,6 +12,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController; // Ini tidak digunakan, bisa dihapus jika tidak ada AuthController lain
 use App\Http\Controllers\Auth\RoleLoginController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PelangganController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,6 +45,7 @@ Route::middleware(['auth'])->group(function () {
         // Master Data
         Route::resource('obat', ObatController::class);
         Route::resource('supplier', SupplierController::class);
+        Route::resource('pelanggan', PelangganController::class);
 
         // Transaksi
         Route::resource('pembelian', PembelianController::class);
