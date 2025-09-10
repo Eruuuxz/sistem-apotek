@@ -1,6 +1,4 @@
-{{-- resources/views/master/pelanggan/create.blade.php --}}
-
-@extends('layouts.admin')
+@extends(in_array(auth()->user()->role, ['admin', 'kasir']) ? 'layouts.admin' : 'layouts.kasir')
 
 @section('title', 'Tambah Pelanggan Baru')
 

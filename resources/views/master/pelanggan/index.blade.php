@@ -1,5 +1,4 @@
-{{-- resources/views/master/pelanggan/index.blade.php --}}
-@extends('layouts.admin') {{-- Sesuaikan dengan layout admin Anda --}}
+@extends(in_array(auth()->user()->role, ['admin', 'kasir']) ? 'layouts.admin' : 'layouts.kasir')
 
 @section('title', 'Daftar Pelanggan')
 

@@ -21,42 +21,62 @@
 
 <body class="bg-gray-100 flex min-h-screen font-sans">
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-green-900 text-white flex flex-col shadow-xl fixed inset-y-0 left-0 z-20">
-        <!-- Brand -->
-        <div class="p-6 text-2xl font-bold border-b border-green-800 flex items-center justify-center tracking-wide">
-            Apotek <span class="text-green-300 ml-1">LIZ Farma 02</span>
-        </div>
+<!-- Sidebar -->
+<aside class="w-64 bg-green-900 text-white flex flex-col shadow-xl fixed inset-y-0 left-0 z-20">
+    <!-- Brand -->
+    <div class="p-6 text-2xl font-bold border-b border-green-800 flex items-center justify-center tracking-wide">
+        Apotek <span class="text-green-300 ml-1">LIZ Farma 02</span>
+    </div>
 
-        <!-- Navigation -->
-        <nav class="mt-6 flex-1 px-2 space-y-2">
-            @auth
-                @if(in_array(Auth::user()->role, ['kasir']))
+    <!-- Navigation -->
+    <nav class="mt-6 flex-1 px-2 space-y-2" x-data="{ activeDropdown: null }">
+        @auth
+            {{-- Sidebar untuk Kasir --}}
+            @if(Auth::user()->role === 'kasir')
+                {{-- POS --}}
+                <a href="{{ route('pos.index') }}"
+                   class="flex items-center px-4 py-3 rounded-lg transition
+                   {{ request()->routeIs('pos.*') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-800 text-gray-200' }}">
+                    <i data-feather="shopping-cart" class="w-5 h-5 mr-3"></i>
+                    <span>POS Penjualan</span>
+                </a>
 
-                    {{-- POS Penjualan --}}
-                    <a href="{{ route('pos.index') }}"
-                        class="flex items-center px-4 py-3 rounded-lg transition 
-                                      {{ request()->routeIs('pos.*') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-800 text-gray-200' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 opacity-80" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" />
-                        </svg>
-                        <span>POS Penjualan</span>
-                    </a>
+                {{-- Riwayat --}}
+                <a href="{{ route('kasir.riwayat') }}"
+                   class="flex items-center px-4 py-3 rounded-lg transition
+                   {{ request()->routeIs('kasir.riwayat') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-800 text-gray-200' }}">
+                    <i data-feather="clock" class="w-5 h-5 mr-3"></i>
+                    <span>Riwayat Penjualan</span>
+                </a>
 
-                    {{-- Riwayat Penjualan --}}
-                    <a href="{{ route('kasir.riwayat') }}"
-                        class="flex items-center px-4 py-3 rounded-lg transition 
-                                      {{ request()->routeIs('kasir.riwayat') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-800 text-gray-200' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 opacity-80" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
+                {{-- Pelanggan (Dropdown) --}}
+                <div>
+                    <button @click="activeDropdown = activeDropdown === 'pelanggan' ? null : 'pelanggan'"
+                        class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
+                        {{ request()->is('pelanggan*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                        <i data-feather="users" class="w-5 h-5"></i>
+                        <span class="ml-3 flex-1 text-left">Pelanggan</span>
+                        <svg :class="{'rotate-180': activeDropdown === 'pelanggan'}"
+                            class="w-4 h-4 transition-transform duration-300 ml-auto text-gray-300"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                  d="M19 9l-7 7-7-7"/>
                         </svg>
-                        <span>Riwayat Penjualan</span>
-                    </a>
-
-                @endif
+                    </button>
+                    <div x-show="activeDropdown === 'pelanggan'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
+                        <a href="{{ route('pelanggan.index') }}"
+                           class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors
+                           {{ request()->is('pelanggan') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                            Daftar Pelanggan
+                        </a>
+                        <a href="{{ route('pelanggan.create') }}"
+                           class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors
+                           {{ request()->is('pelanggan/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                            Tambah Pelanggan (Member)
+                        </a>
+                    </div>
+                </div>
+            @endif
             @endauth
         </nav>
 

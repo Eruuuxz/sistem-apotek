@@ -171,6 +171,38 @@
                             </a>
                         </div>
                     </div>
+                    <!-- Pelanggan Dropdown -->
+                     <!-- Pelanggan Dropdown -->
+<div>
+    <button @click="activeDropdown = activeDropdown === 'pelanggan' ? null : 'pelanggan'" 
+        class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors 
+        {{ request()->is('pelanggan*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+        
+        <i data-feather="users" class="w-5 h-5"></i>
+        <span class="ml-3 flex-1 text-left">Pelanggan</span>
+        
+        <svg :class="{'rotate-180': activeDropdown === 'pelanggan'}"
+            class="w-4 h-4 transition-transform duration-300 ml-auto text-gray-300" fill="none"
+            stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+    </button>
+
+    <div x-show="activeDropdown === 'pelanggan'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
+        <a href="{{ route('pelanggan.index') }}"
+            class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
+            {{ request()->is('pelanggan') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+            Daftar Pelanggan
+        </a>
+        <a href="{{ route('pelanggan.create') }}"
+            class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
+            {{ request()->is('pelanggan/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+            Tambah Pelanggan (Member)
+        </a>
+    </div>
+</div>
+
+                    
                     <!-- ================= TRANSAKSI ================= -->
                     <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">Transaksi</p>
                     <!-- Pembelian Dropdown -->
