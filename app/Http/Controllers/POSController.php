@@ -4,20 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Models\Obat;
 use Illuminate\Http\Request;
+use App\Models\Pelanggan;
 
 class POSController extends Controller
 {
-    public function index()
-    {
-        $obat = Obat::orderBy('nama')->get(['id', 'kode', 'nama', 'harga_jual', 'stok']);
+   public function index()
+{
+    $obat = Obat::orderBy('nama')->get(['id', 'kode', 'nama', 'harga_jual', 'stok']);
 
-        $cart = session('cart', []); // ['BRG001'=>['kode'=>..,'nama'=>..,'harga'=>..,'qty'=>..]]
-        $this->validateCart($cart); // Validasi keranjang saat dimuat
+    $cart = session('cart', []);
+    $this->validateCart($cart);
 
-        $total = collect($cart)->sum(fn($i) => $i['harga'] * $i['qty']);
+    $total = collect($cart)->sum(fn($i) => $i['harga'] * $i['qty']);
 
-        return view('kasir.pos', compact('obat', 'cart', 'total'));
+    // Ambil diskon dari session (jika ada)
+    $diskonType = session('diskon_type', 'nominal'); // default nominal
+    $diskonValue = session('diskon_value', 0);
+
+    if ($diskonType === 'persen') {
+        $diskonAmount = $total * ($diskonValue / 100);
+    } else {
+        $diskonAmount = $diskonValue;
     }
+
+    $totalAkhir = max($total - $diskonAmount, 0);
+
+    $members = Pelanggan::orderBy('nama')->get();
+
+    return view('kasir.pos', compact('obat', 'cart', 'total', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members'));
+}
+
 
     public function search(Request $request)
     {
@@ -104,6 +120,22 @@ class POSController extends Controller
         session(['cart' => $cart]);
         return back();
     }
+
+    public function setDiskon(Request $r)
+{
+    $r->validate([
+        'diskon_type' => 'required|in:nominal,persen',
+        'diskon_value' => 'required|numeric|min:0'
+    ]);
+
+    session([
+        'diskon_type' => $r->diskon_type,
+        'diskon_value' => $r->diskon_value,
+    ]);
+
+    return back()->with('success', 'Diskon berhasil diterapkan');
+}
+    
 
     // Helper function untuk memvalidasi dan mengunci harga/stok di keranjang
     private function validateCart(&$cart)

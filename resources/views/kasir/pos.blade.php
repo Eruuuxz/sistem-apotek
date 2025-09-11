@@ -1,4 +1,3 @@
-{{-- File: /views/kasir/pos.blade.php --}}
 @extends('layouts.kasir')
 
 @section('title', 'POS Kasir')
@@ -99,6 +98,26 @@
                         value="{{ Auth::user()->name }}" readonly>
                 </div>
 
+{{-- Pilihan Member --}}
+<div class="grid grid-cols-3 items-start gap-2">
+    <label for="member" class="text-sm font-medium text-gray-700 mt-2">Pilih Member</label>
+    <div class="col-span-2">
+        <select id="member" class="w-full" onchange="isiDataMember(this)">
+            <option value="">-- Bukan Member --</option>
+            @foreach ($members as $member)
+                <option value="{{ $member->id }}"
+                    data-nama="{{ $member->nama }}"
+                    data-alamat="{{ $member->alamat }}"
+                    data-telepon="{{ $member->telepon }}">
+                    {{ $member->nama }} - {{ $member->telepon }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+</div>
+{{-- End Pilihan Member --}}
+
+
                 {{-- Input data pelanggan --}}
                 <div class="grid grid-cols-3 items-start gap-2">
                     <label for="nama_pelanggan" class="text-sm font-medium text-gray-700 mt-2">Nama Pelanggan <span
@@ -137,6 +156,20 @@
                     </div>
                 </div>
                 {{-- End Input data pelanggan --}}
+                {{-- Diskon Transaksi --}}
+<div class="grid grid-cols-3 items-center gap-2">
+    <label class="text-sm font-medium text-gray-700">Diskon</label>
+    <div class="col-span-2 flex gap-2">
+        <input type="number" id="diskon" name="diskon"
+               class="w-full border rounded-lg px-3 py-2 text-right"
+               placeholder="0" value="0" oninput="hitungTotal()">
+        <select id="tipe_diskon" name="tipe_diskon"
+                class="border rounded-lg px-2 py-2" onchange="hitungTotal()">
+            <option value="nominal">Rp</option>
+            <option value="persen">%</option>
+        </select>
+    </div>
+</div>
 
                 <div class="grid grid-cols-3 items-center gap-2">
                     <label class="text-sm font-medium text-gray-700">Total</label>
@@ -176,166 +209,180 @@
 @endsection
 
 @push('scripts')
-    <script>
-        // Fungsi untuk memformat input bayar dan menghitung kembalian
-        function formatBayar() {
-            let input = document.getElementById('bayar_display');
-            let hidden = document.getElementById('bayar');
+<!-- jQuery & Select2 -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-            // Ambil hanya angka
-            let value = input.value.replace(/\D/g, '');
-            if (!value) {
-                hidden.value = 0;
-                input.value = "";
-                hitungKembalian();
+<script>
+    $(document).ready(function () {
+        // Aktifkan Select2
+        $('#member').select2({
+            placeholder: "Cari Member...",
+            allowClear: true,
+            width: '100%'
+        });
+
+        // Isi otomatis field pelanggan dari member
+        $('#member').on('change', function () {
+            let option = $(this).find(':selected');
+            $('#nama_pelanggan').val(option.data('nama') || "");
+            $('#alamat_pelanggan').val(option.data('alamat') || "");
+            $('#telepon_pelanggan').val(option.data('telepon') || "");
+        });
+    });
+
+    // Fungsi bantu
+    function cleanNumber(str) {
+        return parseInt(str.replace(/[^\d]/g,'')) || 0;
+    }
+
+    function hitungTotal() {
+        let total = {{ $total }};
+        let diskon = parseFloat(document.getElementById('diskon').value) || 0;
+        let tipe   = document.getElementById('tipe_diskon').value;
+
+        if (tipe === 'persen') {
+            total -= (total * diskon / 100);
+        } else {
+            total -= diskon;
+        }
+
+        if (total < 0) total = 0;
+
+        document.getElementById('total').value = "Rp " + total.toLocaleString('id-ID');
+        document.querySelector('[name="total_hidden"]').value = total;
+
+        // hitung ulang kembalian juga
+        hitungKembalian();
+    }
+
+    function formatBayar() {
+        let input = document.getElementById('bayar_display');
+        let hidden = document.getElementById('bayar');
+
+        let value = input.value.replace(/\D/g, '');
+        if (!value) {
+            hidden.value = 0;
+            input.value = "";
+            hitungKembalian();
+            return;
+        }
+
+        hidden.value = parseInt(value, 10);
+        input.value = 'Rp ' + hidden.value.toLocaleString('id-ID');
+
+        hitungKembalian();
+    }
+
+    function hitungKembalian() {
+        let total = parseFloat(document.querySelector('input[name="total_hidden"]').value) || 0;
+        let bayar = parseFloat(document.getElementById('bayar').value) || 0;
+        let kembalian = bayar - total;
+
+        document.getElementById('kembalian').value = 'Rp ' +
+            (kembalian > 0 ? kembalian.toLocaleString('id-ID') : "0");
+    }
+
+    // --- AUTOCOMPLETE SEARCH ---
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchBox = document.getElementById('search');
+        const suggestionBox = document.getElementById('suggestions');
+        let timer;
+        let selectedIndex = -1;
+
+        function highlightText(text, query) {
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<span class="bg-yellow-200">$1</span>');
+        }
+
+        function fetchSuggestions(q) {
+            fetch(`/pos/search?q=${encodeURIComponent(q)}`)
+                .then(res => res.json())
+                .then(data => {
+                    suggestionBox.innerHTML = "";
+                    selectedIndex = -1;
+
+                    if (data.length === 0) {
+                        suggestionBox.classList.add('hidden');
+                        return;
+                    }
+
+                    data.forEach(item => {
+                        const li = document.createElement('li');
+                        li.className = "px-3 py-2 hover:bg-gray-100 cursor-pointer";
+                        li.innerHTML = `${highlightText(item.nama, q)} <span class="text-sm text-gray-500">(${item.kode})</span>`;
+
+                        li.onclick = () => {
+                            searchBox.value = item.kode;
+                            suggestionBox.innerHTML = "";
+                            suggestionBox.classList.add('hidden');
+                            searchBox.form.submit();
+                        };
+
+                        suggestionBox.appendChild(li);
+                    });
+
+                    suggestionBox.classList.remove('hidden');
+                })
+                .catch(() => suggestionBox.classList.add('hidden'));
+        }
+
+        function updateSelection(items) {
+            items.forEach((li, idx) => {
+                li.classList.toggle('bg-blue-100', idx === selectedIndex);
+            });
+            if (selectedIndex >= 0 && items[selectedIndex]) {
+                items[selectedIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        searchBox.addEventListener('keyup', function (e) {
+            const q = this.value.trim();
+            const items = suggestionBox.querySelectorAll('li');
+
+            if (items.length > 0) {
+                if (e.key === "ArrowDown") {
+                    selectedIndex = (selectedIndex + 1) % items.length;
+                    updateSelection(items);
+                    e.preventDefault();
+                    return;
+                } else if (e.key === "ArrowUp") {
+                    selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+                    updateSelection(items);
+                    e.preventDefault();
+                    return;
+                } else if (e.key === "Enter") {
+                    if (selectedIndex >= 0 && selectedIndex < items.length) {
+                        items[selectedIndex].click();
+                        e.preventDefault();
+                        return;
+                    }
+                    if (q.length > 0) {
+                        searchBox.form.submit();
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            }
+
+            clearTimeout(timer);
+            if (q.length < 1) {
+                suggestionBox.innerHTML = "";
+                suggestionBox.classList.add('hidden');
                 return;
             }
 
-            // Simpan angka asli ke hidden input
-            hidden.value = parseInt(value, 10);
-
-            // Format ke Rupiah
-            input.value = 'Rp ' + parseInt(value, 10).toLocaleString('id-ID');
-
-            // Update kembalian
-            hitungKembalian();
-        }
-
-        function hitungKembalian() {
-            let total = parseFloat(document.querySelector('input[name="total_hidden"]').value) || 0;
-            let bayar = parseFloat(document.getElementById('bayar').value) || 0;
-            let kembalian = bayar - total;
-
-            document.getElementById('kembalian').value = 'Rp ' +
-                (kembalian > 0 ? kembalian.toLocaleString('id-ID') : "0");
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Inisialisasi kembalian saat halaman dimuat
-            hitungKembalian();
-
-            const searchBox = document.getElementById('search');
-            const suggestionBox = document.getElementById('suggestions');
-            let timer;
-            let selectedIndex = -1;
-
-            function highlightText(text, query) {
-                const regex = new RegExp(`(${query})`, 'gi');
-                return text.replace(regex, '<span class="bg-yellow-200">$1</span>');
-            }
-
-            function fetchSuggestions(q) {
-                fetch(`/pos/search?q=${encodeURIComponent(q)}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        suggestionBox.innerHTML = "";
-                        selectedIndex = -1; // Reset selected index
-
-                        if (data.length === 0) {
-                            suggestionBox.classList.add('hidden');
-                            return;
-                        }
-
-                        data.forEach(item => {
-                            const li = document.createElement('li');
-                            li.className = "px-3 py-2 hover:bg-gray-100 cursor-pointer";
-                            li.innerHTML = `${highlightText(item.nama, q)} <span class="text-sm text-gray-500">(${item.kode})</span>`;
-
-                            li.onclick = () => {
-                                searchBox.value = item.kode; // Set input value to item's kode
-                                suggestionBox.innerHTML = "";
-                                suggestionBox.classList.add('hidden');
-                                searchBox.form.submit(); // Submit the form to add item to cart
-                            };
-
-                            suggestionBox.appendChild(li);
-                        });
-
-                        suggestionBox.classList.remove('hidden');
-                    })
-                    .catch(error => {
-                        console.error('Error fetching suggestions:', error);
-                        suggestionBox.classList.add('hidden');
-                    });
-            }
-
-            function updateSelection(items) {
-                items.forEach((li, idx) => {
-                    li.classList.toggle('bg-blue-100', idx === selectedIndex);
-                });
-                // Scroll to selected item if it's out of view
-                if (selectedIndex >= 0 && items[selectedIndex]) {
-                    items[selectedIndex].scrollIntoView({ block: 'nearest' });
-                }
-            }
-
-            searchBox.addEventListener('keyup', function (e) {
-                const q = this.value.trim();
-
-                // Keyboard navigation
-                const items = suggestionBox.querySelectorAll('li');
-                if (items.length > 0) {
-                    if (e.key === "ArrowDown") {
-                        selectedIndex = (selectedIndex + 1) % items.length;
-                        updateSelection(items);
-                        e.preventDefault(); // Prevent default scroll behavior
-                        return;
-                    } else if (e.key === "ArrowUp") {
-                        selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-                        updateSelection(items);
-                        e.preventDefault(); // Prevent default scroll behavior
-                        return;
-                    } else if (e.key === "Enter") {
-                        if (selectedIndex >= 0 && selectedIndex < items.length) {
-                            items[selectedIndex].click(); // Simulate click on selected item
-                            e.preventDefault(); // Prevent form submission if Enter is pressed on a selected item
-                            return;
-                        }
-                        // If Enter is pressed without selecting an item, submit the form with current searchBox value
-                        if (q.length > 0) {
-                            searchBox.form.submit();
-                            e.preventDefault();
-                            return;
-                        }
-                    }
-                }
-
-                // Debounce fetch
-                clearTimeout(timer);
-                if (q.length < 1) {
-                    suggestionBox.innerHTML = "";
-                    suggestionBox.classList.add('hidden');
-                    return;
-                }
-
-                timer = setTimeout(() => fetchSuggestions(q), 300);
-            });
-
-            // Klik di luar suggestion -> sembunyikan
-            document.addEventListener('click', function (e) {
-                if (!searchBox.contains(e.target) && !suggestionBox.contains(e.target)) {
-                    suggestionBox.innerHTML = "";
-                    suggestionBox.classList.add('hidden');
-                }
-            });
-
-            // Sembunyikan suggestion box saat input fokus hilang (blur)
-            searchBox.addEventListener('blur', function() {
-                // Beri sedikit delay agar click event pada suggestion item sempat tereksekusi
-                setTimeout(() => {
-                    if (!suggestionBox.contains(document.activeElement)) {
-                        suggestionBox.classList.add('hidden');
-                    }
-                }, 100);
-            });
-
-            // Tampilkan kembali suggestion box saat input fokus
-            searchBox.addEventListener('focus', function() {
-                const q = this.value.trim();
-                if (q.length > 0 && suggestionBox.children.length > 0) {
-                    suggestionBox.classList.remove('hidden');
-                }
-            });
+            timer = setTimeout(() => fetchSuggestions(q), 300);
         });
-    </script>
+
+        document.addEventListener('click', function (e) {
+            if (!searchBox.contains(e.target) && !suggestionBox.contains(e.target)) {
+                suggestionBox.innerHTML = "";
+                suggestionBox.classList.add('hidden');
+            }
+        });
+    });
+</script>
+
 @endpush

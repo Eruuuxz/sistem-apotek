@@ -130,12 +130,37 @@
                 </tr>
                 @endforeach
             </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="4" class="text-right"><strong>Total</strong></td>
-                    <td class="text-right"><strong>Rp {{ number_format($p->total,0,',','.') }}</strong></td>
-                </tr>
-            </tfoot>
+<tfoot>
+    <tr>
+        <td colspan="4" class="text-right"><strong>Subtotal</strong></td>
+        <td class="text-right"><strong>Rp {{ number_format($p->total,0,',','.') }}</strong></td>
+    </tr>
+    <tr>
+        <td colspan="4" class="text-right"><strong>Diskon</strong></td>
+        <td class="text-right">
+            @if($p->diskon_type == 'persen')
+                {{ $p->diskon }}% 
+                (Rp {{ number_format(($p->total * $p->diskon / 100),0,',','.') }})
+            @else
+                Rp {{ number_format($p->diskon,0,',','.') }}
+            @endif
+        </td>
+    </tr>
+    <tr>
+        <td colspan="4" class="text-right"><strong>Total Akhir</strong></td>
+        <td class="text-right">
+            <strong>
+                Rp 
+                @if($p->diskon_type == 'persen')
+                    {{ number_format($p->total - ($p->total * $p->diskon / 100),0,',','.') }}
+                @else
+                    {{ number_format($p->total - $p->diskon,0,',','.') }}
+                @endif
+            </strong>
+        </td>
+    </tr>
+</tfoot>
+
         </table>
 
         <div class="footer" style="margin-top:40px;">
