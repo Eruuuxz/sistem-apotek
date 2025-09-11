@@ -92,8 +92,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/kasir/riwayat', [PenjualanController::class, 'riwayatKasir'])->name('kasir.riwayat');
         Route::get('/kasir/success/{id}', [PenjualanController::class, 'success'])->name('kasir.success');
         Route::get('/penjualan/{id}', [PenjualanController::class, 'show'])->name('penjualan.show');
-        // Pelanggan (dapat diakses oleh kasir)
-        Route::resource('pelanggan', PelangganController::class); // Tambahkan ini di dalam grup kasir
+        // Master Data yang bisa diakses kasir
+        Route::resource('pelanggan', PelangganController::class);
+        // Tambahkan akses ke daftar obat untuk kasir
+        Route::get('/obat', [ObatController::class, 'index'])->name('obat.index');
     });
     // Riwayat Penjualan (bisa diakses oleh role 'kasir' dan 'admin')
     // Route::middleware('role:kasir')->group(function () { // Ini sudah dihandle di atas, bisa dihapus atau diganti
