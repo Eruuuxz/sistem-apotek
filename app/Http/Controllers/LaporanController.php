@@ -48,68 +48,82 @@ class LaporanController extends Controller
     }
     // 📑 Export PDF
     public function penjualanPdf(Request $request)
-    {
-        $tanggal = $request->get('tanggal', now()->toDateString());
+{
+    $tanggal = $request->get('tanggal', now()->toDateString());
 
-        $rows = Penjualan::with('details.obat')
-            ->whereDate('tanggal', $tanggal)
-            ->latest()
-            ->get();
+    // Eager load details + obat
+    $rows = Penjualan::with('details.obat')
+        ->whereDate('tanggal', $tanggal)
+        ->latest()
+        ->get();
 
-        $totalAll = $rows->sum('total');
+    // Total seluruh penjualan
+    $totalAll = $rows->sum('total');
 
-        $pdf = PDF::loadView('laporan.penjualan_pdf', compact('rows', 'tanggal', 'totalAll'));
-        return $pdf->download("Laporan-Penjualan-{$tanggal}.pdf");
-    }
+    // Load view PDF
+    $pdf = PDF::loadView('laporan.penjualan_pdf', compact('rows', 'tanggal', 'totalAll'));
+
+    return $pdf->download("Laporan-Penjualan-{$tanggal}.pdf");
+}
 
     // 📊 Export Excel
-    public function penjualanExcel(Request $request)
-    {
-        $tanggal = $request->get('tanggal', now()->toDateString());
+public function penjualanExcel(Request $request)
+{
+    $tanggal = $request->get('tanggal', now()->toDateString());
 
-        $penjualan = Penjualan::withCount('details')
-            ->whereDate('tanggal', $tanggal)
-            ->get();
+    // Ambil penjualan dengan relasi details + obat
+    $penjualan = Penjualan::with('details.obat')
+        ->whereDate('tanggal', $tanggal)
+        ->get();
 
-        $filename = "laporan-penjualan-{$tanggal}.csv";
+    $filename = "laporan-penjualan-{$tanggal}.csv";
 
-        $headers = [
-            "Content-Type" => "text/csv",
-            "Content-Disposition" => "attachment; filename={$filename}",
-        ];
+    $headers = [
+        "Content-Type" => "text/csv",
+        "Content-Disposition" => "attachment; filename={$filename}",
+    ];
 
-        $callback = function () use ($penjualan, $tanggal) {
-            $file = fopen('php://output', 'w');
+    $callback = function () use ($penjualan, $tanggal) {
+        $file = fopen('php://output', 'w');
+        $delimiter = ';';
 
-            // Set semicolon sebagai pemisah
-            $delimiter = ';';
+        // Judul laporan
+        fputcsv($file, ["Laporan Penjualan - {$tanggal}"], $delimiter);
+        fputcsv($file, [], $delimiter);
 
-            // Judul laporan
-            fputcsv($file, ["Laporan Penjualan - {$tanggal}"], $delimiter);
-            fputcsv($file, [], $delimiter); // baris kosong
+        // Header tabel
+        fputcsv($file, ['No', 'No Nota', 'Tanggal', 'Nama Obat (Qty)', 'Total Qty', 'Subtotal'], $delimiter);
 
-            // Header tabel
-            fputcsv($file, ['No Nota', 'Tanggal', 'Total', 'Item'], $delimiter);
+        // Data
+        foreach ($penjualan as $i => $row) {
+            $obatList = $row->details
+                ->map(fn($d) => ($d->obat->nama ?? '-') . " ({$d->qty})")
+                ->join(', ');
 
-            // Data
-            foreach ($penjualan as $row) {
-                fputcsv($file, [
-                    $row->no_nota,
-                    Carbon::parse($row->tanggal)->format('Y-m-d H:i:s'), // Format tanggal dengan jam
-                    $row->total,
-                    $row->details_count,
-                ], $delimiter);
-            }
+            $totalQty = $row->details->sum('qty');
+            $subtotal = $row->details->sum('subtotal');
 
-            // Total summary
-            fputcsv($file, [], $delimiter);
-            fputcsv($file, ['TOTAL', '', $penjualan->sum('total'), $penjualan->sum('details_count')], $delimiter);
+            fputcsv($file, [
+                $i + 1,
+                $row->no_nota,
+                \Carbon\Carbon::parse($row->tanggal)->format('d-m-Y H:i:s'),
+                $obatList,
+                $totalQty,
+                $subtotal
+            ], $delimiter);
+        }
 
-            fclose($file);
-        };
+        // Total keseluruhan
+        $totalAll = $penjualan->sum(fn($r) => $r->details->sum('subtotal'));
+        $totalQtyAll = $penjualan->sum(fn($r) => $r->details->sum('qty'));
+        fputcsv($file, [], $delimiter);
+        fputcsv($file, ['TOTAL', '', '', '', $totalQtyAll, $totalAll], $delimiter);
 
-        return response()->stream($callback, 200, $headers);
-    }
+        fclose($file);
+    };
+
+    return response()->stream($callback, 200, $headers);
+}
 
     public function penjualanBulanan(Request $request)
     {
@@ -171,64 +185,82 @@ class LaporanController extends Controller
         return response()->json($data);
     }
 
-    public function penjualanBulananPdf(Request $request)
-    {
-        $bulan = $request->get('bulan', now()->month);
-        $tahun = $request->get('tahun', now()->year);
+public function penjualanBulananPdf(Request $request)
+{
+    $bulan = $request->get('bulan', now()->month);
+    $tahun = $request->get('tahun', now()->year);
 
-        $rows = Penjualan::with('details.obat')
-            ->whereYear('tanggal', $tahun)
-            ->whereMonth('tanggal', $bulan)
-            ->get();
+    // Ambil semua penjualan di bulan & tahun yang dipilih
+    $rows = Penjualan::with('details.obat')
+        ->whereYear('tanggal', $tahun)
+        ->whereMonth('tanggal', $bulan)
+        ->get();
 
-        $totalAll = $rows->sum('total');
+    // Hitung total seluruh bulan
+    $totalAll = $rows->sum(fn($p) => $p->details->sum('subtotal'));
 
-        $pdf = \PDF::loadView('laporan.penjualan_pdf', compact('rows', 'bulan', 'tahun', 'totalAll'));
-        return $pdf->download("Laporan-Penjualan-Bulanan-{$bulan}-{$tahun}.pdf");
-    }
+    // Gunakan view yang sama seperti harian
+    $pdf = \PDF::loadView('laporan.penjualan_pdf', compact('rows', 'totalAll', 'bulan', 'tahun'));
+
+    return $pdf->download("Laporan-Penjualan-Bulanan-{$bulan}-{$tahun}.pdf");
+}
+
 
     public function penjualanBulananExcel(Request $request)
-    {
-        $bulan = $request->get('bulan', now()->month);
-        $tahun = $request->get('tahun', now()->year);
+{
+    $bulan = $request->get('bulan', now()->month);
+    $tahun = $request->get('tahun', now()->year);
 
-        $penjualan = Penjualan::withCount('details')
-            ->whereYear('tanggal', $tahun)
-            ->whereMonth('tanggal', $bulan)
-            ->get();
+    // Ambil semua penjualan beserta detail obat
+    $penjualan = Penjualan::with('details.obat')
+        ->whereYear('tanggal', $tahun)
+        ->whereMonth('tanggal', $bulan)
+        ->get();
 
-        $filename = "laporan-penjualan-bulanan-{$bulan}-{$tahun}.csv";
+    $filename = "laporan-penjualan-bulanan-{$bulan}-{$tahun}.csv";
 
-        $headers = [
-            "Content-Type" => "text/csv",
-            "Content-Disposition" => "attachment; filename={$filename}",
-        ];
+    $headers = [
+        "Content-Type" => "text/csv",
+        "Content-Disposition" => "attachment; filename={$filename}",
+    ];
 
-        $callback = function () use ($penjualan, $bulan, $tahun) {
-            $file = fopen('php://output', 'w');
-            $delimiter = ';';
+    $callback = function () use ($penjualan) {
+        $file = fopen('php://output', 'w');
+        $delimiter = ';';
 
-            fputcsv($file, ["Laporan Penjualan Bulanan - {$bulan}/{$tahun}"], $delimiter);
-            fputcsv($file, [], $delimiter);
-            fputcsv($file, ['No Nota', 'Tanggal', 'Total', 'Item'], $delimiter);
+        // Judul laporan
+        fputcsv($file, ["Laporan Penjualan Bulanan"], $delimiter);
+        fputcsv($file, [], $delimiter);
 
-            foreach ($penjualan as $row) {
-                fputcsv($file, [
-                    $row->no_nota,
-                    Carbon::parse($row->tanggal)->format('Y-m-d H:i:s'), // Format tanggal dengan jam
-                    $row->total,
-                    $row->details_count,
-                ], $delimiter);
-            }
+        // Header tabel
+        fputcsv($file, ['No', 'No Nota', 'Tanggal', 'Nama Obat (Qty)', 'Total Qty', 'Subtotal'], $delimiter);
 
-            fputcsv($file, [], $delimiter);
-            fputcsv($file, ['TOTAL', '', $penjualan->sum('total'), $penjualan->sum('details_count')], $delimiter);
+        $no = 1;
+        foreach ($penjualan as $row) {
+            $obatList = $row->details->map(fn($d) => ($d->obat->nama ?? '-') . " ({$d->qty})")->join(', ');
+            $totalQty = $row->details->sum('qty');
+            $subtotal = $row->details->sum('subtotal');
 
-            fclose($file);
-        };
+            fputcsv($file, [
+                $no++,
+                $row->no_nota,
+                $row->tanggal,
+                $obatList,
+                $totalQty,
+                $subtotal
+            ], $delimiter);
+        }
 
-        return response()->stream($callback, 200, $headers);
-    }
+        // Total summary
+        fputcsv($file, [], $delimiter);
+        fputcsv($file, ['TOTAL', '', '', '', $penjualan->sum(fn($p) => $p->details->sum('qty')), $penjualan->sum(fn($p) => $p->details->sum('subtotal'))], $delimiter);
+
+        fclose($file);
+    };
+
+    return response()->stream($callback, 200, $headers);
+}
+
 
     // 📉 Laporan stok
     public function stok(Request $request)

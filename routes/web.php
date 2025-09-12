@@ -93,10 +93,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/kasir/success/{id}', [PenjualanController::class, 'success'])->name('kasir.success');
         Route::get('/penjualan/{id}', [PenjualanController::class, 'show'])->name('penjualan.show');
         // Master Data yang bisa diakses kasir
-        Route::resource('pelanggan', PelangganController::class);
         // Tambahkan akses ke daftar obat untuk kasir
         Route::get('/obat', [ObatController::class, 'index'])->name('obat.index');
     });
+    Route::resource('pelanggan', PelangganController::class);
     // Riwayat Penjualan (bisa diakses oleh role 'kasir' dan 'admin')
     // Route::middleware('role:kasir')->group(function () { // Ini sudah dihandle di atas, bisa dihapus atau diganti
     //     Route::get('/penjualan', [PenjualanController::class, 'index'])->name('penjualan.index');

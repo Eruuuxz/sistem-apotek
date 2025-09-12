@@ -16,6 +16,16 @@
         </a>
     </div>
 
+    <div class="mb-4 flex gap-2 items-center">
+        <span>Filter Status Member:</span>
+        <a href="{{ route('pelanggan.index') }}"
+            class="px-3 py-1 rounded {{ !$statusMember ? 'bg-blue-600 text-white' : 'bg-gray-200' }}">Semua</a>
+        <a href="{{ route('pelanggan.index', ['status_member' => 'member']) }}"
+            class="px-3 py-1 rounded {{ $statusMember == 'member' ? 'bg-blue-600 text-white' : 'bg-gray-200' }}">Member</a>
+        <a href="{{ route('pelanggan.index', ['status_member' => 'non_member']) }}"
+            class="px-3 py-1 rounded {{ $statusMember == 'non_member' ? 'bg-blue-600 text-white' : 'bg-gray-200' }}">Non-Member</a>
+    </div>
+
     <div class="bg-white p-6 shadow rounded-lg">
         <div class="overflow-x-auto">
             <table class="w-full text-sm border border-gray-200 rounded">
@@ -26,7 +36,7 @@
                         <th class="px-4 py-3 text-left">Alamat</th>
                         <th class="px-4 py-3 text-left">No. KTP</th>
                         <th class="px-4 py-3 text-center">Status Member</th>
-                        <th class="px-4 py-3 text-center">Point</th> {{-- Tambahkan kolom Point --}}
+                        <th class="px-4 py-3 text-center">Point</th>
                         <th class="px-4 py-3 text-center">File KTP</th>
                         <th class="px-4 py-3 text-center">Aksi</th>
                     </tr>
@@ -45,26 +55,34 @@
                                     <span class="bg-red-200 text-red-800 text-xs px-2 py-1 rounded-full">Non-Member</span>
                                 @endif
                             </td>
-                            <td class="border px-4 py-3 text-center">{{ $pelanggan->point }}</td> {{-- Tampilkan Point --}}
+                            <td class="border px-4 py-3 text-center">{{ $pelanggan->point ?? 0 }}</td>
                             <td class="border px-4 py-3 text-center">
                                 @if ($pelanggan->file_ktp)
-                                    <a href="{{ Storage::url($pelanggan->file_ktp) }}" target="_blank" class="text-blue-500 hover:underline">Lihat KTP</a>
+                                    <a href="{{ Storage::url($pelanggan->file_ktp) }}" target="_blank"
+                                        class="text-blue-500 hover:underline">Lihat KTP</a>
                                 @else
                                     -
                                 @endif
                             </td>
                             <td class="border px-4 py-3 text-center">
-                                <a href="{{ route('pelanggan.edit', $pelanggan->id) }}" class="text-yellow-500 hover:underline mr-2">Edit</a>
-                                <form action="{{ route('pelanggan.destroy', $pelanggan->id) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus pelanggan ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:underline">Hapus</button>
-                                </form>
+                                {{-- Tombol CRUD hanya untuk pelanggan yang memiliki ID (yaitu member) --}}
+                                @if ($pelanggan->id)
+                                    <a href="{{ route('pelanggan.edit', $pelanggan->id) }}"
+                                        class="text-yellow-500 hover:underline mr-2">Edit</a>
+                                    <form action="{{ route('pelanggan.destroy', $pelanggan->id) }}" method="POST"
+                                        class="inline" onsubmit="return confirm('Yakin ingin menghapus pelanggan ini?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-500 hover:underline">Hapus</button>
+                                    </form>
+                                @else
+                                    -
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="border px-4 py-3 text-center text-gray-500">Tidak ada data pelanggan.</td> {{-- Sesuaikan colspan --}}
+                            <td colspan="8" class="border px-4 py-3 text-center text-gray-500">Tidak ada data pelanggan.</td>
                         </tr>
                     @endforelse
                 </tbody>

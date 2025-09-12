@@ -50,17 +50,6 @@
                 <span>Riwayat Penjualan</span>
             </a>
 
-                <!-- ================= MASTER ================= -->
-            <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-green-300">MASTER</p>
-
-            {{-- Daftar Obat --}}
-            <a href="{{ route('obat.index') }}"
-               class="flex items-center px-4 py-3 rounded-lg transition-colors
-               {{ request()->routeIs('obat.index') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-800 text-gray-200' }}">
-                <i data-feather="package" class="w-5 h-5 mr-3"></i>
-                <span>Daftar Obat</span>
-            </a>
-
             {{-- Pelanggan (Dropdown) --}}
             <div>
                 <button @click="activeDropdown = activeDropdown === 'pelanggan' ? null : 'pelanggan'"

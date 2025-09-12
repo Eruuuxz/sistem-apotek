@@ -39,12 +39,13 @@
             <span class="ml-6 font-semibold">Total Obat Terjual:</span>
             <span class="font-bold text-purple-600">{{ $totalObatTerjual }}</span>
         </div>
-        <div class="flex gap-2">
-            <a href="{{ route('laporan.penjualan.bulanan.pdf', ['bulan' => $bulan, 'tahun' => $tahun]) }}"
-                class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">PDF</a>
-            <a href="{{ route('laporan.penjualan.bulanan.excel', ['bulan' => $bulan, 'tahun' => $tahun]) }}"
-                class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Excel</a>
-        </div>
+<div class="flex gap-2">
+    <a href="{{ route('laporan.penjualan.bulanan.pdf', ['bulan' => $bulan, 'tahun' => $tahun]) }}"
+        class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">PDF</a>
+
+    <a href="{{ route('laporan.penjualan.bulanan.excel', ['bulan' => $bulan, 'tahun' => $tahun]) }}"
+        class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Excel</a>
+</div>
     </div>
 
 
@@ -93,16 +94,48 @@
         </table>
     </div>
 
-    {{-- Modal --}}
-    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white w-11/12 md:w-3/4 lg:w-1/2 p-6 rounded shadow-lg relative">
-            <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-600 hover:text-black">✕</button>
-            <h2 class="text-lg font-bold mb-4">Detail Transaksi</h2>
-            <div id="modalContent">
-                {{-- Isi tabel transaksi harian dimasukkan lewat JS --}}
+{{-- Modal --}}
+<div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white w-11/12 md:w-3/4 lg:w-1/2 p-6 rounded shadow-lg relative">
+        <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-600 hover:text-black">✕</button>
+
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold">Detail Transaksi</h2>
+            
+            <div class="flex gap-2">
+                {{-- Tombol PDF --}}
+                <a id="modalPdfBtn" href="#" target="_blank"
+                    class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition text-sm">PDF</a>
+                
+                {{-- Tombol Excel --}}
+                <a id="modalExcelBtn" href="#" target="_blank"
+                    class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition text-sm">Excel</a>
             </div>
         </div>
+
+        <div id="modalContent">
+            {{-- Isi tabel transaksi harian dimasukkan lewat JS --}}
+        </div>
     </div>
+</div>
+
+<script>
+function openModal(tanggal) {
+    // Tampilkan modal
+    document.getElementById('detailModal').classList.remove('hidden');
+
+    // Set link PDF & Excel sesuai tanggal
+    document.getElementById('modalPdfBtn').href = /laporan/penjualan/pdf?tanggal=${tanggal};
+    document.getElementById('modalExcelBtn').href = /laporan/penjualan/excel?tanggal=${tanggal};
+
+    // Ambil data transaksi via AJAX (opsional) untuk modalContent
+}
+
+function closeModal() {
+    document.getElementById('detailModal').classList.add('hidden');
+}
+</script>
+
 
     @php
         // Data bersih untuk JS
@@ -129,6 +162,9 @@
         const dataByDate = @json($dataForJs);
 
         function openModal(tanggal) {
+            document.getElementById('modalPdfBtn').href = /laporan/penjualan/pdf?tanggal=${tanggal};
+    document.getElementById('modalExcelBtn').href = /laporan/penjualan/excel?tanggal=${tanggal};
+            
             let rows = dataByDate[tanggal];
             let html = `
                     <table class="w-full text-sm border-collapse">
@@ -146,7 +182,7 @@
                 `;
 
             rows.forEach(r => {
-                let items = r.details.map(d => `${d.nama} (${d.qty})`).join(', ');
+                let items = r.details.map(d => ${d.nama} (${d.qty})).join(', ');
                 html += `
                         <tr>
                             <td class="border px-4 py-2">${r.no_nota}</td>
@@ -159,7 +195,7 @@
                     `;
             });
 
-            html += `</tbody></table>`;
+            html += </tbody></table>;
             document.getElementById('modalContent').innerHTML = html;
             document.getElementById('detailModal').classList.remove('hidden');
             document.getElementById('detailModal').classList.add('flex');

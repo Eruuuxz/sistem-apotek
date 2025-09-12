@@ -12,22 +12,29 @@
 
     @if (session('error'))
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span class="block sm:inline">{{ session('error') }}</span>
+            <span class="block sm-inline">{{ session('error') }}</span>
         </div>
     @endif
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Form Input & Tabel Obat -->
+          
         <div class="md:col-span-2 bg-white shadow-lg rounded-2xl p-5">
-            <form action="{{ route('pos.add') }}" method="POST" class="mb-4 relative">
-                @csrf
-                <input type="text" id="search" name="kode" placeholder="Nama/Kode Obat"
-                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                    autocomplete="off">
-                <ul id="suggestions"
-                    class="absolute bg-white border rounded-lg w-full mt-1 hidden max-h-60 overflow-y-auto z-50 shadow-md">
-                </ul>
-            </form>
+            <div class="flex items-center gap-2 mb-4">
+                <form action="{{ route('pos.add') }}" method="POST" class="relative flex-grow">
+                    @csrf
+                    <input type="text" id="search" name="kode" placeholder="Nama/Kode Obat"
+                        class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                        autocomplete="off">
+                    <ul id="suggestions"
+                        class="absolute bg-white border rounded-lg w-full mt-1 hidden max-h-60 overflow-y-auto z-50 shadow-md">
+                    </ul>
+                </form>
+                <button type="button" onclick="openModal()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition whitespace-nowrap">
+                    List Obat
+                </button>
+            </div>
 
             <div class="overflow-x-auto">
                 <table class="min-w-full border-collapse border border-gray-200 text-sm">
@@ -35,6 +42,7 @@
                         <tr>
                             <th class="px-3 py-2 text-left">Kode</th>
                             <th class="px-3 py-2 text-left">Nama Obat</th>
+                            <th class="px-3 py-2 text-left">Kategori</th>
                             <th class="px-3 py-2 text-right">Harga</th>
                             <th class="px-3 py-2 text-center">Qty</th>
                             <th class="px-3 py-2 text-right">Stok</th>
@@ -48,6 +56,7 @@
                                 class="hover:bg-gray-50 transition duration-150 {{ $item['stok'] == 0 ? 'bg-red-50' : ($item['stok'] < 10 ? 'bg-yellow-50' : '') }}">
                                 <td class="border px-3 py-2">{{ $item['kode'] }}</td>
                                 <td class="border px-3 py-2">{{ $item['nama'] }}</td>
+                                <td class="border px-3 py-2">{{ $item['kategori'] }}</td>
                                 <td class="border px-3 py-2 text-right">Rp {{ number_format($item['harga'], 0, ',', '.') }}</td>
                                 <td class="border px-3 py-2 text-center">
                                     <form action="{{ route('pos.update') }}" method="POST" class="inline-block">
@@ -79,7 +88,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="border px-3 py-2 text-center text-gray-400">Keranjang kosong.</td>
+                                <td colspan="8" class="border px-3 py-2 text-center text-gray-400">Keranjang kosong.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -98,30 +107,55 @@
                         value="{{ Auth::user()->name }}" readonly>
                 </div>
 
-{{-- Pilihan Member --}}
-<div class="grid grid-cols-3 items-start gap-2">
-    <label for="member" class="text-sm font-medium text-gray-700 mt-2">Pilih Member</label>
-    <div class="col-span-2">
-        <select id="member" class="w-full" onchange="isiDataMember(this)">
-            <option value="">-- Bukan Member --</option>
-            @foreach ($members as $member)
-                <option value="{{ $member->id }}"
-                    data-nama="{{ $member->nama }}"
-                    data-alamat="{{ $member->alamat }}"
-                    data-telepon="{{ $member->telepon }}">
-                    {{ $member->nama }} - {{ $member->telepon }}
-                </option>
-            @endforeach
-        </select>
-    </div>
-</div>
-{{-- End Pilihan Member --}}
+                {{-- Pilihan Member --}}
+                <div class="grid grid-cols-3 items-start gap-2">
+                    <label for="member" class="text-sm font-medium text-gray-700 mt-2">Pilih Member</label>
+                    <div class="col-span-2">
+                        <select id="member" class="w-full">
+                            <option value="">-- Bukan Member --</option>
+                            @foreach ($members as $member)
+                                <option value="{{ $member->id }}"
+                                    data-nama="{{ $member->nama }}"
+                                    data-alamat="{{ $member->alamat }}"
+                                    data-telepon="{{ $member->telepon }}">
+                                    {{ $member->nama }} - {{ $member->telepon }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                {{-- End Pilihan Member --}}
+
+                {{-- Check if psychotropic drug exists in the cart --}}
+                @php
+                    $hasPsikotropika = false;
+                    foreach ($cart as $item) {
+                        if ($item['kategori'] === 'Psikotropika') {
+                            $hasPsikotropika = true;
+                            break;
+                        }
+                    }
+                @endphp
+
+                @if ($hasPsikotropika)
+                    <div class="grid grid-cols-3 items-start gap-2">
+                        <label for="no_ktp" class="text-sm font-medium text-gray-700 mt-2">No. KTP <span class="text-red-600">*</span></label>
+                        <div class="col-span-2">
+                            <input type="text" id="no_ktp" name="no_ktp"
+                                class="w-full border rounded-lg px-3 py-2" placeholder="Nomor KTP Pelanggan" required
+                                value="{{ old('no_ktp') }}">
+                            @error('no_ktp')
+                                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                @endif
 
 
                 {{-- Input data pelanggan --}}
                 <div class="grid grid-cols-3 items-start gap-2">
                     <label for="nama_pelanggan" class="text-sm font-medium text-gray-700 mt-2">Nama Pelanggan <span
-                            class="text-red-600">*</span></label>
+                                class="text-red-600">*</span></label>
                     <div class="col-span-2">
                         <input type="text" id="nama_pelanggan" name="nama_pelanggan"
                             class="w-full border rounded-lg px-3 py-2" placeholder="Nama Pelanggan" required
@@ -157,19 +191,19 @@
                 </div>
                 {{-- End Input data pelanggan --}}
                 {{-- Diskon Transaksi --}}
-<div class="grid grid-cols-3 items-center gap-2">
-    <label class="text-sm font-medium text-gray-700">Diskon</label>
-    <div class="col-span-2 flex gap-2">
-        <input type="number" id="diskon" name="diskon"
-               class="w-full border rounded-lg px-3 py-2 text-right"
-               placeholder="0" value="0" oninput="hitungTotal()">
-        <select id="tipe_diskon" name="tipe_diskon"
-                class="border rounded-lg px-2 py-2" onchange="hitungTotal()">
-            <option value="nominal">Rp</option>
-            <option value="persen">%</option>
-        </select>
-    </div>
-</div>
+                <div class="grid grid-cols-3 items-center gap-2">
+                    <label class="text-sm font-medium text-gray-700">Diskon</label>
+                    <div class="col-span-2 flex gap-2">
+                        <input type="number" id="diskon" name="diskon"
+                               class="w-full border rounded-lg px-3 py-2 text-right"
+                               placeholder="0" value="0" oninput="hitungTotal()">
+                        <select id="tipe_diskon" name="tipe_diskon"
+                                 class="border rounded-lg px-2 py-2" onchange="hitungTotal()">
+                            <option value="nominal">Rp</option>
+                            <option value="persen">%</option>
+                        </select>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-3 items-center gap-2">
                     <label class="text-sm font-medium text-gray-700">Total</label>
@@ -203,8 +237,87 @@
                 </button>
             </form>
         </div>
+        <!-- Modal List Obat -->
+        <div id="obatModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white w-11/12 md:w-3/4 lg:w-1/2 p-6 rounded-2xl shadow-lg relative max-h-[90vh] overflow-hidden">
+                <button onclick="closeModal()"
+                    class="absolute top-3 right-3 text-gray-600 hover:text-black text-lg font-bold">✕</button>
+                <h2 class="text-xl font-semibold mb-4">Daftar Obat</h2>
+                
+                <div class="mb-4">
+                    <input type="text" id="modal-search" placeholder="Cari obat..." class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                </div>
 
-    </div>
+                <div class="overflow-y-auto max-h-96">
+                    <table class="min-w-full border-collapse border border-gray-200 text-sm" id="obat-table">
+                        <thead class="bg-gray-100 rounded-t-lg sticky top-0">
+                            <tr>
+                                <th class="px-3 py-2 text-left cursor-pointer sortable" data-sort-type="string" data-sort-dir="asc">
+                                    Kode <span class="sort-icon"></span>
+                                </th>
+                                <th class="px-3 py-2 text-left cursor-pointer sortable" data-sort-type="string" data-sort-dir="asc">
+                                    Nama Obat <span class="sort-icon"></span>
+                                </th>
+                                <th class="px-3 py-2 text-left cursor-pointer sortable" data-sort-type="string" data-sort-dir="asc">
+                                    Kategori <span class="sort-icon"></span>
+                                </th>
+                                <th class="px-3 py-2 text-left cursor-pointer sortable" data-sort-type="date" data-sort-dir="asc">
+                                    Kadaluarsa <span class="sort-icon"></span>
+                                </th>
+                                <th class="px-3 py-2 text-right cursor-pointer sortable" data-sort-type="number" data-sort-dir="asc">
+                                    Harga <span class="sort-icon"></span>
+                                </th>
+                                <th class="px-3 py-2 text-right cursor-pointer sortable" data-sort-type="number" data-sort-dir="asc">
+                                    Stok <span class="sort-icon"></span>
+                                </th>
+                                <th class="px-3 py-2 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($obat as $item)
+                                @php
+                                    $isExpired = \Carbon\Carbon::parse($item->expired_date)->isPast();
+                                @endphp
+                                <tr class="hover:bg-gray-50 transition duration-150 {{ $item->stok == 0 || $isExpired ? 'bg-red-50' : ($item->stok < 10 ? 'bg-yellow-50' : '') }}">
+                                    <td class="border px-3 py-2">{{ $item->kode }}</td>
+                                    <td class="border px-3 py-2">{{ $item->nama }}</td>
+                                    <td class="border px-3 py-2">{{ $item->kategori }}</td>
+                                    <td class="border px-3 py-2" data-value="{{ $item->expired_date }}">
+                                        {{ \Carbon\Carbon::parse($item->expired_date)->format('d-m-Y') }}
+                                        @if($isExpired)
+                                            <span class="ml-2 px-2 py-1 text-xs bg-red-600 text-white rounded-full">Expired</span>
+                                        @endif
+                                    </td>
+                                    <td class="border px-3 py-2 text-right" data-value="{{ $item->harga_jual }}">
+                                        Rp {{ number_format($item->harga_jual, 0, ',', '.') }}
+                                    </td>
+                                    <td class="border px-3 py-2 text-right" data-value="{{ $item->stok }}">
+                                        {{ $item->stok }}
+                                        @if($item->stok == 0)
+                                            <span class="ml-2 px-2 py-1 text-xs bg-red-600 text-white rounded-full">Habis</span>
+                                        @elseif($item->stok < 10)
+                                            <span class="ml-2 px-2 py-1 text-xs bg-yellow-500 text-white rounded-full">Menipis</span>
+                                        @endif
+                                    </td>
+                                    <td class="border px-3 py-2 text-center">
+                                        <form action="{{ route('pos.add') }}" method="POST" class="inline-block">
+                                            @csrf
+                                            <input type="hidden" name="kode" value="{{ $item->kode }}">
+                                            <input type="hidden" name="qty" value="1">
+                                            <button type="submit"
+                                                class="bg-green-600 hover:bg-green-700 text-white py-1 px-2 rounded-lg transition text-xs"
+                                                @if($item->stok == 0 || $isExpired) disabled @endif>
+                                                Tambah
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
 
@@ -240,7 +353,7 @@
     function hitungTotal() {
         let total = {{ $total }};
         let diskon = parseFloat(document.getElementById('diskon').value) || 0;
-        let tipe   = document.getElementById('tipe_diskon').value;
+        let tipe  = document.getElementById('tipe_diskon').value;
 
         if (tipe === 'persen') {
             total -= (total * diskon / 100);
@@ -383,6 +496,78 @@
             }
         });
     });
-</script>
+    
+    // --- MODAL FUNCTIONS ---
+    function openModal() {
+        document.getElementById('obatModal').classList.remove('hidden');
+        document.getElementById('obatModal').classList.add('flex');
+    }
 
+    function closeModal() {
+        document.getElementById('obatModal').classList.remove('flex');
+        document.getElementById('obatModal').classList.add('hidden');
+    }
+
+    // Tutup modal jika klik di luar konten
+    document.getElementById('obatModal').addEventListener('click', function(e) {
+        if (e.target.id === 'obatModal') {
+            closeModal();
+        }
+    });
+
+    // --- MODAL SEARCH & SORT ---
+    document.getElementById('modal-search').addEventListener('keyup', function() {
+        const query = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#obat-table tbody tr');
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    });
+
+    document.querySelectorAll('.sortable').forEach(header => {
+        header.addEventListener('click', function() {
+            const table = this.closest('table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const headerIndex = Array.from(this.parentNode.children).indexOf(this);
+            const sortType = this.dataset.sortType;
+            let sortDir = this.dataset.sortDir;
+
+            const sortedRows = rows.sort((a, b) => {
+                const aValue = a.children[headerIndex].dataset.value || a.children[headerIndex].textContent;
+                const bValue = b.children[headerIndex].dataset.value || b.children[headerIndex].textContent;
+
+                let comparison = 0;
+                if (sortType === 'number') {
+                    comparison = parseFloat(aValue) - parseFloat(bValue);
+                } else if (sortType === 'date') {
+                    comparison = new Date(aValue) - new Date(bValue);
+                }
+                else {
+                    comparison = aValue.localeCompare(bValue);
+                }
+                
+                return sortDir === 'asc' ? comparison : -comparison;
+            });
+
+            // Update sort direction
+            document.querySelectorAll('.sortable').forEach(h => {
+                h.dataset.sortDir = 'asc';
+                h.querySelector('.sort-icon').textContent = '';
+            });
+
+            if (sortDir === 'asc') {
+                this.dataset.sortDir = 'desc';
+                this.querySelector('.sort-icon').textContent = ' ▼';
+            } else {
+                this.dataset.sortDir = 'asc';
+                this.querySelector('.sort-icon').textContent = ' ▲';
+            }
+            
+            sortedRows.forEach(row => tbody.appendChild(row));
+        });
+    });
+
+</script>
 @endpush

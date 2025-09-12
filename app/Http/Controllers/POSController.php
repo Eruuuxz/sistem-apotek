@@ -5,44 +5,45 @@ namespace App\Http\Controllers;
 use App\Models\Obat;
 use Illuminate\Http\Request;
 use App\Models\Pelanggan;
+use Carbon\Carbon;
 
 class POSController extends Controller
 {
-   public function index()
-{
-    $obat = Obat::orderBy('nama')->get(['id', 'kode', 'nama', 'harga_jual', 'stok']);
+    public function index()
+    {
+        $obat = Obat::orderBy('nama')->get(['id', 'kode', 'nama','kategori', 'expired_date', 'harga_jual', 'stok']);
 
-    $cart = session('cart', []);
-    $this->validateCart($cart);
+        $cart = session('cart', []);
+        $this->validateCart($cart);
 
-    $total = collect($cart)->sum(fn($i) => $i['harga'] * $i['qty']);
+        $total = collect($cart)->sum(fn($i) => $i['harga'] * $i['qty']);
 
-    // Ambil diskon dari session (jika ada)
-    $diskonType = session('diskon_type', 'nominal'); // default nominal
-    $diskonValue = session('diskon_value', 0);
+        // Ambil diskon dari session (jika ada)
+        $diskonType = session('diskon_type', 'nominal'); // default nominal
+        $diskonValue = session('diskon_value', 0);
 
-    if ($diskonType === 'persen') {
-        $diskonAmount = $total * ($diskonValue / 100);
-    } else {
-        $diskonAmount = $diskonValue;
+        if ($diskonType === 'persen') {
+            $diskonAmount = $total * ($diskonValue / 100);
+        } else {
+            $diskonAmount = $diskonValue;
+        }
+
+        $totalAkhir = max($total - $diskonAmount, 0);
+
+        $members = Pelanggan::orderBy('nama')->get();
+
+        return view('kasir.pos', compact('obat', 'cart', 'total', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members'));
     }
-
-    $totalAkhir = max($total - $diskonAmount, 0);
-
-    $members = Pelanggan::orderBy('nama')->get();
-
-    return view('kasir.pos', compact('obat', 'cart', 'total', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members'));
-}
 
 
     public function search(Request $request)
     {
         $keyword = $request->get('q');
 
-        $obat = Obat::where('nama', 'like', '%'. $keyword . '%') // cari di mana saja dalam nama
-            ->orWhere('kode', 'like', '%'. $keyword . '%') // // cari di mana saja dalam kode
+        $obat = Obat::where('nama', 'like', '%'. $keyword . '%')
+            ->orWhere('kode', 'like', '%'. $keyword . '%')
             ->orderBy('nama')
-            ->get(['id', 'kode', 'nama', 'harga_jual', 'stok']);
+            ->get(['id', 'kode', 'nama', 'kategori', 'expired_date', 'harga_jual', 'stok']);
 
         return response()->json($obat);
     }
@@ -53,8 +54,13 @@ class POSController extends Controller
 
         $o = Obat::where('kode', $r->kode)->where('stok', '>', 0)->orderBy('expired_date', 'asc')->first();
 
+        // Cek jika obat tidak ditemukan atau sudah kadaluarsa
         if (!$o) {
-            return back()->with('error', 'Obat tidak ditemukan');
+            return back()->with('error', 'Obat tidak ditemukan atau stok kosong.');
+        }
+
+        if (Carbon::parse($o->expired_date)->isPast()) {
+            return back()->with('error', 'Obat sudah kadaluarsa dan tidak bisa ditambahkan.');
         }
 
         $cart = session('cart', []);
@@ -73,9 +79,11 @@ class POSController extends Controller
             $cart[$o->kode] = [
                 'kode' => $o->kode,
                 'nama' => $o->nama,
+                'kategori' => $o->kategori,
                 'harga' => $o->harga_jual,
                 'qty' => 1,
-                'stok' => $o->stok // Simpan stok saat ini untuk referensi 
+                'stok' => $o->stok, // Simpan stok saat ini untuk referensi 
+                'expired_date' => $o->expired_date // Tambahkan tanggal kadaluarsa ke keranjang
             ];
         }
 
@@ -122,19 +130,19 @@ class POSController extends Controller
     }
 
     public function setDiskon(Request $r)
-{
-    $r->validate([
-        'diskon_type' => 'required|in:nominal,persen',
-        'diskon_value' => 'required|numeric|min:0'
-    ]);
+    {
+        $r->validate([
+            'diskon_type' => 'required|in:nominal,persen',
+            'diskon_value' => 'required|numeric|min:0'
+        ]);
 
-    session([
-        'diskon_type' => $r->diskon_type,
-        'diskon_value' => $r->diskon_value,
-    ]);
+        session([
+            'diskon_type' => $r->diskon_type,
+            'diskon_value' => $r->diskon_value,
+        ]);
 
-    return back()->with('success', 'Diskon berhasil diterapkan');
-}
+        return back()->with('success', 'Diskon berhasil diterapkan');
+    }
     
 
     // Helper function untuk memvalidasi dan mengunci harga/stok di keranjang
@@ -142,12 +150,13 @@ class POSController extends Controller
     {
         foreach ($cart as $kode => &$item) {
             $o = Obat::where('kode', $kode)->first();
-            if (!$o) {
-                unset($cart[$kode]); // Hapus item jika obat tidak ditemukan di DB
+            if (!$o || Carbon::parse($o->expired_date)->isPast()) {
+                unset($cart[$kode]); // Hapus item jika obat tidak ditemukan atau sudah kadaluarsa
                 continue;
             }
-            // Kunci harga ke harga jual terbaru dari DB
+            // Kunci harga dan kategori ke harga jual/kategori terbaru dari DB
             $item['harga'] = $o->harga_jual;
+            $item['kategori'] = $o->kategori; // Perbaikan: Pastikan kategori selalu sinkron
             // Batasi qty hingga stok yang tersedia
             if ($item['qty'] > $o->stok) {
                 $item['qty'] = $o->stok;
