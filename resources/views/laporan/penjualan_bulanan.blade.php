@@ -118,25 +118,6 @@
         </div>
     </div>
 </div>
-
-<script>
-function openModal(tanggal) {
-    // Tampilkan modal
-    document.getElementById('detailModal').classList.remove('hidden');
-
-    // Set link PDF & Excel sesuai tanggal
-    document.getElementById('modalPdfBtn').href = /laporan/penjualan/pdf?tanggal=${tanggal};
-    document.getElementById('modalExcelBtn').href = /laporan/penjualan/excel?tanggal=${tanggal};
-
-    // Ambil data transaksi via AJAX (opsional) untuk modalContent
-}
-
-function closeModal() {
-    document.getElementById('detailModal').classList.add('hidden');
-}
-</script>
-
-
     @php
         // Data bersih untuk JS
         $dataForJs = $dataPerHari->map(function ($rows) {
@@ -158,53 +139,58 @@ function closeModal() {
         })->toArray();
     @endphp
 
-    <script>
-        const dataByDate = @json($dataForJs);
+<script>
+    // Pastikan hanya ada satu fungsi openModal()
+    const dataByDate = @json($dataForJs);
 
-        function openModal(tanggal) {
-            document.getElementById('modalPdfBtn').href = /laporan/penjualan/pdf?tanggal=${tanggal};
-    document.getElementById('modalExcelBtn').href = /laporan/penjualan/excel?tanggal=${tanggal};
-            
-            let rows = dataByDate[tanggal];
-            let html = `
-                    <table class="w-full text-sm border-collapse">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-4 py-2 border text-left">No Nota</th>
-                                <th class="px-4 py-2 border text-left">Kasir</th>
-                                <th class="px-4 py-2 border text-left">Tanggal & Waktu</th> {{-- Tambahkan header --}}
-                                <th class="px-4 py-2 border text-right">Total</th>
-                                <th class="px-4 py-2 border text-center">Item</th>
-                                <th class="px-4 py-2 border text-center">Qty Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
+    function openModal(tanggal) {
+        // Perbaiki sintaks template literal pada URL
+        document.getElementById('modalPdfBtn').href = `/laporan/penjualan/pdf?tanggal=${tanggal}`;
+        document.getElementById('modalExcelBtn').href = `/laporan/penjualan/excel?tanggal=${tanggal}`;
+        
+        let rows = dataByDate[tanggal];
+        let html = `
+            <table class="w-full text-sm border-collapse">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-4 py-2 border text-left">No Nota</th>
+                        <th class="px-4 py-2 border text-left">Kasir</th>
+                        <th class="px-4 py-2 border text-left">Tanggal & Waktu</th>
+                        <th class="px-4 py-2 border text-right">Total</th>
+                        <th class="px-4 py-2 border text-center">Item</th>
+                        <th class="px-4 py-2 border text-center">Qty Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
 
-            rows.forEach(r => {
-                let items = r.details.map(d => ${d.nama} (${d.qty})).join(', ');
-                html += `
-                        <tr>
-                            <td class="border px-4 py-2">${r.no_nota}</td>
-                            <td class="border px-4 py-2">${r.kasir}</td>
-                            <td class="border px-4 py-2">${r.tanggal}</td> {{-- Tampilkan tanggal dengan jam --}}
-                            <td class="border px-4 py-2 text-right">Rp ${Number(r.total).toLocaleString('id-ID')}</td>
-                            <td class="border px-4 py-2">${items}</td>
-                            <td class="border px-4 py-2 text-center">${r.total_qty}</td>
-                        </tr>
-                    `;
-            });
+        rows.forEach(r => {
+            let items = r.details.map(d => `${d.nama} (${d.qty})`).join(', ');
+            html += `
+                <tr>
+                    <td class="border px-4 py-2">${r.no_nota}</td>
+                    <td class="border px-4 py-2">${r.kasir}</td>
+                    <td class="border px-4 py-2">${r.tanggal}</td>
+                    <td class="border px-4 py-2 text-right">Rp ${Number(r.total).toLocaleString('id-ID')}</td>
+                    <td class="border px-4 py-2">${items}</td>
+                    <td class="border px-4 py-2 text-center">${r.total_qty}</td>
+                </tr>
+            `;
+        });
 
-            html += </tbody></table>;
-            document.getElementById('modalContent').innerHTML = html;
-            document.getElementById('detailModal').classList.remove('hidden');
-            document.getElementById('detailModal').classList.add('flex');
-        }
+        html += `
+                </tbody>
+            </table>
+        `;
+        document.getElementById('modalContent').innerHTML = html;
+        document.getElementById('detailModal').classList.remove('hidden');
+        document.getElementById('detailModal').classList.add('flex');
+    }
 
-        function closeModal() {
-            document.getElementById('detailModal').classList.add('hidden');
-            document.getElementById('detailModal').classList.remove('flex');
-        }
-    </script>
+    function closeModal() {
+        document.getElementById('detailModal').classList.add('hidden');
+        document.getElementById('detailModal').classList.remove('flex');
+    }
+</script>
 
 @endsection
