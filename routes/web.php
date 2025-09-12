@@ -45,7 +45,8 @@ Route::middleware(['auth'])->group(function () {
         // Master Data
         Route::resource('obat', ObatController::class);
         Route::resource('supplier', SupplierController::class);
-        // Route::resource('pelanggan', PelangganController::class); // Pindahkan ini
+        // Route::resource('pelanggan', PelangganController::class);
+        
         // Transaksi
         Route::resource('pembelian', PembelianController::class);
         Route::get('/laporan/profit', [LaporanController::class, 'profitBulanan'])->name('profit');
@@ -76,6 +77,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:kasir')->group(function () {
         // POS
         Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
+        Route::get('/cart', [POSController::class, 'cart'])->name('pos.cart');
         Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
         Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
         Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
@@ -94,7 +96,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/penjualan/{id}', [PenjualanController::class, 'show'])->name('penjualan.show');
         // Master Data yang bisa diakses kasir
         // Tambahkan akses ke daftar obat untuk kasir
-        Route::get('/obat', [ObatController::class, 'index'])->name('obat.index');
     });
     Route::resource('pelanggan', PelangganController::class);
     // Riwayat Penjualan (bisa diakses oleh role 'kasir' dan 'admin')

@@ -1,0 +1,49 @@
+[33mf45a901[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m baru
+[33m9da5d0a[m fix: akses daftar obat kasir
+[33m516a8f6[m cek
+[33m3714e99[m fix: Penjualan
+[33me64e7d2[m fix: Akses sidebar Pelanggan di kasir 403
+[33m3f490f8[m nambah pelanggan di sidebar
+[33m5a24a8d[m backend dev: implementasi validasi form rapi dan error handling standar, tambah custom error page 404/500, fokus ke CRUD & transaksi
+[33m8971ea4[m feat: peningkatan POS - quick search obat, info stok, dan diskon manual per transaksi; fitur promo otomatis & cart caching ditunda
+[33mdccf3c1[m feat: tambah dukungan obat psikotropika - kolom is_psikotropika & golongan_obat di tabel obat, validasi no_ktp di POS, simpan ke penjualan_detail
+[33m995c50f[m feat: setup awal multi cabang - tambah tabel cabang & relasi cabang_id ke user dan transaksi, sistem masih 1 cabang default
+[33m470f0b7[m feat: tambah fitur CRUD pelanggan + upload KTP (fase 1 member system), relasi awal ke POS, detail KTP belum ditampilkan
+[33m3718232[m fix: perbaiki search
+[33m50c8a88[m ui
+[33m611ace9[m feat: input & cetak data pelanggan di POS kasir (nama, alamat, telepon) + tampilkan di struk & kwitansi
+[33mdf81de6[m Merge branch 'master' of https://github.com/Eruuuxz/sistem-apotek
+[33mc5e6fd6[m benerin laporan dan profit
+[33mb8f92c1[m[33m ([m[1;31morigin/fix-admin-kasir[m[33m)[m fix: perbaiki method POSController
+[33mfbf643e[m fix search
+[33ma6fc957[m menambahkan success di kasir
+[33m306a762[m cekidot
+[33meb06bfb[m feat: detail retur, kadaluarsa, date time
+[33ma752925[m fix: detail retur, kadaluarsa, date time
+[33m1dda647[m WIP: progress fitur backend (belum selesai)
+[33m1f2f5ab[m nambahin profit dan rombak bagian laporan
+[33mb29b0dc[m interaktif sidebar
+[33m626ac3e[m commit
+[33m7c878ab[m FE(Done)
+[33m9133bfe[m FE(All)
+[33m8f744db[m fix controller
+[33mdb5aa68[m Merge branch 'master' into fix-admin-kasir qa!
+[33m2c361e4[m aja
+[33m9d5d745[m membuat dashboard admin lebih interaktif & POS kasir selesai
+[33m246e209[m fix: perbaikan admin dan kasir
+[33mff706e9[m Riwayat tampilan dari kasir muncul
+[33m9f65f5d[m POS: auto input nama kasir dari user login (BE) + format pembayaran ke Rupiah (FE) belum
+[33m13eaca6[m Admin tidak bisa melihat kasir
+[33mcbe3e0f[m nambahin fitur di pos
+[33m03b164d[m POS: auto input nama kasir dari user login (BE) + format pembayaran ke Rupiah (FE) belum
+[33mf3f6598[m Merge branch 'master' of https://github.com/Eruuuxz/sistem-apotek
+[33m92e5d19[m nambahin faktur(struk obat)
+[33mc5f9629[m fix(fe): alert hapus, breadcrumb, placeholder/error form
+[33m203785e[m ngebagusin tampilan Auth
+[33ma1b3b11[m Feat: tambah fitur login dengan Laravel Breeze
+[33m314b273[m Refactor: hapu modul / ganti 'Barang' jadi 'Obat', update routes, migrasi & seeder
+[33mf99e761[m hapus modul barang
+[33m48a6190[m Tambah fitur import/export + fix backend
+[33m9f0c98b[m Phase 2: Transaksi & POS completed
+[33m4f8ebcb[m Week 2: CRUD Master Data completed
+[33m4a7c859[m Week 1: Setup & Database completed
