@@ -15,6 +15,7 @@ class Obat extends Model
         'kode',
         'nama',
         'kategori',
+        'is_psikotropika',
         'stok',
         'min_stok',
         'expired_date',

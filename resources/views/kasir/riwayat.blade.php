@@ -16,8 +16,9 @@
             <thead class="bg-gray-100 rounded-t-lg">
                 <tr>
                     <th class="px-4 py-2 text-left">No Nota</th>
-                    <th class="px-4 py-2 text-left">Tanggal & Waktu</th> {{-- Ubah header --}}
+                    <th class="px-4 py-2 text-left">Tanggal & Waktu</th>
                     <th class="px-4 py-2 text-left">Kasir</th>
+                    <th class="px-4 py-2 text-left">Nama Pelanggan</th> {{-- Tambah kolom Nama Pelanggan --}}
                     <th class="px-4 py-2 text-right">Total</th>
                     <th class="px-4 py-2 text-center">Aksi</th>
                 </tr>
@@ -26,19 +27,19 @@
                 @forelse($data as $row)
                     <tr class="hover:bg-gray-50 transition">
                         <td class="border px-4 py-2">{{ $row->no_nota }}</td>
-                        <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('Y-m-d H:i:s') }}</td> {{-- Tambahkan format jam --}}
+                        <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('Y-m-d H:i:s') }}</td>
                         <td class="border px-4 py-2">{{ $row->kasir->name ?? '-' }}</td>
+                        <td class="border px-4 py-2">{{ $row->pelanggan->nama ?? $row->nama_pelanggan ?? '-' }}</td> {{-- Tampilkan nama pelanggan --}}
                         <td class="border px-4 py-2 text-right">Rp {{ number_format($row->total, 0, ',', '.') }}</td>
-<td class="border px-4 py-2 text-center flex justify-center gap-2">
-    <a href="{{ route('penjualan.show', $row->id) }}" class="text-blue-500 hover:underline">Detail</a>
-    <span class="text-gray-300">|</span>
-    <a href="{{ route('pos.print.faktur', $row->id) }}" class="text-green-600 hover:underline">Cetak</a>
-</td>
-
+                        <td class="border px-4 py-2 text-center flex justify-center gap-2">
+                            <a href="{{ route('penjualan.show', $row->id) }}" class="text-blue-500 hover:underline">Detail</a>
+                            <span class="text-gray-300">|</span>
+                            <a href="{{ route('pos.print.faktur', $row->id) }}" class="text-green-600 hover:underline">Cetak</a>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="border px-4 py-2 text-center text-gray-500">Tidak ada data penjualan.</td>
+                        <td colspan="6" class="border px-4 py-2 text-center text-gray-500">Tidak ada data penjualan.</td>
                     </tr>
                 @endforelse
             </tbody>

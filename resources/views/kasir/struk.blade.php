@@ -39,6 +39,10 @@
             background: #f5f5f5;
         }
 
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
         .header {
             display: flex;
             justify-content: space-between;
@@ -114,11 +118,11 @@
             <div class="header-right">FAKTUR</div>
         </div>
 
-        {{-- DETAIL --}}
+        {{-- DETAIL TRANSAKSI & PELANGGAN --}}
         <table class="details" width="100%">
             <tr>
-                <td><strong>Nama Pelanggan</strong> : {{ $penjualan->nama_pelanggan ?? '-' }}</td>
-                <td class="text-right"><strong>Kasir</strong> : {{ $penjualan->kasir->name ?? '-' }}</td>
+                <td style="width:50%;"><strong>Nama Pelanggan</strong> : {{ $penjualan->nama_pelanggan ?? '-' }}</td>
+                <td class="text-right" style="width:50%;"><strong>Kasir</strong> : {{ $penjualan->kasir->name ?? '-' }}</td>
             </tr>
             <tr>
                 <td><strong>No. Telp</strong> : {{ $penjualan->telepon_pelanggan ?? '-' }}</td>
@@ -129,6 +133,17 @@
                 <td><strong>Alamat</strong> : {{ $penjualan->alamat_pelanggan ?? '-' }}</td>
                 <td class="text-right"><strong>No. Faktur</strong> : {{ $penjualan->no_nota }}</td>
             </tr>
+            @if($penjualan->pelanggan)
+            <tr>
+                <td><strong>Status Member</strong> : {{ ucfirst($penjualan->pelanggan->status_member) }}</td>
+                <td class="text-right"><strong>Poin Member</strong> : {{ number_format($penjualan->pelanggan->point, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            @if($penjualan->details->firstWhere('no_ktp')) {{-- Cek jika ada detail dengan no_ktp --}}
+            <tr>
+                <td colspan="2"><strong>No. KTP</strong> : {{ $penjualan->details->firstWhere('no_ktp')->no_ktp }}</td>
+            </tr>
+            @endif
         </table>
 
 
@@ -147,9 +162,9 @@
             <tbody>
                 @foreach($penjualan->details ?? [] as $i => $item)
                     <tr>
-                        <td align="center">{{ $i + 1 }}</td>
+                        <td class="text-center">{{ $i + 1 }}</td>
                         <td>{{ $item->obat->nama ?? '-' }}</td>
-                        <td align="center">{{ $item->qty }}</td>
+                        <td class="text-center">{{ $item->qty }}</td>
                         <td>
                             @if($item->obat->expired_date)
                                 (ED {{ \Carbon\Carbon::parse($item->obat->expired_date)->format('d-m-Y') }})
@@ -157,8 +172,8 @@
                                 (ED -)
                             @endif
                         </td>
-                        <td align="right">{{ number_format($item->harga, 0, ',', '.') }}</td>
-                        <td align="right">{{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($item->harga, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($item->subtotal, 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -167,21 +182,45 @@
         {{-- TOTAL --}}
         <table class="totals" width="100%">
             <tr>
-                <td><strong>Total : Rp {{ number_format($penjualan->total, 0, ',', '.') }}</strong></td>
+                <td style="width: 70%; border: none;"></td>
+                <td style="width: 15%; border: none; text-align: right;">Subtotal:</td>
+                <td style="width: 15%; border: none; text-align: right;">Rp {{ number_format($penjualan->subtotal_attribute, 0, ',', '.') }}</td>
+            </tr>
+            @if($penjualan->diskon_amount > 0)
+            <tr>
+                <td style="width: 70%; border: none;"></td>
+                <td style="width: 15%; border: none; text-align: right;">Diskon ({{ $penjualan->diskon_type == 'persen' ? $penjualan->diskon_value . '%' : 'Rp ' . number_format($penjualan->diskon_value, 0, ',', '.') }}):</td>
+                <td style="width: 15%; border: none; text-align: right;">- Rp {{ number_format($penjualan->diskon_amount, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            <tr>
+                <td style="width: 70%; border: none;"></td>
+                <td style="width: 15%; border: none; text-align: right;">Total:</td>
+                <td style="width: 15%; border: none; text-align: right;"><strong>Rp {{ number_format($penjualan->total, 0, ',', '.') }}</strong></td>
+            </tr>
+            <tr>
+                <td style="width: 70%; border: none;"></td>
+                <td style="width: 15%; border: none; text-align: right;">Bayar:</td>
+                <td style="width: 15%; border: none; text-align: right;">Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td style="width: 70%; border: none;"></td>
+                <td style="width: 15%; border: none; text-align: right;">Kembalian:</td>
+                <td style="width: 15%; border: none; text-align: right;">Rp {{ number_format($penjualan->kembalian, 0, ',', '.') }}</td>
             </tr>
         </table>
 
         {{-- CATATAN --}}
-<div class="footer">
-    <p><strong>Catatan:</strong><br>
-    Terimakasih telah berkunjung. Semoga sehat selalu.<br>
-    Maaf, barang yang sudah dibeli tidak dapat ditukar atau dikembalikan.</p>
+        <div class="footer">
+            <p><strong>Catatan:</strong><br>
+            Terimakasih telah berkunjung. Semoga sehat selalu.<br>
+            Maaf, barang yang sudah dibeli tidak dapat ditukar atau dikembalikan.</p>
 
-    <div style="text-align: right; margin-top: 50px; margin-right: 50px;">
-        Kasir<br><br><br>
-        __________________<br>
-    </div>
-</div>
+            <div style="text-align: right; margin-top: 50px; margin-right: 50px;">
+                Kasir<br><br><br>
+                __________________<br>
+            </div>
+        </div>
 
     </div>
 

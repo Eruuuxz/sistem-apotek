@@ -100,20 +100,19 @@
 <body onload="window.print()">
     <div class="kwitansi-container">
         <!-- Bagian kiri -->
-<!-- Bagian kiri -->
-<div class="left-section">
-    <div class="left-box">
-        <div class="vertical-text">
-            APOTEK LIZ FARMA 02<br>
-            JL. RAYA BATUJAJAR NO. 321<br>
-            RT.001 RW.005<br>
-            KEL. BATUJAJAR BARAT, KEC. BATUJAJAR
+        <div class="left-section">
+            <div class="left-box">
+                <div class="vertical-text">
+                    APOTEK LIZ FARMA 02<br>
+                    JL. RAYA BATUJAJAR NO. 321<br>
+                    RT.001 RW.005<br>
+                    KEL. BATUJAJAR BARAT, KEC. BATUJAJAR
+                </div>
+            </div>
+            <div class="logo">
+                <img src="{{ asset('images/ilus.jpg') }}" alt="Logo Apotek">
+            </div>
         </div>
-    </div>
-    <div class="logo">
-        <img src="{{ asset('images/ilus.jpg') }}" alt="Logo Apotek">
-    </div>
-</div>
 
 
         <!-- Bagian kanan -->
@@ -123,17 +122,22 @@
             </div>
             <div class="field">
                 <span>Telah terima dari:</span>
-                @if($penjualan->nama_pelanggan)
-                    {{ $penjualan->nama_pelanggan }}
+                @if($penjualan->pelanggan)
+                    {{ $penjualan->pelanggan->nama }} ({{ ucfirst($penjualan->pelanggan->status_member) }})
                 @else
-                    ....................................
+                    {{ $penjualan->nama_pelanggan ?? '....................................' }}
                 @endif
             </div>
+            @if($penjualan->pelanggan)
+            <div class="field">
+                <span>Poin Member:</span> {{ number_format($penjualan->pelanggan->point, 0, ',', '.') }}
+            </div>
+            @endif
             <div class="field">
                 <span>Uang sejumlah:</span> Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}
             </div>
             <div class="field">
-                <span>Untuk pembayaran:</span> ....................................
+                <span>Untuk pembayaran:</span> Pembelian obat di Apotek LIZ Farma 02
             </div>
 
             <div class="amount-box">

@@ -5,23 +5,35 @@ namespace App\Http\Controllers;
 use App\Models\Obat;
 use Illuminate\Http\Request;
 use App\Models\Pelanggan;
+use App\Models\Penjualan;
+use App\Models\PenjualanDetail;
+use App\Models\BatchObat;
+use App\Models\Cabang;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class POSController extends Controller
 {
     public function index()
     {
-        $obat = Obat::orderBy('nama')->get(['id', 'kode', 'nama','kategori', 'expired_date', 'harga_jual', 'stok']);
+        $obat = Obat::where('stok', '>', 0)
+            ->where(function ($query) {
+                $query->whereNull('expired_date')
+                      ->orWhere('expired_date', '>', now());
+            })
+            ->orderBy('nama')
+            ->get(['id', 'kode', 'nama', 'kategori', 'expired_date', 'harga_jual', 'stok', 'is_psikotropika']);
 
         $cart = session('cart', []);
         $this->validateCart($cart);
 
         $total = collect($cart)->sum(fn($i) => $i['harga'] * $i['qty']);
 
-        // Ambil diskon dari session (jika ada)
-        $diskonType = session('diskon_type', 'nominal'); // default nominal
+        $diskonType = session('diskon_type', 'nominal');
         $diskonValue = session('diskon_value', 0);
 
+        $diskonAmount = 0;
         if ($diskonType === 'persen') {
             $diskonAmount = $total * ($diskonValue / 100);
         } else {
@@ -35,15 +47,22 @@ class POSController extends Controller
         return view('kasir.pos', compact('obat', 'cart', 'total', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members'));
     }
 
-
     public function search(Request $request)
     {
         $keyword = $request->get('q');
 
-        $obat = Obat::where('nama', 'like', '%'. $keyword . '%')
-            ->orWhere('kode', 'like', '%'. $keyword . '%')
+        $obat = Obat::where('stok', '>', 0)
+            ->where(function ($query) {
+                $query->whereNull('expired_date')
+                      ->orWhere('expired_date', '>', now());
+            })
+            ->where(function ($query) use ($keyword) {
+                $query->where('nama', 'like', '%' . $keyword . '%')
+                    ->orWhere('kode', 'like', '%' . $keyword . '%');
+            })
             ->orderBy('nama')
-            ->get(['id', 'kode', 'nama', 'kategori', 'expired_date', 'harga_jual', 'stok']);
+            ->limit(10)
+            ->get(['id', 'kode', 'nama', 'kategori', 'expired_date', 'harga_jual', 'stok', 'is_psikotropika']);
 
         return response()->json($obat);
     }
@@ -52,40 +71,73 @@ class POSController extends Controller
     {
         $r->validate(['kode' => 'required']);
 
-        $o = Obat::where('kode', $r->kode)->where('stok', '>', 0)->orderBy('expired_date', 'asc')->first();
+        $obat = Obat::where('kode', $r->kode)->first();
 
-        // Cek jika obat tidak ditemukan atau sudah kadaluarsa
-        if (!$o) {
-            return back()->with('error', 'Obat tidak ditemukan atau stok kosong.');
+        if (!$obat) {
+            return back()->with('error', 'Obat tidak ditemukan.');
         }
 
-        if (Carbon::parse($o->expired_date)->isPast()) {
-            return back()->with('error', 'Obat sudah kadaluarsa dan tidak bisa ditambahkan.');
+        if ($obat->stok <= 0) {
+            return back()->with('error', 'Stok ' . $obat->nama . ' kosong.');
+        }
+
+        // Cek apakah obat sudah kadaluarsa (berdasarkan expired_date di tabel obat)
+        // Ini adalah expired_date dari tabel obat, bukan batch.
+        // Validasi batch akan dilakukan saat mengambil batch.
+        if ($obat->expired_date && Carbon::parse($obat->expired_date)->isPast()) {
+            return back()->with('error', 'Obat ' . $obat->nama . ' sudah kadaluarsa dan tidak bisa ditambahkan.');
         }
 
         $cart = session('cart', []);
+        $qtyToAdd = 1;
 
-        if (isset($cart[$o->kode])) {
-            // Cek stok sebelum menambah
-            if ($cart[$o->kode]['qty'] + 1 > $o->stok) {
-                return back()->with('error', 'Stok ' . $o->nama . ' tidak cukup.');
-            }
-            $cart[$o->kode]['qty'] += 1;
-        } else {
-            // Cek stok untuk item baru
-            if ($o->stok < 1) {
-                return back()->with('error', 'Stok ' . $o->nama . ' kosong.');
-            }
-            $cart[$o->kode] = [
-                'kode' => $o->kode,
-                'nama' => $o->nama,
-                'kategori' => $o->kategori,
-                'harga' => $o->harga_jual,
-                'qty' => 1,
-                'stok' => $o->stok, // Simpan stok saat ini untuk referensi 
-                'expired_date' => $o->expired_date // Tambahkan tanggal kadaluarsa ke keranjang
-            ];
+        if (isset($cart[$obat->kode])) {
+            $qtyToAdd = $cart[$obat->kode]['qty'] + 1;
         }
+
+        // Ambil batch obat menggunakan FEFO
+        $batches = BatchObat::where('obat_id', $obat->id)
+            ->where('stok_saat_ini', '>', 0)
+            ->where('expired_date', '>', now()) // Hanya batch yang belum kadaluarsa
+            ->orderBy('expired_date', 'asc') // FEFO: expired terdekat dulu
+            ->get();
+
+        $tempBatchesUsed = [];
+        $totalQtyFromBatches = 0;
+        $remainingQtyNeeded = $qtyToAdd;
+
+        foreach ($batches as $batch) {
+            if ($remainingQtyNeeded <= 0) break;
+
+            $qtyFromThisBatch = min($remainingQtyNeeded, $batch->stok_saat_ini);
+            if ($qtyFromThisBatch > 0) {
+                $tempBatchesUsed[] = [
+                    'batch_id' => $batch->id,
+                    'no_batch' => $batch->no_batch,
+                    'expired_date' => $batch->expired_date,
+                    'qty_from_batch' => $qtyFromThisBatch,
+                    'harga_beli_per_unit' => $batch->harga_beli_per_unit,
+                ];
+                $totalQtyFromBatches += $qtyFromThisBatch;
+                $remainingQtyNeeded -= $qtyFromThisBatch;
+            }
+        }
+
+        if ($totalQtyFromBatches < $qtyToAdd) {
+            return back()->with('error', 'Stok ' . $obat->nama . ' tidak cukup dari batch yang tersedia. Stok saat ini: ' . $obat->stok);
+        }
+
+        $cart[$obat->kode] = [
+            'id' => $obat->id,
+            'kode' => $obat->kode,
+            'nama' => $obat->nama,
+            'kategori' => $obat->kategori,
+            'harga' => $obat->harga_jual,
+            'qty' => $qtyToAdd,
+            'stok' => $obat->stok,
+            'is_psikotropika' => $obat->is_psikotropika,
+            'batches_used' => $tempBatchesUsed,
+        ];
 
         session(['cart' => $cart]);
         return back();
@@ -93,29 +145,68 @@ class POSController extends Controller
 
     public function updateQty(Request $r)
     {
-        $r->validate(['kode' => 'required', 'qty' => 'required|integer|min:1']);
+        $r->validate(['kode' => 'required', 'qty' => 'required|integer|min:0']);
 
         $cart = session('cart', []);
+        $kode = $r->kode;
+        $newQty = (int) $r->qty;
 
-        if (isset($cart[$r->kode])) {
-            $o = Obat::where('kode', $r->kode)->first();
-            if (!$o) {
-                unset($cart[$r->kode]);
-                session(['cart' => $cart]);
-                return back()->with('error', 'Obat tidak ditemukan di database.');
-            }
-
-            // Batasi qty agar tidak melebihi stok yang tersedia
-            $newQty = (int) $r->qty;
-            if ($newQty > $o->stok) {
-                $newQty = $o->stok; // Set ke stok maksimal 
-                session(['cart' => $cart]); // Update session jika qty diubah
-                return back()->with('error', 'Kuantitas melebihi stok yang tersedia. Stok maksimal: ' . $o->stok);
-            }
-
-            $cart[$r->kode]['qty'] = $newQty;
-            session(['cart' => $cart]);
+        if (!isset($cart[$kode])) {
+            return back()->with('error', 'Obat tidak ada di keranjang.');
         }
+
+        if ($newQty === 0) {
+            unset($cart[$kode]);
+            session(['cart' => $cart]);
+            return back();
+        }
+
+        $obat = Obat::where('kode', $kode)->first();
+        if (!$obat) {
+            unset($cart[$kode]);
+            session(['cart' => $cart]);
+            return back()->with('error', 'Obat tidak ditemukan di database.');
+        }
+
+        if ($newQty > $obat->stok) {
+            return back()->with('error', 'Kuantitas melebihi stok total yang tersedia. Stok maksimal: ' . $obat->stok);
+        }
+
+        $batches = BatchObat::where('obat_id', $obat->id)
+            ->where('stok_saat_ini', '>', 0)
+            ->where('expired_date', '>', now())
+            ->orderBy('expired_date', 'asc')
+            ->get();
+
+        $tempBatchesUsed = [];
+        $remainingQtyNeeded = $newQty;
+        $totalQtyFromBatches = 0;
+
+        foreach ($batches as $batch) {
+            if ($remainingQtyNeeded <= 0) break;
+
+            $qtyFromThisBatch = min($remainingQtyNeeded, $batch->stok_saat_ini);
+            if ($qtyFromThisBatch > 0) {
+                $tempBatchesUsed[] = [
+                    'batch_id' => $batch->id,
+                    'no_batch' => $batch->no_batch,
+                    'expired_date' => $batch->expired_date,
+                    'qty_from_batch' => $qtyFromThisBatch,
+                    'harga_beli_per_unit' => $batch->harga_beli_per_unit,
+                ];
+                $totalQtyFromBatches += $qtyFromThisBatch;
+                $remainingQtyNeeded -= $qtyFromThisBatch;
+            }
+        }
+
+        if ($totalQtyFromBatches < $newQty) {
+            return back()->with('error', 'Stok ' . $obat->nama . ' tidak cukup dari batch yang tersedia untuk kuantitas ini. Stok saat ini: ' . $obat->stok);
+        }
+
+        $cart[$kode]['qty'] = $newQty;
+        $cart[$kode]['batches_used'] = $tempBatchesUsed;
+        session(['cart' => $cart]);
+
         return back();
     }
 
@@ -143,30 +234,257 @@ class POSController extends Controller
 
         return back()->with('success', 'Diskon berhasil diterapkan');
     }
-    
 
-    // Helper function untuk memvalidasi dan mengunci harga/stok di keranjang
+    public function checkout(Request $r)
+    {
+        $cart = session('cart', []);
+        if (empty($cart)) {
+            return back()->with('error', 'Keranjang kosong');
+        }
+
+        $totalCart = collect($cart)->sum(fn($i) => (float)$i['harga'] * (int)$i['qty']);
+
+        $diskonType = $r->input('diskon_type', 'nominal');
+        $diskonValue = (float)$r->input('diskon_value', 0);
+        $diskonAmount = 0;
+
+        if ($diskonType === 'persen') {
+            $diskonAmount = $totalCart * ($diskonValue / 100);
+        } else {
+            $diskonAmount = $diskonValue;
+        }
+
+        $finalTotal = max($totalCart - $diskonAmount, 0);
+
+        $validated = $r->validate([
+            'nama_pelanggan' => 'required|string|max:255',
+            'alamat_pelanggan' => 'nullable|string|max:1000',
+            'telepon_pelanggan' => 'nullable|string|max:20',
+            'pelanggan_id' => 'nullable|exists:pelanggan,id',
+            'bayar' => 'required|numeric|min:' . $finalTotal,
+            'no_ktp' => 'nullable|string|max:20',
+        ], [
+            'bayar.min' => 'Pembayaran kurang dari total belanja setelah diskon.'
+        ]);
+
+        $hasPsikotropika = collect($cart)->contains(fn($item) => $item['is_psikotropika']);
+        if ($hasPsikotropika && empty($validated['no_ktp'])) {
+            return back()->withErrors(['no_ktp' => 'Nomor KTP wajib diisi untuk pembelian obat psikotropika.'])->withInput();
+        }
+
+        $bayar = (float)$r->bayar;
+        $kembalian = $bayar - $finalTotal;
+
+        DB::transaction(function () use ($cart, $finalTotal, $bayar, $kembalian, $r, $validated, $diskonType, $diskonValue, $diskonAmount, $hasPsikotropika, &$penjualan) {
+            $no = 'PJ-' . date('Ymd') . '-' . str_pad(Penjualan::whereDate('tanggal', date('Y-m-d'))->count() + 1, 3, '0', STR_PAD_LEFT);
+            $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id') ?? Cabang::first()->id;
+
+            $penjualan = Penjualan::create([
+                'no_nota' => $no,
+                'tanggal' => Carbon::now()->toDateTimeString(),
+                'user_id' => Auth::id(),
+                'cabang_id' => $cabangId,
+                'total' => $finalTotal,
+                'bayar' => $bayar,
+                'kembalian' => $kembalian,
+                'nama_pelanggan' => $validated['nama_pelanggan'],
+                'alamat_pelanggan' => $validated['alamat_pelanggan'],
+                'telepon_pelanggan' => $validated['telepon_pelanggan'],
+                'pelanggan_id' => $validated['pelanggan_id'],
+                'diskon_type' => $diskonType,
+                'diskon_value' => $diskonValue,
+                'diskon_amount' => $diskonAmount,
+            ]);
+
+            foreach ($cart as $item) {
+                $obat = Obat::find($item['id']);
+                if (!$obat) {
+                    throw new \Exception("Obat dengan ID {$item['id']} tidak ditemukan.");
+                }
+
+                $totalHPP = 0;
+                $totalQtyUsed = 0;
+                $batchIdsUsed = [];
+
+                foreach ($item['batches_used'] as $batchDetail) {
+                    $totalHPP += $batchDetail['harga_beli_per_unit'] * $batchDetail['qty_from_batch'];
+                    $totalQtyUsed += $batchDetail['qty_from_batch'];
+                    $batchIdsUsed[] = $batchDetail['batch_id'];
+                }
+                $hpp = $totalQtyUsed > 0 ? $totalHPP / $totalQtyUsed : $obat->harga_dasar;
+
+                PenjualanDetail::create([
+                    'penjualan_id' => $penjualan->id,
+                    'obat_id' => $obat->id,
+                    'qty' => $item['qty'],
+                    'harga' => $item['harga'],
+                    'hpp' => $hpp,
+                    'subtotal' => (float)$item['qty'] * (float)$item['harga'],
+                    'no_ktp' => $hasPsikotropika ? $validated['no_ktp'] : null,
+                    'batch_id' => count($batchIdsUsed) === 1 ? $batchIdsUsed[0] : null, // Simpan batch_id jika hanya 1 batch
+                ]);
+
+                $obat->decrement('stok', $item['qty']);
+
+                foreach ($item['batches_used'] as $batchDetail) {
+                    $batch = BatchObat::find($batchDetail['batch_id']);
+                    if ($batch) {
+                        $batch->decrement('stok_saat_ini', $batchDetail['qty_from_batch']);
+                    }
+                }
+            }
+
+            if ($validated['pelanggan_id']) {
+                $pelanggan = Pelanggan::find($validated['pelanggan_id']);
+                if ($pelanggan) {
+                    $pointsEarned = floor($finalTotal / 1000);
+                    $pelanggan->increment('point', $pointsEarned);
+                }
+            }
+        });
+
+        session()->forget('cart');
+        session()->forget('diskon_type');
+        session()->forget('diskon_value');
+
+        return redirect()->route('pos.print.options', $penjualan->id);
+    }
+
     private function validateCart(&$cart)
     {
         foreach ($cart as $kode => &$item) {
-            $o = Obat::where('kode', $kode)->first();
-            if (!$o || Carbon::parse($o->expired_date)->isPast()) {
-                unset($cart[$kode]); // Hapus item jika obat tidak ditemukan atau sudah kadaluarsa
+            $obat = Obat::where('kode', $kode)->first();
+
+            if (!$obat || $obat->stok <= 0 || ($obat->expired_date && Carbon::parse($obat->expired_date)->isPast())) {
+                unset($cart[$kode]);
                 continue;
             }
-            // Kunci harga dan kategori ke harga jual/kategori terbaru dari DB
-            $item['harga'] = $o->harga_jual;
-            $item['kategori'] = $o->kategori; // Perbaikan: Pastikan kategori selalu sinkron
-            // Batasi qty hingga stok yang tersedia
-            if ($item['qty'] > $o->stok) {
-                $item['qty'] = $o->stok;
+
+            $item['harga'] = $obat->harga_jual;
+            $item['kategori'] = $obat->kategori;
+            $item['is_psikotropika'] = $obat->is_psikotropika;
+
+            $batches = BatchObat::where('obat_id', $obat->id)
+                ->where('stok_saat_ini', '>', 0)
+                ->where('expired_date', '>', now())
+                ->orderBy('expired_date', 'asc')
+                ->get();
+
+            $tempBatchesUsed = [];
+            $remainingQtyNeeded = $item['qty'];
+            $totalQtyFromBatches = 0;
+
+            foreach ($batches as $batch) {
+                if ($remainingQtyNeeded <= 0) break;
+
+                $qtyFromThisBatch = min($remainingQtyNeeded, $batch->stok_saat_ini);
+                if ($qtyFromThisBatch > 0) {
+                    $tempBatchesUsed[] = [
+                        'batch_id' => $batch->id,
+                        'no_batch' => $batch->no_batch,
+                        'expired_date' => $batch->expired_date,
+                        'qty_from_batch' => $qtyFromThisBatch,
+                        'harga_beli_per_unit' => $batch->harga_beli_per_unit,
+                    ];
+                    $totalQtyFromBatches += $qtyFromThisBatch;
+                    $remainingQtyNeeded -= $qtyFromThisBatch;
+                }
             }
-            if ($item['qty'] < 1) { // Pastikan qty minimal 1
-                $item['qty'] = 1;
+
+            if ($totalQtyFromBatches < $item['qty']) {
+                $item['qty'] = $totalQtyFromBatches;
+                $item['batches_used'] = $tempBatchesUsed;
+                if ($item['qty'] === 0) {
+                    unset($cart[$kode]);
+                    continue;
+                }
+            } else {
+                $item['batches_used'] = $tempBatchesUsed;
             }
-            // Update stok referensi di keranjang
-            $item['stok'] = $o->stok;
+
+            $item['stok'] = $obat->stok;
         }
-        session(['cart' => $cart]); // Simpan kembali keranjang yang sudah divalidasi
+        session(['cart' => $cart]);
+    }
+
+    public function printOptions($id)
+    {
+        $penjualan = Penjualan::findOrFail($id);
+        return view('kasir.print-options', compact('penjualan'));
+    }
+
+    public function printFaktur($id)
+    {
+        $penjualan = Penjualan::with('details.obat', 'kasir', 'pelanggan', 'details.batchObat')->findOrFail($id); // Load batchObat
+        return view('kasir.struk', compact('penjualan'));
+    }
+
+    public function printKwitansi($id)
+    {
+        $penjualan = Penjualan::with('kasir', 'pelanggan')->findOrFail($id);
+        return view('kasir.kwitansi', compact('penjualan'));
+    }
+
+    public function strukPdf($id)
+    {
+        $penjualan = Penjualan::with('details.obat', 'kasir', 'pelanggan', 'details.batchObat')->findOrFail($id); // Load batchObat
+        $pdf = Pdf::loadView('kasir.struk', compact('penjualan'))->setPaper('A6', 'landscape');
+        return $pdf->stream('faktur-' . $penjualan->no_nota . '.pdf');
+    }
+
+    public function riwayatKasir()
+    {
+        $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id');
+
+        $data = Penjualan::with('details.obat', 'pelanggan')
+            ->where('user_id', Auth::id())
+            ->where('cabang_id', $cabangId)
+            ->orderBy('tanggal', 'desc')
+            ->paginate(10);
+
+        return view('kasir.riwayat', compact('data'));
+    }
+
+    public function show($id)
+    {
+        $p = Penjualan::with('details.obat', 'kasir', 'pelanggan', 'details.batchObat')->findOrFail($id); // Load batchObat
+        return view('kasir.detail', compact('p'));
+    }
+
+    public function success($id)
+    {
+        $penjualan = Penjualan::with('kasir', 'pelanggan')->findOrFail($id);
+        return view('kasir.success', compact('penjualan'));
+    }
+
+    public function searchPelanggan(Request $request)
+    {
+        $query = $request->input('q');
+        $pelanggans = Pelanggan::where('nama', 'like', "%{$query}%")
+            ->orWhere('telepon', 'like', "%{$query}%")
+            ->orWhere('no_ktp', 'like', "%{$query}%")
+            ->limit(10)
+            ->get();
+
+        return response()->json($pelanggans);
+    }
+
+    public function addPelangganCepat(Request $request)
+    {
+        $request->validate([
+            'nama' => 'required|string|max:255',
+            'telepon' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string|max:1000',
+        ]);
+
+        $pelanggan = Pelanggan::create([
+            'nama' => $request->nama,
+            'telepon' => $request->telepon,
+            'alamat' => $request->alamat,
+            'status_member' => 'member',
+            'point' => 0,   
+        ]);
+
+        return response()->json($pelanggan);
     }
 }

@@ -6,19 +6,28 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('penjualan', function (Blueprint $table) {
-            $table->unsignedBigInteger('pelanggan_id')->nullable()->after('telepon_pelanggan');
-            $table->foreign('pelanggan_id')->references('id')->on('pelanggan')->nullOnDelete();
+            if (!Schema::hasColumn('penjualan', 'pelanggan_id')) {
+                $table->foreignId('pelanggan_id')->nullable()->constrained('pelanggan')->onDelete('set null')->after('telepon_pelanggan');
+            }
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('penjualan', function (Blueprint $table) {
-            $table->dropForeign(['pelanggan_id']);
-            $table->dropColumn('pelanggan_id');
+            if (Schema::hasColumn('penjualan', 'pelanggan_id')) {
+                $table->dropForeign(['pelanggan_id']);
+                $table->dropColumn('pelanggan_id');
+            }
         });
     }
 };

@@ -43,6 +43,7 @@
                             <th class="px-3 py-2 text-left">Kode</th>
                             <th class="px-3 py-2 text-left">Nama Obat</th>
                             <th class="px-3 py-2 text-left">Kategori</th>
+                            <th class="px-3 py-2 text-left">Expired Date</th> {{-- Tambah kolom Expired Date --}}
                             <th class="px-3 py-2 text-right">Harga</th>
                             <th class="px-3 py-2 text-center">Qty</th>
                             <th class="px-3 py-2 text-right">Stok</th>
@@ -52,11 +53,31 @@
                     </thead>
                     <tbody>
                         @forelse($cart as $item)
+                            @php
+                                $isExpired = false;
+                                $expiredDateDisplay = 'N/A';
+                                if (!empty($item['batches_used'])) {
+                                    // Ambil expired date terdekat dari batch yang digunakan
+                                    $expiredDate = collect($item['batches_used'])->min('expired_date');
+                                    if ($expiredDate) {
+                                        $expiredDateDisplay = \Carbon\Carbon::parse($expiredDate)->format('d-m-Y');
+                                        $isExpired = \Carbon\Carbon::parse($expiredDate)->isPast();
+                                    }
+                                }
+                            @endphp
                             <tr
-                                class="hover:bg-gray-50 transition duration-150 {{ $item['stok'] == 0 ? 'bg-red-50' : ($item['stok'] < 10 ? 'bg-yellow-50' : '') }}">
+                                class="hover:bg-gray-50 transition duration-150 
+                                {{ $item['stok'] == 0 || $isExpired ? 'bg-red-50' : ($item['stok'] < 10 ? 'bg-yellow-50' : '') }}"
+                                data-is-psikotropika="{{ $item['is_psikotropika'] ? 'true' : 'false' }}">
                                 <td class="border px-3 py-2">{{ $item['kode'] }}</td>
                                 <td class="border px-3 py-2">{{ $item['nama'] }}</td>
                                 <td class="border px-3 py-2">{{ $item['kategori'] }}</td>
+                                <td class="border px-3 py-2">
+                                    {{ $expiredDateDisplay }}
+                                    @if($isExpired)
+                                        <span class="ml-2 px-2 py-1 text-xs bg-red-600 text-white rounded-full">Expired</span>
+                                    @endif
+                                </td>
                                 <td class="border px-3 py-2 text-right">Rp {{ number_format($item['harga'], 0, ',', '.') }}</td>
                                 <td class="border px-3 py-2 text-center">
                                     <form action="{{ route('pos.update') }}" method="POST" class="inline-block">
@@ -64,7 +85,7 @@
                                         <input type="hidden" name="kode" value="{{ $item['kode'] }}">
                                         <input type="number" name="qty" value="{{ $item['qty'] }}"
                                             class="w-16 border rounded text-center px-1 py-1" onchange="this.form.submit()"
-                                            min="1" max="{{ $item['stok'] }}">
+                                            min="0" max="{{ $item['stok'] }}"> {{-- min 0 untuk hapus --}}
                                     </form>
                                 </td>
                                 <td class="border px-3 py-2 text-right">
@@ -88,7 +109,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="border px-3 py-2 text-center text-gray-400">Keranjang kosong.</td>
+                                <td colspan="9" class="border px-3 py-2 text-center text-gray-400">Keranjang kosong.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -109,48 +130,18 @@
 
                 {{-- Pilihan Member --}}
                 <div class="grid grid-cols-3 items-start gap-2">
-                    <label for="member" class="text-sm font-medium text-gray-700 mt-2">Pilih Member</label>
-                    <div class="col-span-2">
-                        <select id="member" class="w-full">
+                    <label for="member_search_select2" class="text-sm font-medium text-gray-700 mt-2">Pilih Member</label>
+                    <div class="col-span-2 flex gap-2">
+                        <select id="member_search_select2" name="pelanggan_id" class="w-full">
                             <option value="">-- Bukan Member --</option>
-                            @foreach ($members as $member)
-                                <option value="{{ $member->id }}"
-                                    data-nama="{{ $member->nama }}"
-                                    data-alamat="{{ $member->alamat }}"
-                                    data-telepon="{{ $member->telepon }}">
-                                    {{ $member->nama }} - {{ $member->telepon }}
-                                </option>
-                            @endforeach
+                            {{-- Options will be loaded via AJAX --}}
                         </select>
+                        <button type="button" onclick="openAddPelangganModal()" class="bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600 transition">
+                            + Baru
+                        </button>
                     </div>
                 </div>
                 {{-- End Pilihan Member --}}
-
-                {{-- Check if psychotropic drug exists in the cart --}}
-                @php
-                    $hasPsikotropika = false;
-                    foreach ($cart as $item) {
-                        if ($item['kategori'] === 'Psikotropika') {
-                            $hasPsikotropika = true;
-                            break;
-                        }
-                    }
-                @endphp
-
-                @if ($hasPsikotropika)
-                    <div class="grid grid-cols-3 items-start gap-2">
-                        <label for="no_ktp" class="text-sm font-medium text-gray-700 mt-2">No. KTP <span class="text-red-600">*</span></label>
-                        <div class="col-span-2">
-                            <input type="text" id="no_ktp" name="no_ktp"
-                                class="w-full border rounded-lg px-3 py-2" placeholder="Nomor KTP Pelanggan" required
-                                value="{{ old('no_ktp') }}">
-                            @error('no_ktp')
-                                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                @endif
-
 
                 {{-- Input data pelanggan --}}
                 <div class="grid grid-cols-3 items-start gap-2">
@@ -190,17 +181,31 @@
                     </div>
                 </div>
                 {{-- End Input data pelanggan --}}
+
+                {{-- Input KTP (hanya muncul jika ada psikotropika) --}}
+                <div id="ktp-input-group" class="grid grid-cols-3 items-start gap-2" style="display: none;">
+                    <label for="no_ktp" class="text-sm font-medium text-gray-700 mt-2">No. KTP <span class="text-red-600">*</span></label>
+                    <div class="col-span-2">
+                        <input type="text" id="no_ktp" name="no_ktp"
+                            class="w-full border rounded-lg px-3 py-2" placeholder="Nomor KTP Pelanggan"
+                            value="{{ old('no_ktp') }}">
+                        @error('no_ktp')
+                            <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
                 {{-- Diskon Transaksi --}}
                 <div class="grid grid-cols-3 items-center gap-2">
                     <label class="text-sm font-medium text-gray-700">Diskon</label>
                     <div class="col-span-2 flex gap-2">
-                        <input type="number" id="diskon" name="diskon"
+                        <input type="number" id="diskon_value" name="diskon_value"
                                class="w-full border rounded-lg px-3 py-2 text-right"
-                               placeholder="0" value="0" oninput="hitungTotal()">
-                        <select id="tipe_diskon" name="tipe_diskon"
+                               placeholder="0" value="{{ old('diskon_value', $diskonValue) }}" oninput="hitungTotal()">
+                        <select id="diskon_type" name="diskon_type"
                                  class="border rounded-lg px-2 py-2" onchange="hitungTotal()">
-                            <option value="nominal">Rp</option>
-                            <option value="persen">%</option>
+                            <option value="nominal" {{ old('diskon_type', $diskonType) == 'nominal' ? 'selected' : '' }}>Rp</option>
+                            <option value="persen" {{ old('diskon_type', $diskonType) == 'persen' ? 'selected' : '' }}>%</option>
                         </select>
                     </div>
                 </div>
@@ -208,10 +213,10 @@
                 <div class="grid grid-cols-3 items-center gap-2">
                     <label class="text-sm font-medium text-gray-700">Total</label>
                     <div class="col-span-2">
-                        <input type="text" id="total"
+                        <input type="text" id="total_display"
                             class="w-full border rounded-lg px-3 py-2 text-right font-bold bg-gray-100"
-                            value="Rp {{ number_format($total, 0, ',', '.') }}" readonly>
-                        <input type="hidden" name="total_hidden" value="{{ $total }}">
+                            value="Rp {{ number_format($totalAkhir, 0, ',', '.') }}" readonly>
+                        <input type="hidden" name="total_hidden" id="total_hidden" value="{{ $totalAkhir }}">
                     </div>
                 </div>
 
@@ -319,6 +324,30 @@
             </div>
         </div>
     </div>
+
+    {{-- Modal Tambah Pelanggan Cepat --}}
+    <div id="addPelangganModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white w-11/12 md:w-1/3 p-6 rounded-2xl shadow-lg relative">
+            <button onclick="closeAddPelangganModal()" class="absolute top-3 right-3 text-gray-600 hover:text-black text-lg font-bold">✕</button>
+            <h2 class="text-xl font-semibold mb-4">Tambah Pelanggan Baru</h2>
+            <form id="add-pelanggan-form" class="space-y-4">
+                @csrf
+                <div>
+                    <label for="new_nama_pelanggan" class="block text-sm font-medium text-gray-700">Nama Pelanggan <span class="text-red-600">*</span></label>
+                    <input type="text" id="new_nama_pelanggan" name="nama" class="w-full border rounded-lg px-3 py-2" required>
+                </div>
+                <div>
+                    <label for="new_telepon_pelanggan" class="block text-sm font-medium text-gray-700">Telepon</label>
+                    <input type="text" id="new_telepon_pelanggan" name="telepon" class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label for="new_alamat_pelanggan" class="block text-sm font-medium text-gray-700">Alamat</label>
+                    <textarea id="new_alamat_pelanggan" name="alamat" rows="2" class="w-full border rounded-lg px-3 py-2"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Simpan Pelanggan</button>
+            </form>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -329,47 +358,94 @@
 
 <script>
     $(document).ready(function () {
-        // Aktifkan Select2
-        $('#member').select2({
+        // Inisialisasi Select2 untuk pencarian pelanggan
+        $('#member_search_select2').select2({
             placeholder: "Cari Member...",
             allowClear: true,
-            width: '100%'
+            width: '100%',
+            ajax: {
+                url: "{{ route('pos.searchPelanggan') }}",
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        q: params.term // search term
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: $.map(data, function (item) {
+                            return {
+                                text: item.nama + (item.telepon ? ' (' + item.telepon + ')' : ''),
+                                id: item.id,
+                                data: item // Simpan seluruh objek item untuk digunakan nanti
+                            }
+                        })
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 2 // Minimal 2 karakter untuk mulai mencari
         });
 
-        // Isi otomatis field pelanggan dari member
-        $('#member').on('change', function () {
-            let option = $(this).find(':selected');
-            $('#nama_pelanggan').val(option.data('nama') || "");
-            $('#alamat_pelanggan').val(option.data('alamat') || "");
-            $('#telepon_pelanggan').val(option.data('telepon') || "");
+        // Isi otomatis field pelanggan dari member yang dipilih
+        $('#member_search_select2').on('select2:select', function (e) {
+            const data = e.params.data.data; // Ambil objek data pelanggan
+            $('#nama_pelanggan').val(data.nama || "");
+            $('#alamat_pelanggan').val(data.alamat || "");
+            $('#telepon_pelanggan').val(data.telepon || "");
+            // Hidden input pelanggan_id sudah otomatis terisi oleh Select2
         });
+
+        // Clear form pelanggan jika pilihan member dihapus
+        $('#member_search_select2').on('select2:clear', function (e) {
+            $('#nama_pelanggan').val("");
+            $('#alamat_pelanggan').val("");
+            $('#telepon_pelanggan').val("");
+            // pelanggan_id akan otomatis kosong
+        });
+
+        // Panggil fungsi checkPsikotropikaInCart saat halaman dimuat
+        checkPsikotropikaInCart();
+        hitungTotal(); // Pastikan total dihitung ulang saat halaman dimuat
     });
 
-    // Fungsi bantu
+    // Fungsi bantu untuk membersihkan angka dari format mata uang
     function cleanNumber(str) {
         return parseInt(str.replace(/[^\d]/g,'')) || 0;
     }
 
+    // Fungsi untuk menghitung total belanja termasuk diskon
     function hitungTotal() {
-        let total = {{ $total }};
-        let diskon = parseFloat(document.getElementById('diskon').value) || 0;
-        let tipe  = document.getElementById('tipe_diskon').value;
+        let total = 0;
+        // Iterasi melalui setiap baris di tabel keranjang
+        $('table tbody tr').each(function() {
+            const qty = parseInt($(this).find('input[name^="qty"]').val()) || 0;
+            const hargaText = $(this).find('td:nth-child(5)').text().replace('Rp ', '').replace(/\./g, ''); // Ambil harga dari kolom ke-5
+            const harga = parseFloat(hargaText) || 0;
+            total += qty * harga;
+        });
 
-        if (tipe === 'persen') {
-            total -= (total * diskon / 100);
+        let diskonValue = parseFloat(document.getElementById('diskon_value').value) || 0;
+        let diskonType  = document.getElementById('diskon_type').value;
+
+        let diskonAmount = 0;
+        if (diskonType === 'persen') {
+            diskonAmount = total * (diskonValue / 100);
         } else {
-            total -= diskon;
+            diskonAmount = diskonValue;
         }
 
-        if (total < 0) total = 0;
+        let finalTotal = Math.max(total - diskonAmount, 0);
 
-        document.getElementById('total').value = "Rp " + total.toLocaleString('id-ID');
-        document.querySelector('[name="total_hidden"]').value = total;
+        document.getElementById('total_display').value = "Rp " + finalTotal.toLocaleString('id-ID');
+        document.getElementById('total_hidden').value = finalTotal;
 
         // hitung ulang kembalian juga
         hitungKembalian();
     }
 
+    // Fungsi untuk memformat input bayar dan menghitung kembalian
     function formatBayar() {
         let input = document.getElementById('bayar_display');
         let hidden = document.getElementById('bayar');
@@ -388,8 +464,9 @@
         hitungKembalian();
     }
 
+    // Fungsi untuk menghitung kembalian
     function hitungKembalian() {
-        let total = parseFloat(document.querySelector('input[name="total_hidden"]').value) || 0;
+        let total = parseFloat(document.getElementById('total_hidden').value) || 0;
         let bayar = parseFloat(document.getElementById('bayar').value) || 0;
         let kembalian = bayar - total;
 
@@ -397,7 +474,29 @@
             (kembalian > 0 ? kembalian.toLocaleString('id-ID') : "0");
     }
 
-    // --- AUTOCOMPLETE SEARCH ---
+    // Fungsi untuk memeriksa apakah ada obat psikotropika di keranjang
+    function checkPsikotropikaInCart() {
+        const ktpInputGroup = document.getElementById('ktp-input-group');
+        let hasPsikotropika = false;
+
+        $('table tbody tr').each(function() {
+            if ($(this).data('is-psikotropika') === true || $(this).data('is-psikotropika') === 'true') {
+                hasPsikotropika = true;
+                return false; // Keluar dari loop each
+            }
+        });
+
+        if (hasPsikotropika) {
+            ktpInputGroup.style.display = 'grid'; // Tampilkan input KTP
+            document.getElementById('no_ktp').setAttribute('required', 'required');
+        } else {
+            ktpInputGroup.style.display = 'none'; // Sembunyikan input KTP
+            document.getElementById('no_ktp').removeAttribute('required');
+            document.getElementById('no_ktp').value = ''; // Kosongkan nilai KTP
+        }
+    }
+
+    // --- AUTOCOMPLETE SEARCH OBAT ---
     document.addEventListener('DOMContentLoaded', function () {
         const searchBox = document.getElementById('search');
         const suggestionBox = document.getElementById('suggestions');
@@ -497,7 +596,7 @@
         });
     });
     
-    // --- MODAL FUNCTIONS ---
+    // --- MODAL FUNCTIONS (LIST OBAT) ---
     function openModal() {
         document.getElementById('obatModal').classList.remove('hidden');
         document.getElementById('obatModal').classList.add('flex');
@@ -515,7 +614,7 @@
         }
     });
 
-    // --- MODAL SEARCH & SORT ---
+    // --- MODAL SEARCH & SORT (LIST OBAT) ---
     document.getElementById('modal-search').addEventListener('keyup', function() {
         const query = this.value.toLowerCase();
         const rows = document.querySelectorAll('#obat-table tbody tr');
@@ -566,6 +665,59 @@
             }
             
             sortedRows.forEach(row => tbody.appendChild(row));
+        });
+    });
+
+    // --- MODAL TAMBAH PELANGGAN CEPAT ---
+    function openAddPelangganModal() {
+        document.getElementById('addPelangganModal').classList.remove('hidden');
+        document.getElementById('addPelangganModal').classList.add('flex');
+    }
+
+    function closeAddPelangganModal() {
+        document.getElementById('addPelangganModal').classList.remove('flex');
+        document.getElementById('addPelangganModal').classList.add('hidden');
+        document.getElementById('add-pelanggan-form').reset(); // Reset form
+    }
+
+    document.getElementById('addPelangganModal').addEventListener('click', function(e) {
+        if (e.target.id === 'addPelangganModal') {
+            closeAddPelangganModal();
+        }
+    });
+
+    document.getElementById('add-pelanggan-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+
+        fetch("{{ route('pos.addPelangganCepat') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.id) {
+                alert('Pelanggan berhasil ditambahkan!');
+                // Tambahkan pelanggan baru ke Select2 dan pilih
+                const newOption = new Option(data.nama + (data.telepon ? ' (' + data.telepon + ')' : ''), data.id, true, true);
+                $('#member_search_select2').append(newOption).trigger('change');
+                // Isi form checkout dengan data pelanggan baru
+                $('#nama_pelanggan').val(data.nama || "");
+                $('#alamat_pelanggan').val(data.alamat || "");
+                $('#telepon_pelanggan').val(data.telepon || "");
+                closeAddPelangganModal();
+            } else {
+                alert('Gagal menambahkan pelanggan: ' + (data.message || 'Terjadi kesalahan.'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat menambahkan pelanggan.');
         });
     });
 

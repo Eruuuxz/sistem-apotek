@@ -5,6 +5,7 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\Obat; // Import model Obat
 use App\Models\Supplier; // Import model Supplier
+use Carbon\Carbon; // Import Carbon
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Obat>
@@ -26,12 +27,14 @@ class ObatFactory extends Factory
             'kode' => 'OBT' . $this->faker->unique()->numerify('###'),
             'nama' => $this->faker->word() . ' ' . $this->faker->randomElement(['Tablet', 'Sirup', 'Kapsul']),
             'kategori' => $this->faker->randomElement(['Obat Bebas', 'Obat Bebas Terbatas', 'Obat Keras', 'Psikotropika']),
-            'stok' => $this->faker->numberBetween(10, 100),
-            'min_stok' => $this->faker->numberBetween(3, 10), // Tambahkan min_stok
+            'stok' => 0, // Set stok awal ke 0, nanti akan diupdate oleh BatchObatSeeder
+            'min_stok' => $this->faker->numberBetween(3, 10),
             'harga_dasar' => $hargaDasar,
             'persen_untung' => $persenUntung,
             'harga_jual' => $hargaJual,
             'supplier_id' => $supplierId,
+            'expired_date' => Carbon::now()->addMonths(rand(6, 36)), // Tambahkan expired_date di sini juga
+            'is_psikotropika' => $this->faker->boolean(10), // 10% kemungkinan psikotropika
         ];
     }
 }

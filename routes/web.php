@@ -1,103 +1,121 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\RoleLoginController;
+use App\Http\Controllers\Auth\CustomAuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\POSController;
 use App\Http\Controllers\ObatController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\PembelianController;
-use App\Http\Controllers\PenjualanController;
 use App\Http\Controllers\ReturController;
-use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Auth\RoleLoginController;
+use App\Http\Controllers\POSController;
+use App\Http\Controllers\PenjualanController;
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\BiayaOperasionalController;
 use App\Http\Controllers\PelangganController;
-use App\Http\Controllers\SuratPesananController; // Import SuratPesananController
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SuratPesananController;
+
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('auth.pilih-login');
 });
 
-Route::get('/pilih-login', function () {
-    return view('auth/pilih-login');
-});
-
+// Rute untuk memilih jenis login
 Route::get('/login/admin', [RoleLoginController::class, 'showAdminLoginForm'])->name('login.admin');
-Route::get('/login/kasir', [RoleLogin::class, 'showKasirLoginForm'])->name('login.kasir');
+Route::get('/login/kasir', [RoleLoginController::class, 'showKasirLoginForm'])->name('login.kasir');
 
-Route::get('/penjualan/{id}/struk/pdf', [PenjualanController::class, 'strukPdf'])->name('penjualan.struk.pdf');
-
-Route::middleware(['auth'])->group(function () {
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-        // Master Data
-        Route::resource('obat', ObatController::class);
-        Route::resource('supplier', SupplierController::class);
-        Route::resource('pelanggan', PelangganController::class); // Pastikan ini ada jika ingin CRUD pelanggan oleh admin
-        
-        // Transaksi
-        Route::resource('pembelian', PembelianController::class);
-        Route::get('/supplier/{id}/obat', [PembelianController::class, 'getObatBySupplier']);
-        Route::get('pembelian/faktur/{pembelian}', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
-        Route::get('pembelian/pdf/{pembelian}', [PembelianController::class, 'pdf'])->name('pembelian.pdf'); // Perbaiki nama route
-        
-        Route::resource('retur', ReturController::class);
-        Route::get('retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');
-        Route::get('/retur/{retur}', [\App\Http\Controllers\ReturController::class, 'show'])->name('retur.show');
-
-        // Surat Pesanan Routes (BARU)
-        Route::resource('surat_pesanan', SuratPesananController::class);
-        Route::get('surat_pesanan/{surat_pesanan}/download', [SuratPesananController::class, 'downloadTemplate'])->name('surat_pesanan.download_template');
-        Route::get('surat_pesanan/{id}/details', [SuratPesananController::class, 'getSpDetails'])->name('surat_pesanan.get_details');
+// Menggunakan CustomAuthenticatedSessionController untuk menangani login
+Route::post('/login', [CustomAuthenticatedSessionController::class, 'store'])->middleware('guest')->name('login');
 
 
-        // Laporan
-        Route::prefix('laporan')->name('laporan.')->group(function () {
-            Route::get('/', [LaporanController::class, 'index'])->name('index');
-            Route::get('penjualan', [LaporanController::class, 'penjualan'])->name('penjualan');
-            Route::get('penjualan/pdf', [LaporanController::class, 'penjualanPdf'])->name('penjualan.pdf');
-            Route::get('penjualan/excel', [LaporanController::class, 'penjualanExcel'])->name('penjualan.excel');
-            Route::get('penjualan-bulanan', [LaporanController::class, 'penjualanBulanan'])->name('penjualan.bulanan');
-            Route::get('penjualan-bulanan/pdf', [LaporanController::class, 'penjualanBulananPdf'])->name('penjualan.bulanan.pdf');
-            Route::get('penjualan-bulanan/excel', [LaporanController::class, 'penjualanBulananExcel'])->name('penjualan.bulanan.excel');
-            Route::get('stok', [LaporanController::class, 'stok'])->name('stok');
-            Route::get('profit', [LaporanController::class, 'profitBulanan'])->name('profit');
-            Route::get('/laporan/profit/detail/{tanggal}', [LaporanController::class, 'profitDetailJson']);
-        });
-        Route::resource('users', UserController::class);
-        // Route::resource('biaya-operasional', BiayaOperasionalController::class); // Uncomment jika sudah ada controllernya
-    });
-
-    Route::middleware('role:kasir')->group(function () {
-        // POS
-        Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
-        Route::get('/cart', [POSController::class, 'cart'])->name('pos.cart');
-        Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
-        Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
-        Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
-        Route::post('/pos/checkout', [PenjualanController::class, 'checkout'])->name('pos.checkout');
-        Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
-        // Quick Search Obat (API)
-        Route::get('/api/obat/search', [ObatController::class, 'search'])->name('api.obat.search');
-        // Print Options
-        Route::get('/pos/print/{id}', [PenjualanController::class, 'printOptions'])->name('pos.print.options');
-        Route::get('/pos/print/faktur/{id}', [PenjualanController::class, 'printFaktur'])->name('pos.print.faktur');
-        Route::get('/pos/print/kwitansi/{id}', [PenjualanController::class, 'printKwitansi'])->name('pos.print.kwitansi');
-        Route::get('/pos/print/struk-pdf/{id}', [PenjualanController::class, 'strukPdf'])->name('pos.print.struk.pdf');
-        // Riwayat & Success
-        Route::get('/kasir/riwayat', [PenjualanController::class, 'riwayatKasir'])->name('kasir.riwayat');
-        Route::get('/kasir/success/{id}', [PenjualanController::class, 'success'])->name('kasir.success');
-        Route::get('/penjualan/{id}', [PenjualanController::class, 'show'])->name('penjualan.show');
-    });
-    Route::resource('pelanggan', PelangganController::class); // Pelanggan bisa diakses admin/kasir
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Master Data
+    Route::resource('obat', ObatController::class);
+    Route::get('/obat-search', [ObatController::class, 'search'])->name('obat.search'); // Untuk pencarian obat di POS
+    Route::resource('supplier', SupplierController::class);
+    
+    // Transaksi
+    Route::resource('pembelian', PembelianController::class);
+    Route::get('/pembelian/faktur/{id}', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
+    Route::get('/pembelian/pdf/{id}', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
+    Route::get('/pembelian/get-obat-by-supplier/{supplierId}', [PembelianController::class, 'getObatBySupplier'])->name('pembelian.getObatBySupplier');
+
+    Route::resource('retur', ReturController::class);
+    Route::get('/retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');
+    
+    Route::resource('surat_pesanan', SuratPesananController::class);
+    Route::get('/surat_pesanan/{suratPesanan}/download', [SuratPesananController::class, 'downloadTemplate'])->name('surat_pesanan.downloadTemplate');
+    Route::get('/surat_pesanan/details/{id}', [SuratPesananController::class, 'getSpDetails'])->name('surat_pesanan.getSpDetails');
+    
+
+    // Laporan
+    Route::prefix('laporan')->name('laporan.')->group(function () {
+        Route::get('/', [LaporanController::class, 'index'])->name('index');
+        Route::get('/penjualan', [LaporanController::class, 'penjualan'])->name('penjualan');
+        Route::get('/penjualan/pdf', [LaporanController::class, 'penjualanPdf'])->name('penjualan.pdf');
+        Route::get('/penjualan/excel', [LaporanController::class, 'penjualanExcel'])->name('penjualan.excel');
+        Route::get('/penjualan-bulanan', [LaporanController::class, 'penjualanBulanan'])->name('penjualan.bulanan');
+        Route::get('/penjualan-bulanan/pdf', [LaporanController::class, 'penjualanBulananPdf'])->name('penjualan.bulanan.pdf');
+        Route::get('/penjualan-bulanan/excel', [LaporanController::class, 'penjualanBulananExcel'])->name('penjualan.bulanan.excel');
+        Route::get('/profit', [LaporanController::class, 'profitBulanan'])->name('profit');
+        Route::get('/stok', [LaporanController::class, 'stok'])->name('stok');
+    });
+    
+    // Management User
+    Route::resource('users', UserController::class);
+
+    // Biaya Operasional
+    Route::resource('biaya-operasional', BiayaOperasionalController::class);
+});
+
+Route::middleware(['auth', 'role:kasir'])->group(function () {
+    // POS System
+    Route::prefix('pos')->name('pos.')->group(function () {
+        Route::get('/', [POSController::class, 'index'])->name('index');
+        Route::post('/add', [POSController::class, 'add'])->name('add');
+        Route::post('/update', [POSController::class, 'updateQty'])->name('update');
+        Route::post('/remove', [POSController::class, 'remove'])->name('remove');
+        Route::post('/checkout', [POSController::class, 'checkout'])->name('checkout');
+        Route::get('/search', [POSController::class, 'search'])->name('search');
+        Route::post('/set-diskon', [POSController::class, 'setDiskon'])->name('setDiskon');
+        
+        // Print Options
+        Route::get('/print-options/{id}', [POSController::class, 'printOptions'])->name('print.options');
+        Route::get('/print-faktur/{id}', [POSController::class, 'printFaktur'])->name('print.faktur');
+        Route::get('/print-kwitansi/{id}', [POSController::class, 'printKwitansi'])->name('print.kwitansi');
+        Route::get('/struk-pdf/{id}', [POSController::class, 'strukPdf'])->name('struk.pdf');
+        
+        // Pelanggan AJAX
+        Route::get('/search-pelanggan', [POSController::class, 'searchPelanggan'])->name('searchPelanggan');
+        Route::post('/add-pelanggan-cepat', [POSController::class, 'addPelangganCepat'])->name('addPelangganCepat');
+    });
+    
+    // Riwayat Penjualan Kasir
+    Route::get('/riwayat-penjualan', [POSController::class, 'riwayatKasir'])->name('kasir.riwayat');
+    Route::get('/penjualan/{id}', [POSController::class, 'show'])->name('penjualan.show');
+    Route::get('/penjualan/success/{id}', [POSController::class, 'success'])->name('kasir.success');
+});
+Route::resource('pelanggan', PelangganController::class);
 
 require __DIR__ . '/auth.php';
-

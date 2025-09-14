@@ -27,6 +27,7 @@ class Penjualan extends Model
         'diskon_type',
         'diskon_value',
         'diskon_amount',
+        'pelanggan_id', 
     ];
 
     protected $casts = [
@@ -46,6 +47,10 @@ class Penjualan extends Model
     {
         return $this->belongsTo(Cabang::class, 'cabang_id');
     } 
+    public function pelanggan(): BelongsTo 
+    {
+        return $this->belongsTo(Pelanggan::class, 'pelanggan_id');
+    }
     public function getSubtotalAttribute()
     {
         return $this->total + $this->diskon_amount;

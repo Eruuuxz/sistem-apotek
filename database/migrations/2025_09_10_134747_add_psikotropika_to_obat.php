@@ -12,8 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('obat', function (Blueprint $table) {
-            $table->boolean('is_psikotropika')->default(false)->after('kategori');
-            $table->string('golongan_obat')->nullable()->after('is_psikotropika'); // contoh: "Psikotropika Gol. II"
+            if (!Schema::hasColumn('obat', 'is_psikotropika')) {
+                $table->boolean('is_psikotropika')->default(false)->after('kategori');
+            }
         });
     }
 
@@ -23,8 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('obat', function (Blueprint $table) {
-            $table->dropColumn('is_psikotropika');
-            $table->dropColumn('golongan_obat');
+            if (Schema::hasColumn('obat', 'is_psikotropika')) {
+                $table->dropColumn('is_psikotropika');
+            }
         });
     }
 };
