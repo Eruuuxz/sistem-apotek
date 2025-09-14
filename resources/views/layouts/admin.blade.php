@@ -57,6 +57,12 @@
                     @php
                         $stokHabis = \App\Models\Obat::where('stok', 0)->count();
                         $stokMenipis = \App\Models\Obat::where('stok', '<=', 10)->where('stok', '>', 0)->count();
+
+                        $stokExpired = \App\Models\Obat::whereNotNull('expired_date')
+                            ->where('expired_date', '<', now())->count();
+
+                        $stokHampirExpired = \App\Models\Obat::whereNotNull('expired_date')
+                            ->whereBetween('expired_date', [now(), now()->addMonth()])->count();
                     @endphp
 
                     <!-- ================= MASTER ================= -->
@@ -205,6 +211,32 @@
                     
                     <!-- ================= TRANSAKSI ================= -->
                     <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">Transaksi</p>
+                    
+                    <!-- Surat Pesanan Dropdown (BARU) -->
+                    <div>
+                        <button @click="activeDropdown = (activeDropdown === 'surat_pesanan' ? null : 'surat_pesanan')"
+                            class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
+                                {{ request()->is('surat_pesanan*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                            <i data-feather="file-text" class="w-5 h-5"></i>
+                            <span class="ml-3 flex-1 text-left">Surat Pesanan</span>
+                            <svg :class="{ 'rotate-180': activeDropdown === 'surat_pesanan' }"
+                                class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="activeDropdown === 'surat_pesanan'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
+                            <a href="{{ route('surat_pesanan.index') }}"
+                                class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('surat_pesanan') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                                Daftar SP
+                            </a>
+                            <a href="{{ route('surat_pesanan.create') }}"
+                                class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('surat_pesanan/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                                Buat SP Baru
+                            </a>
+                        </div>
+                    </div>
+
                     <!-- Pembelian Dropdown -->
                     <div>
                         <button @click="activeDropdown = (activeDropdown === 'pembelian' ? null : 'pembelian')"

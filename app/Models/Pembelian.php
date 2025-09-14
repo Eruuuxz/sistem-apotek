@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pembelian extends Model
 {
@@ -15,28 +13,31 @@ class Pembelian extends Model
 
     protected $fillable = [
         'no_faktur',
+        'no_faktur_pbf', 
         'tanggal',
         'supplier_id',
-        'cabang_id',
+        'surat_pesanan_id', 
         'total',
+        'diskon', // Pastikan ini ada jika digunakan
+        'diskon_type', // Pastikan ini ada jika digunakan
     ];
 
     protected $casts = [
         'tanggal' => 'datetime',
     ];
-    
-    public function supplier(): BelongsTo
+
+    public function supplier()
     {
-        return $this->belongsTo(Supplier::class, 'supplier_id');
+        return $this->belongsTo(Supplier::class);
     }
 
-    public function detail(): HasMany
+    public function suratPesanan() // Tambahkan relasi ini
     {
-        return $this->hasMany(PembelianDetail::class, 'pembelian_id');
+        return $this->belongsTo(SuratPesanan::class);
     }
 
-    public function cabang()
+    public function detail()
     {
-        return $this->belongsTo(Cabang::class, 'cabang_id');
+        return $this->hasMany(PembelianDetail::class);
     }
 }

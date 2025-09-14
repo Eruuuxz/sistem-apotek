@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Pembelian, PembelianDetail, Supplier, Obat, Cabang};
+use App\Models\Pembelian;
+use App\Models\PembelianDetail;
+use App\Models\Obat;
+use App\Models\BatchObat; // Tambahkan ini
+use App\Models\Cabang; // Tambahkan ini
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
-use Carbon\Carbon; // Tambahkan ini
+use Illuminate\Validation\Rule; // Tambahkan ini
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class PembelianController extends Controller
@@ -35,54 +39,71 @@ public function index()
         return view('transaksi.pembelian.create', compact('suppliers', 'obat', 'noFaktur'));
     }
 
-    public function store(Request $r)
+    public function store(Request $request)
     {
-        $r->validate([
-            'no_faktur' => ['required', 'max:50', Rule::unique('pembelian', 'no_faktur')],
-            'tanggal' => ['required', 'date'], // Validasi tetap 'date' karena input HTML type="date"
-            'supplier_id' => ['required', 'exists:supplier,id'],
-            'obat_id' => ['required', 'array', 'min:1'],
-            'obat_id.*' => ['required', 'exists:obat,id'],
-            'jumlah' => ['required', 'array', 'min:1'],
-            'jumlah.*' => ['required', 'integer', 'min:1'],
-            'harga' => ['required', 'array', 'min:1'],
-            'harga.*' => ['required', 'numeric', 'min:0'],
+        $request->validate([
+            'no_faktur' => ['required', 'string', Rule::unique('pembelian', 'no_faktur')],
+            'tanggal' => 'required|date',
+            'supplier_id' => 'required|exists:supplier,id',
+            'items' => 'required|array|min:1',
+            'items.*.obat_id' => 'required|integer|exists:obat,id',
+            'items.*.jumlah' => 'required|integer|min:1',
+            'items.*.harga_beli_satuan' => 'required|numeric|min:0',
+            'items.*.no_batch' => 'nullable|string|max:255',
+            'items.*.expired_date' => 'nullable|date',
         ]);
 
-        DB::transaction(function () use ($r, &$pembelian) {
+        DB::transaction(function () use ($request, &$pembelian) {
             $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id') ?? Cabang::first()->id;
-            
+
             $pembelian = Pembelian::create([
-            'no_faktur' => $r->no_faktur,
-            'tanggal' => Carbon::parse($r->tanggal)->toDateTimeString(),
-            'supplier_id' => $r->supplier_id,
-            'cabang_id' => $cabangId,
-            'total' => 0,
-        ]);
+                'no_faktur' => $request->no_faktur,
+                'tanggal' => Carbon::parse($request->tanggal)->toDateTimeString(),
+                'supplier_id' => $request->supplier_id,
+                'cabang_id' => $cabangId,
+                'total' => 0, // update setelah loop
+            ]);
 
             $total = 0;
-            foreach ($r->obat_id as $i => $obatId) {
-                $qty = (int) $r->jumlah[$i];
-                $harga = (float) $r->harga[$i];
-                $sub = $qty * $harga;
+            foreach ($request->items as $it) {
+                $obat = Obat::findOrFail($it['obat_id']);
+                $qty = (int)$it['jumlah'];
+                $hargaBeli = (float)$it['harga_beli_satuan'];
+                $noBatch = $it['no_batch'] ?? null;
+                $expired = !empty($it['expired_date']) ? Carbon::parse($it['expired_date'])->toDateString() : null;
 
+                // Simpan pembelian detail
                 PembelianDetail::create([
                     'pembelian_id' => $pembelian->id,
-                    'obat_id' => $obatId,
+                    'obat_id' => $obat->id,
                     'jumlah' => $qty,
-                    'harga_beli' => $harga, // Sesuaikan dengan nama kolom di migration
+                    'harga_beli' => $hargaBeli, // Sesuaikan dengan nama kolom di migration
+                    'no_batch' => $noBatch,
+                    'expired_date' => $expired,
+                    'harga_beli_satuan' => $hargaBeli,
                 ]);
 
-                // stok obat bertambah
-                $obat = Obat::find($obatId);
+                // Buat batch_obat entry
+                BatchObat::create([
+                    'obat_id' => $obat->id,
+                    'no_batch' => $noBatch,
+                    'expired_date' => $expired,
+                    'stok_awal' => $qty,
+                    'stok_saat_ini' => $qty,
+                    'harga_beli_per_unit' => $hargaBeli,
+                    'supplier_id' => $request->supplier_id ?? null,
+                ]);
+
+                // Update stok di tabel obat (increment)
                 $obat->increment('stok', $qty);
-                $total += $sub;
+                $total += ($qty * $hargaBeli);
             }
 
+            // Update total pembelian
             $pembelian->update(['total' => $total]);
         });
 
-        return redirect()->route('pembelian.index')->with('success', 'Pembelian tersimpan');
+        return redirect()->route('pembelian.index')->with('success', 'Pembelian tersimpan dan batch dibuat.');
     }
 
     public function faktur($id)

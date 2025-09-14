@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Supplier extends Model
 {
@@ -15,23 +14,27 @@ class Supplier extends Model
     protected $fillable = [
         'kode',
         'nama',
-        'kota',
         'alamat',
+        'kota',
         'telepon',
     ];
 
-    public function obat(): HasMany
+    public function obat()
     {
-        return $this->hasMany(Obat::class, 'supplier_id');
+        return $this->hasMany(Obat::class);
     }
 
-    public function barang(): HasMany
+    public function pembelian() // Tambahkan relasi ini
     {
-        return $this->hasMany(Barang::class, 'supplier_id');
+        return $this->hasMany(Pembelian::class);
     }
 
-    public function pembelian(): HasMany
+    public function suratPesanans() // Tambahkan relasi ini
     {
-        return $this->hasMany(Pembelian::class, 'supplier_id');
+        return $this->hasMany(SuratPesanan::class);
     }
+
+    // Relasi retur tidak langsung ke supplier, tapi melalui pembelian.
+    // Jika ingin langsung, perlu kolom supplier_id di tabel retur atau relasi hasManyThrough
+    // Untuk saat ini, kita akan mengambilnya melalui Pembelian di SupplierController@show
 }

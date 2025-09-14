@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Retur extends Model
 {
@@ -22,11 +21,22 @@ class Retur extends Model
     ];
 
     protected $casts = [
-        'tanggal' => 'datetime', // Tambahkan baris ini
+        'tanggal' => 'datetime',
     ];
 
-    public function details(): HasMany
+    public function details()
     {
-        return $this->hasMany(ReturDetail::class, 'retur_id');
+        return $this->hasMany(ReturDetail::class);
+    }
+
+    // Relasi ke transaksi sumber
+    public function pembelian()
+    {
+        return $this->belongsTo(Pembelian::class, 'transaksi_id')->where('jenis', 'pembelian');
+    }
+
+    public function penjualan()
+    {
+        return $this->belongsTo(Penjualan::class, 'transaksi_id')->where('jenis', 'penjualan');
     }
 }
