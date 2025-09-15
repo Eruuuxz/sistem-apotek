@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Obat extends Model
 {
@@ -15,10 +16,10 @@ class Obat extends Model
         'kode',
         'nama',
         'kategori',
-        'sediaan', 
-        'kemasan_besar', 
-        'satuan_terkecil', 
-        'rasio_konversi', 
+        'sediaan',
+        'kemasan_besar',
+        'satuan_terkecil',
+        'rasio_konversi',
         'is_psikotropika',
         'stok',
         'min_stok',
@@ -27,14 +28,16 @@ class Obat extends Model
         'persen_untung',
         'harga_jual',
         'supplier_id',
-        'ppn_included', 
-        'ppn_rate',     
+        'ppn_included',
+        'ppn_rate',
     ];
 
     protected $casts = [
         'expired_date' => 'date',
-        'ppn_included' => 'boolean', // Cast sebagai boolean
-        'ppn_rate' => 'decimal:2',   // Cast sebagai decimal dengan 2 angka di belakang koma
+        'harga_dasar' => 'decimal:2',
+        'harga_jual' => 'decimal:2',
+        'ppn_included' => 'boolean',
+        'ppn_rate' => 'decimal:2',
     ];
 
     public function supplier()
@@ -57,11 +60,18 @@ class Obat extends Model
         return $this->hasMany(ReturDetail::class);
     }
 
-    public function suratPesananDetails() // Tambahkan relasi ini
+    public function suratPesananDetails()
     {
         return $this->hasMany(SuratPesananDetail::class);
     }
 
+    public function consultations()
+    {
+        return $this->belongsToMany(Consultation::class, 'consultation_obat')
+                    ->withPivot('qty', 'harga_satuan', 'subtotal')
+                    ->withTimestamps();
+    }
+    
     // Accessor untuk mendapatkan stok dalam format kemasan besar (jika ada)
     public function getStokFormattedAttribute()
     {

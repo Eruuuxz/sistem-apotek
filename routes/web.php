@@ -98,6 +98,28 @@ Route::middleware('auth')->group(function () {
         // Manajemen Shift (Admin)
         Route::resource('shifts', ShiftController::class)->except(['show', 'edit', 'update', 'destroy']);
         Route::get('shifts/summary', [ShiftController::class, 'summary'])->name('shifts.summary');
+        // web.php (Tambahkan di dalam middleware('role:admin')->group(function () { ... });)
+
+        // Laporan Customer Analytics
+        Route::prefix('customer-analytics')->name('customer_analytics.')->group(function () {
+            Route::get('/', [CustomerAnalyticsController::class, 'index'])->name('index');
+            Route::get('/daily-sales-recap', [CustomerAnalyticsController::class, 'dailySalesRecap'])->name('daily_sales_recap');
+            Route::get('/stock-movement-analysis', [CustomerAnalyticsController::class, 'stockMovementAnalysis'])->name('stock_movement_analysis');
+            Route::get('/generate-pdf/{reportType}', [CustomerAnalyticsController::class, 'generatePdf'])->name('generate_pdf');
+            Route::get('/generate-excel/{reportType}', [CustomerAnalyticsController::class, 'generateExcel'])->name('generate_excel');
+        });
+
+        // Stock Opname
+        Route::resource('stock-opname', StockOpnameController::class);
+        Route::post('stock-opname/{stock_opname}/approve', [StockOpnameController::class, 'approve'])->name('stock_opname.approve');
+        Route::post('stock-opname/{stock_opname}/reject', [StockOpnameController::class, 'reject'])->name('stock_opname.reject');
+        Route::get('stock-opname/{stock_opname}/pdf', [StockOpnameController::class, 'generatePdf'])->name('stock_opname.pdf');
+
+        // Konsultasi & Tindakan Medis
+        Route::resource('medical-actions', MedicalActionController::class);
+        Route::resource('consultations', ConsultationController::class);
+        Route::get('consultations/{consultation}/receipt', [ConsultationController::class, 'printReceipt'])->name('consultations.receipt');
+
     });
 
     // Route untuk kasir (shift management tanpa check.shift middleware)
