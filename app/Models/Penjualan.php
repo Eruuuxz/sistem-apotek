@@ -17,6 +17,7 @@ class Penjualan extends Model
         'no_nota',
         'tanggal',
         'user_id',
+        'cashier_shift_id', 
         'cabang_id',
         'total',
         'bayar',
@@ -28,10 +29,14 @@ class Penjualan extends Model
         'diskon_value',
         'diskon_amount',
         'pelanggan_id', 
+        'ppn_percent', 
+        'ppn_amount',  
     ];
 
     protected $casts = [
         'tanggal' => 'datetime',
+        'ppn_percent' => 'decimal:2',
+        'ppn_amount' => 'decimal:2',
     ];
 
     public function details(): HasMany
@@ -54,5 +59,11 @@ class Penjualan extends Model
     public function getSubtotalAttribute()
     {
         return $this->total + $this->diskon_amount;
+    }
+
+    // Relasi ke CashierShift
+    public function cashierShift()
+    {
+        return $this->belongsTo(CashierShift::class);
     }
 }

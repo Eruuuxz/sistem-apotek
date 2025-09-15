@@ -5,17 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Pembelian;
 use App\Models\PembelianDetail;
 use App\Models\Obat;
-use App\Models\BatchObat; // Tambahkan ini
-use App\Models\Cabang; // Tambahkan ini
+use App\Models\BatchObat;
+use App\Models\Cabang;
+use App\Models\Supplier; // Import Supplier
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule; // Tambahkan ini
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class PembelianController extends Controller
 {
-public function index()
+    public function index()
     {
         $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id');
 
@@ -62,9 +63,12 @@ public function index()
                 'supplier_id' => $request->supplier_id,
                 'cabang_id' => $cabangId,
                 'total' => 0, // update setelah loop
+                'ppn_amount' => 0, // Default, akan dihitung
             ]);
 
             $total = 0;
+            $totalPpnPembelian = 0;
+
             foreach ($request->items as $it) {
                 $obat = Obat::findOrFail($it['obat_id']);
                 $qty = (int)$it['jumlah'];
@@ -72,15 +76,30 @@ public function index()
                 $noBatch = $it['no_batch'] ?? null;
                 $expired = !empty($it['expired_date']) ? Carbon::parse($it['expired_date'])->toDateString() : null;
 
+                // Hitung PPN untuk item pembelian
+                $ppnRate = $obat->ppn_rate ?? 0;
+                $ppnAmountPerItem = 0;
+                if ($ppnRate > 0) {
+                    if ($obat->ppn_included) {
+                        // Jika harga beli sudah termasuk PPN, hitung PPN dari harga beli
+                        $ppnAmountPerItem = ($hargaBeli / (1 + $ppnRate / 100)) * ($ppnRate / 100);
+                    } else {
+                        // Jika harga beli belum termasuk PPN, PPN ditambahkan ke harga beli
+                        $ppnAmountPerItem = $hargaBeli * ($ppnRate / 100);
+                    }
+                }
+                $totalPpnPembelian += $ppnAmountPerItem * $qty;
+
                 // Simpan pembelian detail
                 PembelianDetail::create([
                     'pembelian_id' => $pembelian->id,
                     'obat_id' => $obat->id,
                     'jumlah' => $qty,
-                    'harga_beli' => $hargaBeli, // Sesuaikan dengan nama kolom di migration
+                    'harga_beli' => $hargaBeli,
                     'no_batch' => $noBatch,
                     'expired_date' => $expired,
                     'harga_beli_satuan' => $hargaBeli,
+                    'ppn_amount' => $ppnAmountPerItem, // Simpan PPN per item
                 ]);
 
                 // Buat batch_obat entry
@@ -99,8 +118,11 @@ public function index()
                 $total += ($qty * $hargaBeli);
             }
 
-            // Update total pembelian
-            $pembelian->update(['total' => $total]);
+            // Update total pembelian dan total PPN pembelian
+            $pembelian->update([
+                'total' => $total,
+                'ppn_amount' => $totalPpnPembelian,
+            ]);
         });
 
         return redirect()->route('pembelian.index')->with('success', 'Pembelian tersimpan dan batch dibuat.');
@@ -122,10 +144,6 @@ public function index()
         return $pdf->download('Faktur-' . $p->no_faktur . '.pdf');
     }
 
-    // app/Http/Controllers/PembelianController.php
-
-    // ... (bagian lain dari kode)
-
     public function edit(Pembelian $pembelian)
     {
         $suppliers = Supplier::orderBy('nama')->get();
@@ -145,8 +163,7 @@ public function index()
             'obat_id.*' => ['required', 'exists:obat,id'],
             'jumlah' => ['required', 'array', 'min:1'],
             'jumlah.*' => ['required', 'integer', 'min:1'],
-            'harga' => ['required', 'array', 'min:1'],
-            'harga.*' => ['required', 'numeric', 'min:0'],
+            'harga' => ['required', 'array', 'min:0'], // Harga bisa 0 jika ada diskon besar
         ]);
 
         DB::transaction(function () use ($r, $pembelian) {
@@ -170,30 +187,52 @@ public function index()
                 'supplier_id' => $r->supplier_id,
                 'cabang_id' => $cabangId,
                 'total' => 0,
+                'ppn_amount' => 0, // Reset PPN
             ]);
 
             // 4. Tambahkan detail pembelian baru dan update stok
             $total = 0;
+            $totalPpnPembelian = 0;
             foreach ($r->obat_id as $i => $obatId) {
                 $qty = (int) $r->jumlah[$i];
                 $harga = (float) $r->harga[$i];
                 $sub = $qty * $harga;
+
+                $obat = Obat::find($obatId);
+                if (!$obat) {
+                    throw new \Exception("Obat dengan ID {$obatId} tidak ditemukan.");
+                }
+
+                // Hitung PPN untuk item pembelian
+                $ppnRate = $obat->ppn_rate ?? 0;
+                $ppnAmountPerItem = 0;
+                if ($ppnRate > 0) {
+                    if ($obat->ppn_included) {
+                        $ppnAmountPerItem = ($harga / (1 + $ppnRate / 100)) * ($ppnRate / 100);
+                    } else {
+                        $ppnAmountPerItem = $harga * ($ppnRate / 100);
+                    }
+                }
+                $totalPpnPembelian += $ppnAmountPerItem * $qty;
 
                 PembelianDetail::create([
                     'pembelian_id' => $pembelian->id,
                     'obat_id' => $obatId,
                     'jumlah' => $qty,
                     'harga_beli' => $harga,
+                    'ppn_amount' => $ppnAmountPerItem, // Simpan PPN per item
                 ]);
 
-                $obat = Obat::find($obatId);
                 if ($obat) {
                     $obat->increment('stok', $qty);
                 }
                 $total += $sub;
             }
 
-            $pembelian->update(['total' => $total]);
+            $pembelian->update([
+                'total' => $total,
+                'ppn_amount' => $totalPpnPembelian,
+            ]);
         });
 
         return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil diperbarui');

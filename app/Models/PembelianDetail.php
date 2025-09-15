@@ -16,6 +16,11 @@ class PembelianDetail extends Model
         'obat_id',
         'jumlah',
         'harga_beli',
+        'ppn_amount', 
+    ];
+
+    protected $casts = [
+        'ppn_amount' => 'decimal:2',
     ];
 
     public function pembelian()

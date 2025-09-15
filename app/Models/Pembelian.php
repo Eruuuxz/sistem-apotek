@@ -20,10 +20,12 @@ class Pembelian extends Model
         'total',
         'diskon', // Pastikan ini ada jika digunakan
         'diskon_type', // Pastikan ini ada jika digunakan
+        'ppn_amount', 
     ];
 
     protected $casts = [
         'tanggal' => 'datetime',
+        'ppn_amount' => 'decimal:2',
     ];
 
     public function supplier()

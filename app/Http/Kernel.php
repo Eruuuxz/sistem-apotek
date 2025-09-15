@@ -40,5 +40,6 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class, // PENTING: tambahkan ini
+        'check.shift' => \App\Http\Middleware\CheckCashierShift::class, // Middleware baru untuk shift
     ];
 }

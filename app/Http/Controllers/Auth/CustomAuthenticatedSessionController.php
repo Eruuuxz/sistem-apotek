@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Illuminate\Validation\ValidationException; // Tambahkan ini
+use App\Providers\RouteServiceProvider; // Tambahkan ini
 
 class CustomAuthenticatedSessionController extends Controller
 {
@@ -71,4 +72,3 @@ class CustomAuthenticatedSessionController extends Controller
         return redirect('/');
     }
 }
-

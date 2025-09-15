@@ -27,10 +27,14 @@ class Obat extends Model
         'persen_untung',
         'harga_jual',
         'supplier_id',
+        'ppn_included', 
+        'ppn_rate',     
     ];
 
     protected $casts = [
         'expired_date' => 'date',
+        'ppn_included' => 'boolean', // Cast sebagai boolean
+        'ppn_rate' => 'decimal:2',   // Cast sebagai decimal dengan 2 angka di belakang koma
     ];
 
     public function supplier()
@@ -78,5 +82,23 @@ class Obat extends Model
             return $formatted === '' ? "0 {$this->satuan_terkecil}" : $formatted;
         }
         return "{$this->stok} {$this->satuan_terkecil}";
+    }
+
+    // Accessor untuk mendapatkan harga jual tanpa PPN (jika PPN included)
+    public function getHargaJualTanpaPpnAttribute()
+    {
+        if ($this->ppn_included && $this->ppn_rate > 0) {
+            return $this->harga_jual / (1 + $this->ppn_rate / 100);
+        }
+        return $this->harga_jual;
+    }
+
+    // Accessor untuk mendapatkan harga dasar tanpa PPN (jika PPN included)
+    public function getHargaDasarTanpaPpnAttribute()
+    {
+        if ($this->ppn_included && $this->ppn_rate > 0) {
+            return $this->harga_dasar / (1 + $this->ppn_rate / 100);
+        }
+        return $this->harga_dasar;
     }
 }

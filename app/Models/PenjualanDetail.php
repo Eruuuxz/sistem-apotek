@@ -20,6 +20,11 @@ class PenjualanDetail extends Model
         'hpp',
         'subtotal',
         'no_ktp', 
+        'ppn_amount_per_item', 
+    ];
+
+    protected $casts = [
+        'ppn_amount_per_item' => 'decimal:2',
     ];
 
     public function penjualan(): BelongsTo

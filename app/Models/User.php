@@ -6,7 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Cabang;
+use App\Models\Cabang; // Pastikan ini sudah ada
 
 class User extends Authenticatable
 {
@@ -48,8 +48,21 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
     public function cabang()
     {
-    return $this->belongsTo(Cabang::class, 'cabang_id');
+        return $this->belongsTo(Cabang::class, 'cabang_id');
     }
+
+    // Relasi ke CashierShift
+    public function cashierShifts()
+    {
+        return $this->hasMany(CashierShift::class);
+    }
+
+    public function hasRole($role)
+{
+    return $this->role === $role;
+}
+
 }

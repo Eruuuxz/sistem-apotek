@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class, 
             PelangganSeeder::class,
             AssignAdminToCabangSeeder::class,
+            ShiftSeeder::class,
         ]);
     }
 }
