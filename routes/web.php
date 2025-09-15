@@ -16,7 +16,7 @@ use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\BiayaOperasionalController;
 use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\SuratPesananController;
-
+use App\Http\Controllers\StockMovementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -117,5 +117,9 @@ Route::middleware(['auth', 'role:kasir'])->group(function () {
     Route::get('/penjualan/success/{id}', [POSController::class, 'success'])->name('kasir.success');
 });
 Route::resource('pelanggan', PelangganController::class);
+Route::middleware(['auth', 'role:admin,owner'])->group(function () {
+    Route::get('/stock-movement', [StockMovementController::class, 'index'])->name('stock.movement');
+    Route::get('/stock-movement/detail', [StockMovementController::class, 'detail'])->name('stock.movement.detail');
+});
 
 require __DIR__ . '/auth.php';

@@ -40,23 +40,30 @@ class ObatController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $request->validate([
-            'kode' => 'required|unique:obat,kode',
-            'nama' => 'required|string|max:255',
-            'kategori' => 'required|string|max:255',
-            'stok' => 'required|integer|min:0',
-            'expired_date' => 'nullable|date|after_or_equal:today',
-            'harga_dasar' => 'required|numeric|min:0',
-            'persen_untung' => 'required|numeric|min:0',
-            'harga_jual' => 'required|numeric|min:0',
-            'supplier_id' => 'nullable|exists:supplier,id' // Validasi supplier_id
-        ]);
+        {
+            $request->validate([
+                'kode' => 'required|unique:obats,kode',
+                'nama' => 'required',
+                'kategori' => 'required',
+                'sediaan' => 'nullable|string', 
+                'kemasan_besar' => 'nullable|string', 
+                'satuan_terkecil' => 'required|string', 
+                'rasio_konversi' => 'required_if:kemasan_besar,!=,null|integer|min:1', // NEW : Wajib jika ada kemasan besar
+                'stok' => 'required|integer|min:0',
+                'min_stok' => 'nullable|integer|min:0',
+                'harga_dasar' => 'required|numeric|min:0',
+                'persen_untung' => 'nullable|numeric|min:0',
+                'harga_jual' => 'required|numeric|min:0',
+                'supplier_id' => 'required|exists:suppliers,id',
+                'expired_date' => 'nullable|date|after_or_equal:today',
+            ], [
+                'rasio_konversi.required_if' => 'Rasio konversi wajib diisi jika kemasan besar dipilih.',
+            ]);
 
-        Obat::create($request->all());
+            Obat::create($request->all());
 
-        return redirect('/obat')->with('success', 'Obat berhasil ditambahkan');
-    }
+            return redirect()->route('obat.index')->with('success', 'Data obat berhasil ditambahkan.');
+        }
 
     public function edit(Obat $obat)
     {
@@ -65,24 +72,31 @@ class ObatController extends Controller
     }
 
     public function update(Request $request, Obat $obat)
-    {
-        $request->validate([
-            'kode' => 'required|unique:obat,kode,' . $obat->id,
-            'nama' => 'required|string|max:255',
-            'kategori' => 'required|string|max:255',
-            'stok' => 'required|integer|min:0',
-            'expired_date' => 'nullable|date|after_or_equal:today',
-            'harga_dasar' => 'required|numeric|min:0',
-            'persen_untung' => 'required|numeric|min:0',
-            'harga_jual' => 'required|numeric|min:0',
-            'supplier_id' => 'nullable|exists:supplier,id'
-        ]);
+        {
+            $request->validate([
+                'kode' => 'required|unique:obats,kode,' . $obat->id,
+                'nama' => 'required',
+                'kategori' => 'required',
+                'sediaan' => 'nullable|string', 
+                'kemasan_besar' => 'nullable|string', 
+                'satuan_terkecil' => 'required|string', 
+                'rasio_konversi' => 'required_if:kemasan_besar,!=,null|integer|min:1', 
+                'stok' => 'required|integer|min:0',
+                'min_stok' => 'nullable|integer|min:0',
+                'harga_dasar' => 'required|numeric|min:0',
+                'persen_untung' => 'nullable|numeric|min:0',
+                'harga_jual' => 'required|numeric|min:0',
+                'supplier_id' => 'required|exists:suppliers,id',
+                'expired_date' => 'nullable|date|after_or_equal:today',
+            ], [
+                'rasio_konversi.required_if' => 'Rasio konversi wajib diisi jika kemasan besar dipilih.',
+            ]);
 
-        $obat->update($request->all());
+            $obat->update($request->all());
 
-        return redirect('/obat')->with('success', 'Obat berhasil diperbarui');
-    }
-
+            return redirect()->route('obat.index')->with('success', 'Data obat berhasil diperbarui.');
+        }
+        
     public function destroy(Obat $obat)
     {
         $obat->delete();

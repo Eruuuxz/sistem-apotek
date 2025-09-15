@@ -15,6 +15,10 @@ class Obat extends Model
         'kode',
         'nama',
         'kategori',
+        'sediaan', 
+        'kemasan_besar', 
+        'satuan_terkecil', 
+        'rasio_konversi', 
         'is_psikotropika',
         'stok',
         'min_stok',
@@ -52,5 +56,27 @@ class Obat extends Model
     public function suratPesananDetails() // Tambahkan relasi ini
     {
         return $this->hasMany(SuratPesananDetail::class);
+    }
+
+    // Accessor untuk mendapatkan stok dalam format kemasan besar (jika ada)
+    public function getStokFormattedAttribute()
+    {
+        if ($this->kemasan_besar && $this->rasio_konversi > 1) {
+            $jumlahKemasan = floor($this->stok / $this->rasio_konversi);
+            $sisaSatuan = $this->stok % $this->rasio_konversi;
+            
+            $formatted = '';
+            if ($jumlahKemasan > 0) {
+                $formatted .= "{$jumlahKemasan} {$this->kemasan_besar}";
+            }
+            if ($sisaSatuan > 0) {
+                if ($formatted !== '') {
+                    $formatted .= " dan ";
+                }
+                $formatted .= "{$sisaSatuan} {$this->satuan_terkecil}";
+            }
+            return $formatted === '' ? "0 {$this->satuan_terkecil}" : $formatted;
+        }
+        return "{$this->stok} {$this->satuan_terkecil}";
     }
 }
