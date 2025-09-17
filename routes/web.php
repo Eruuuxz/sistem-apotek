@@ -95,11 +95,11 @@ Route::middleware('auth')->group(function () {
         Route::get('surat_pesanan/{surat_pesanan}/download', [SuratPesananController::class, 'downloadTemplate'])->name('surat_pesanan.download');
         Route::get('surat_pesanan/{id}/details', [SuratPesananController::class, 'getSpDetails'])->name('surat_pesanan.details');
         Route::get('/surat_pesanan/{id}/pdf', [SuratPesananController::class, 'generatePdf'])->name('surat_pesanan.pdf');
+
         // Manajemen Shift (Admin)
         Route::resource('shifts', ShiftController::class)->except(['show', 'edit', 'update', 'destroy']);
         Route::get('shifts/summary', [ShiftController::class, 'summary'])->name('shifts.summary');
-        // web.php (Tambahkan di dalam middleware('role:admin')->group(function () { ... });)
-
+        
         // Laporan Customer Analytics
         Route::prefix('customer-analytics')->name('customer_analytics.')->group(function () {
             Route::get('/', [CustomerAnalyticsController::class, 'index'])->name('index');
@@ -115,43 +115,43 @@ Route::middleware('auth')->group(function () {
         Route::post('stock-opname/{stock_opname}/reject', [StockOpnameController::class, 'reject'])->name('stock_opname.reject');
         Route::get('stock-opname/{stock_opname}/pdf', [StockOpnameController::class, 'generatePdf'])->name('stock_opname.pdf');
 
-        // Konsultasi & Tindakan Medis
+        // Medical actions and consultations
         Route::resource('medical-actions', MedicalActionController::class);
         Route::resource('consultations', ConsultationController::class);
         Route::get('consultations/{consultation}/receipt', [ConsultationController::class, 'printReceipt'])->name('consultations.receipt');
-
     });
 
-    // Route untuk kasir (shift management tanpa check.shift middleware)
+    // Kasir Routes
     Route::middleware('role:kasir')->group(function () {
-        Route::get('/shifts/start', function () {
-            $shifts = Shift::all();
-            $activeShift = CashierShift::where('user_id', Auth::id())->where('status', 'open')->first();
-            return view('shifts.start', compact('shifts', 'activeShift'));
-        })->name('shifts.start.form');
+        // POS index page is NOT under the 'check.shift' middleware.
+        // It serves as a gatekeeper, showing either the "start shift" form or the full POS.
+        Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
+
+        // Shift management routes are also NOT under 'check.shift'.
+        // This allows the cashier to start and end their shifts at any time.
         Route::post('/shifts/start', [ShiftController::class, 'startShift'])->name('shifts.start');
         Route::post('/shifts/end', [ShiftController::class, 'endShift'])->name('shifts.end');
         Route::get('/shifts/my-summary', [ShiftController::class, 'summary'])->name('shifts.my.summary');
-    });
 
-    // Kasir Routes dengan middleware check.shift
-    Route::middleware(['role:kasir', 'check.shift'])->group(function () {
-        Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
-        Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
-        Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
-        Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
-        Route::post('/pos/set-diskon', [POSController::class, 'setDiskon'])->name('pos.setDiskon');
-        Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
-        Route::get('/pos/print-options/{id}', [POSController::class, 'printOptions'])->name('pos.print.options');
-        Route::get('/pos/print-faktur/{id}', [POSController::class, 'printFaktur'])->name('pos.print.faktur');
-        Route::get('/pos/print-kwitansi/{id}', [POSController::class, 'printKwitansi'])->name('pos.print.kwitansi');
-        Route::get('/pos/struk-pdf/{id}', [POSController::class, 'strukPdf'])->name('pos.struk.pdf');
-        Route::get('/pos/riwayat', [POSController::class, 'riwayatKasir'])->name('kasir.riwayat');
-        Route::get('/pos/riwayat/{id}', [POSController::class, 'show'])->name('penjualan.show');
-        Route::get('/pos/success/{id}', [POSController::class, 'success'])->name('kasir.success');
-        Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
-        Route::get('/pos/search-pelanggan', [POSController::class, 'searchPelanggan'])->name('pos.searchPelanggan');
-        Route::post('/pos/add-pelanggan-cepat', [POSController::class, 'addPelangganCepat'])->name('pos.addPelangganCepat');
+        // All other POS functionality is protected by the 'check.shift' middleware.
+        // This ensures no sales can be processed without an active shift.
+        Route::middleware('check.shift')->group(function () {
+            Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
+            Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
+            Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
+            Route::post('/pos/set-diskon', [POSController::class, 'setDiskon'])->name('pos.setDiskon');
+            Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
+            Route::get('/pos/print-options/{id}', [POSController::class, 'printOptions'])->name('pos.print.options');
+            Route::get('/pos/print-faktur/{id}', [POSController::class, 'printFaktur'])->name('pos.print.faktur');
+            Route::get('/pos/print-kwitansi/{id}', [POSController::class, 'printKwitansi'])->name('pos.print.kwitansi');
+            Route::get('/pos/struk-pdf/{id}', [POSController::class, 'strukPdf'])->name('pos.struk.pdf');
+            Route::get('/pos/riwayat', [POSController::class, 'riwayatKasir'])->name('kasir.riwayat');
+            Route::get('/pos/riwayat/{id}', [POSController::class, 'show'])->name('penjualan.show');
+            Route::get('/pos/success/{id}', [POSController::class, 'success'])->name('kasir.success');
+            Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
+            Route::get('/pos/search-pelanggan', [POSController::class, 'searchPelanggan'])->name('pos.searchPelanggan');
+            Route::post('/pos/add-pelanggan-cepat', [POSController::class, 'addPelangganCepat'])->name('pos.addPelangganCepat');
+        });
     });
 });
 

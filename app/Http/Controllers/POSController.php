@@ -3,24 +3,44 @@
 namespace App\Http\Controllers;
 
 use App\Models\Obat;
-use Illuminate\Http\Request;
 use App\Models\Pelanggan;
 use App\Models\Penjualan;
 use App\Models\PenjualanDetail;
 use App\Models\BatchObat;
 use App\Models\Cabang;
+use App\Models\CashierShift;
+use App\Models\Shift;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf; // Pastikan ini sudah terinstal dan dikonfigurasi
 
 class POSController extends Controller
 {
+    /**
+     * Menampilkan halaman POS.
+     * Mengatur apakah menampilkan form "Mulai Shift" atau POS itu sendiri.
+     */
     public function index()
     {
+        // Cari shift kasir yang sedang aktif
+        $activeShift = CashierShift::with('shift')
+                                    ->where('user_id', Auth::id())
+                                    ->where('status', 'open')
+                                    ->first();
+
+        // Jika tidak ada shift yang aktif, tampilkan form "Mulai Shift"
+        if (!$activeShift) {
+            $shifts = Shift::all();
+            return view('kasir.pos', compact('activeShift', 'shifts'));
+        }
+
+        // Jika ada shift yang aktif, lanjutkan dengan logika POS normal
         $obat = Obat::where('stok', '>', 0)
             ->where(function ($query) {
                 $query->whereNull('expired_date')
-                      ->orWhere('expired_date', '>', now());
+                    ->orWhere('expired_date', '>', now());
             })
             ->orderBy('nama')
             ->get(['id', 'kode', 'nama', 'kategori', 'expired_date', 'harga_jual', 'stok', 'is_psikotropika']);
@@ -44,9 +64,12 @@ class POSController extends Controller
 
         $members = Pelanggan::orderBy('nama')->get();
 
-        return view('kasir.pos', compact('obat', 'cart', 'total', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members'));
+        return view('kasir.pos', compact('obat', 'cart', 'total', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members', 'activeShift'));
     }
 
+    /**
+     * Mencari obat untuk fitur autocomplete.
+     */
     public function search(Request $request)
     {
         $keyword = $request->get('q');
@@ -54,7 +77,7 @@ class POSController extends Controller
         $obat = Obat::where('stok', '>', 0)
             ->where(function ($query) {
                 $query->whereNull('expired_date')
-                      ->orWhere('expired_date', '>', now());
+                    ->orWhere('expired_date', '>', now());
             })
             ->where(function ($query) use ($keyword) {
                 $query->where('nama', 'like', '%' . $keyword . '%')
@@ -67,6 +90,9 @@ class POSController extends Controller
         return response()->json($obat);
     }
 
+    /**
+     * Menambahkan item ke keranjang belanja.
+     */
     public function add(Request $r)
     {
         $r->validate(['kode' => 'required']);
@@ -81,9 +107,6 @@ class POSController extends Controller
             return back()->with('error', 'Stok ' . $obat->nama . ' kosong.');
         }
 
-        // Cek apakah obat sudah kadaluarsa (berdasarkan expired_date di tabel obat)
-        // Ini adalah expired_date dari tabel obat, bukan batch.
-        // Validasi batch akan dilakukan saat mengambil batch.
         if ($obat->expired_date && Carbon::parse($obat->expired_date)->isPast()) {
             return back()->with('error', 'Obat ' . $obat->nama . ' sudah kadaluarsa dan tidak bisa ditambahkan.');
         }
@@ -95,11 +118,10 @@ class POSController extends Controller
             $qtyToAdd = $cart[$obat->kode]['qty'] + 1;
         }
 
-        // Ambil batch obat menggunakan FEFO
         $batches = BatchObat::where('obat_id', $obat->id)
             ->where('stok_saat_ini', '>', 0)
-            ->where('expired_date', '>', now()) // Hanya batch yang belum kadaluarsa
-            ->orderBy('expired_date', 'asc') // FEFO: expired terdekat dulu
+            ->where('expired_date', '>', now()) 
+            ->orderBy('expired_date', 'asc')
             ->get();
 
         $tempBatchesUsed = [];
@@ -143,6 +165,9 @@ class POSController extends Controller
         return back();
     }
 
+    /**
+     * Memperbarui kuantitas item di keranjang.
+     */
     public function updateQty(Request $r)
     {
         $r->validate(['kode' => 'required', 'qty' => 'required|integer|min:0']);
@@ -210,6 +235,9 @@ class POSController extends Controller
         return back();
     }
 
+    /**
+     * Menghapus item dari keranjang.
+     */
     public function remove(Request $r)
     {
         $r->validate(['kode' => 'required']);
@@ -220,6 +248,9 @@ class POSController extends Controller
         return back();
     }
 
+    /**
+     * Mengatur diskon untuk transaksi.
+     */
     public function setDiskon(Request $r)
     {
         $r->validate([
@@ -235,6 +266,9 @@ class POSController extends Controller
         return back()->with('success', 'Diskon berhasil diterapkan');
     }
 
+    /**
+     * Memproses checkout dan menyimpan transaksi.
+     */
     public function checkout(Request $r)
     {
         $cart = session('cart', []);
@@ -274,8 +308,17 @@ class POSController extends Controller
 
         $bayar = (float)$r->bayar;
         $kembalian = $bayar - $finalTotal;
+        $penjualan = null; // Inisialisasi variabel penjualan
 
-        DB::transaction(function () use ($cart, $finalTotal, $bayar, $kembalian, $r, $validated, $diskonType, $diskonValue, $diskonAmount, $hasPsikotropika, &$penjualan) {
+        $activeShift = CashierShift::where('user_id', Auth::id())
+                                ->where('status', 'open')
+                                ->first();
+
+        if (!$activeShift) {
+            return back()->with('error', 'Anda tidak memiliki shift yang sedang berjalan. Silakan mulai shift terlebih dahulu.');
+        }
+
+        DB::transaction(function () use ($cart, $finalTotal, $bayar, $kembalian, $r, $validated, $diskonType, $diskonValue, $diskonAmount, $hasPsikotropika, $activeShift, &$penjualan) {
             $no = 'PJ-' . date('Ymd') . '-' . str_pad(Penjualan::whereDate('tanggal', date('Y-m-d'))->count() + 1, 3, '0', STR_PAD_LEFT);
             $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id') ?? Cabang::first()->id;
 
@@ -294,6 +337,7 @@ class POSController extends Controller
                 'diskon_type' => $diskonType,
                 'diskon_value' => $diskonValue,
                 'diskon_amount' => $diskonAmount,
+                'cashier_shift_id' => $activeShift->id,
             ]);
 
             foreach ($cart as $item) {
@@ -321,7 +365,7 @@ class POSController extends Controller
                     'hpp' => $hpp,
                     'subtotal' => (float)$item['qty'] * (float)$item['harga'],
                     'no_ktp' => $hasPsikotropika ? $validated['no_ktp'] : null,
-                    'batch_id' => count($batchIdsUsed) === 1 ? $batchIdsUsed[0] : null, // Simpan batch_id jika hanya 1 batch
+                    'batch_id' => count($batchIdsUsed) === 1 ? $batchIdsUsed[0] : null,
                 ]);
 
                 $obat->decrement('stok', $item['qty']);
@@ -350,6 +394,9 @@ class POSController extends Controller
         return redirect()->route('pos.print.options', $penjualan->id);
     }
 
+    /**
+     * Memvalidasi ulang stok di keranjang.
+     */
     private function validateCart(&$cart)
     {
         foreach ($cart as $kode => &$item) {
@@ -407,6 +454,7 @@ class POSController extends Controller
         session(['cart' => $cart]);
     }
 
+    // ... (Metode untuk mencetak, riwayat, dan pelanggan tetap sama) ...
     public function printOptions($id)
     {
         $penjualan = Penjualan::findOrFail($id);
@@ -415,7 +463,7 @@ class POSController extends Controller
 
     public function printFaktur($id)
     {
-        $penjualan = Penjualan::with('details.obat', 'kasir', 'pelanggan', 'details.batchObat')->findOrFail($id); // Load batchObat
+        $penjualan = Penjualan::with('details.obat', 'kasir', 'pelanggan', 'details.batchObat')->findOrFail($id);
         return view('kasir.struk', compact('penjualan'));
     }
 
@@ -427,7 +475,7 @@ class POSController extends Controller
 
     public function strukPdf($id)
     {
-        $penjualan = Penjualan::with('details.obat', 'kasir', 'pelanggan', 'details.batchObat')->findOrFail($id); // Load batchObat
+        $penjualan = Penjualan::with('details.obat', 'kasir', 'pelanggan', 'details.batchObat')->findOrFail($id);
         $pdf = Pdf::loadView('kasir.struk', compact('penjualan'))->setPaper('A6', 'landscape');
         return $pdf->stream('faktur-' . $penjualan->no_nota . '.pdf');
     }
@@ -447,7 +495,7 @@ class POSController extends Controller
 
     public function show($id)
     {
-        $p = Penjualan::with('details.obat', 'kasir', 'pelanggan', 'details.batchObat')->findOrFail($id); // Load batchObat
+        $p = Penjualan::with('details.obat', 'kasir', 'pelanggan', 'details.batchObat')->findOrFail($id);
         return view('kasir.detail', compact('p'));
     }
 
@@ -482,7 +530,7 @@ class POSController extends Controller
             'telepon' => $request->telepon,
             'alamat' => $request->alamat,
             'status_member' => 'member',
-            'point' => 0,   
+            'point' => 0,  
         ]);
 
         return response()->json($pelanggan);
