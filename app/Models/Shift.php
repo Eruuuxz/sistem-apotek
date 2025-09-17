@@ -12,9 +12,9 @@ class Shift extends Model
     protected $table = 'shifts'; // Nama tabel untuk definisi shift
 
     protected $fillable = [
-        'name',        // Nama shift (e.g., Pagi, Siang, Malam)
+        'name',        // Nama shift (e.g., Pagi, Sore)
         'start_time',  // Waktu mulai shift (e.g., 08:00:00)
-        'end_time',    // Waktu berakhir shift (e.g., 16:00:00)
+        'end_time',    // Waktu berakhir shift (e.g., 20:00:00)
     ];
 
     // Relasi ke CashierShift

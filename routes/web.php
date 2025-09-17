@@ -131,7 +131,7 @@ Route::middleware('auth')->group(function () {
         // This allows the cashier to start and end their shifts at any time.
         Route::post('/shifts/start', [ShiftController::class, 'startShift'])->name('shifts.start');
         Route::post('/shifts/end', [ShiftController::class, 'endShift'])->name('shifts.end');
-        Route::get('/shifts/my-summary', [ShiftController::class, 'summary'])->name('shifts.my.summary');
+        // Route::get('/shifts/my-summary', [ShiftController::class, 'summary'])->name('shifts.my.summary');
 
         // All other POS functionality is protected by the 'check.shift' middleware.
         // This ensures no sales can be processed without an active shift.

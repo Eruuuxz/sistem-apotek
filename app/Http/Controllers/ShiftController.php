@@ -55,25 +55,28 @@ class ShiftController extends Controller
             'initial_cash' => 'required|numeric|min:0',
         ]);
 
-        // Cek apakah kasir sudah memiliki shift yang sedang open
+        // Cek apakah ada shift aktif untuk user ini
         $activeShift = CashierShift::where('user_id', Auth::id())
-                                   ->where('status', 'open')
+                                   ->whereNull('end_time')
                                    ->first();
 
         if ($activeShift) {
-            return back()->with('error', 'Anda sudah memiliki shift yang sedang berjalan.');
+            return redirect()->route('pos.index')->with('error', 'Anda sudah memiliki shift aktif.');
         }
 
+        // Mulai shift baru
         CashierShift::create([
             'user_id' => Auth::id(),
             'shift_id' => $request->shift_id,
             'start_time' => Carbon::now(),
             'initial_cash' => $request->initial_cash,
-            'status' => 'open',
+            'status' => 'open', 
         ]);
 
-        return redirect()->route('pos.index')->with('success', 'Shift berhasil dimulai.');
+        return redirect()->route('pos.index')->with('success', 'Shift berhasil dimulai!');
     }
+
+
 
     /**
      * Mengakhiri shift untuk kasir yang sedang login.

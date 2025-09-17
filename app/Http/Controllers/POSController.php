@@ -18,53 +18,43 @@ use Barryvdh\DomPDF\Facade\Pdf; // Pastikan ini sudah terinstal dan dikonfiguras
 
 class POSController extends Controller
 {
-    /**
-     * Menampilkan halaman POS.
-     * Mengatur apakah menampilkan form "Mulai Shift" atau POS itu sendiri.
-     */
     public function index()
     {
-        // Cari shift kasir yang sedang aktif
-        $activeShift = CashierShift::with('shift')
-                                    ->where('user_id', Auth::id())
-                                    ->where('status', 'open')
-                                    ->first();
+        $activeShift = CashierShift::where('user_id', Auth::id())
+                                   ->whereNull('end_time')
+                                   ->with('shift')
+                                   ->first();
 
-        // Jika tidak ada shift yang aktif, tampilkan form "Mulai Shift"
-        if (!$activeShift) {
-            $shifts = Shift::all();
+        $shifts = Shift::all(); // Ini akan mengambil semua shift yang ada, termasuk Pagi dan Sore
+
+        if ($activeShift) {
+            // Logika untuk POS jika shift aktif
+            $cart = session()->get('cart', []);
+            $totalHarga = collect($cart)->sum(function($item) {
+                return $item['qty'] * $item['harga'];
+            });
+
+            // Ambil diskon dari session
+            $diskonValue = session('diskon_value', 0);
+            $diskonType = session('diskon_type', 'nominal');
+
+            $totalAkhir = $totalHarga;
+            if ($diskonType === 'persen') {
+                $totalAkhir -= $totalHarga * ($diskonValue / 100);
+            } else {
+                $totalAkhir -= $diskonValue;
+            }
+            $totalAkhir = max(0, $totalAkhir); // Pastikan total tidak negatif
+
+            $obat = Obat::where('stok', '>', 0)->get(); // Untuk modal list obat
+
+            return view('kasir.pos', compact('cart', 'activeShift', 'totalAkhir', 'diskonValue', 'diskonType', 'obat', 'shifts'));
+        } else {
+            // Tampilkan form untuk memulai shift
+            // akan menangani tampilan form memulai shift jika $activeShift null.
+            // Pastikan view 'kasir.pos' bisa menerima $shifts untuk dropdown.
             return view('kasir.pos', compact('activeShift', 'shifts'));
         }
-
-        // Jika ada shift yang aktif, lanjutkan dengan logika POS normal
-        $obat = Obat::where('stok', '>', 0)
-            ->where(function ($query) {
-                $query->whereNull('expired_date')
-                    ->orWhere('expired_date', '>', now());
-            })
-            ->orderBy('nama')
-            ->get(['id', 'kode', 'nama', 'kategori', 'expired_date', 'harga_jual', 'stok', 'is_psikotropika']);
-
-        $cart = session('cart', []);
-        $this->validateCart($cart);
-
-        $total = collect($cart)->sum(fn($i) => $i['harga'] * $i['qty']);
-
-        $diskonType = session('diskon_type', 'nominal');
-        $diskonValue = session('diskon_value', 0);
-
-        $diskonAmount = 0;
-        if ($diskonType === 'persen') {
-            $diskonAmount = $total * ($diskonValue / 100);
-        } else {
-            $diskonAmount = $diskonValue;
-        }
-
-        $totalAkhir = max($total - $diskonAmount, 0);
-
-        $members = Pelanggan::orderBy('nama')->get();
-
-        return view('kasir.pos', compact('obat', 'cart', 'total', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members', 'activeShift'));
     }
 
     /**
