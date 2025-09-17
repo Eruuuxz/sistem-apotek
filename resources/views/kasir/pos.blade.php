@@ -20,8 +20,15 @@
     {{-- Cek apakah ada shift yang aktif --}}
     @if ($activeShift)
         {{-- Tampilan POS utama jika shift aktif --}}
-        <div class="alert bg-green-100 border-green-400 text-green-700 px-4 py-3 rounded-lg relative mb-4">
-            Anda sudah memiliki shift aktif: <strong>{{ $activeShift->shift->name }}</strong> dimulai pada {{ $activeShift->start_time }}.
+        <div class="alert bg-green-100 border-green-400 text-green-700 px-4 py-3 rounded-lg relative mb-4 flex justify-between items-center">
+            <div>
+                Anda sudah memiliki shift aktif: <strong>{{ $activeShift->shift->name }}</strong> dimulai pada {{ $activeShift->start_time }}.
+            </div>
+            
+            {{-- Tombol Akhiri Shift --}}
+            <button type="button" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap" onclick="openEndShiftModal()">
+                Akhiri Shift
+            </button>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -53,6 +60,7 @@
                                 <th class="px-3 py-2 text-left">Expired Date</th>
                                 <th class="px-3 py-2 text-right">Harga</th>
                                 <th class="px-3 py-2 text-center">Qty</th>
+                                <th class="px-3 py-2 text-right">PPN</th>
                                 <th class="px-3 py-2 text-right">Stok</th>
                                 <th class="px-3 py-2 text-right">Subtotal</th>
                                 <th class="px-3 py-2 text-center">Aksi</th>
@@ -70,6 +78,9 @@
                                             $isExpired = \Carbon\Carbon::parse($expiredDate)->isPast();
                                         }
                                     }
+                                    // Hitung PPN per item
+                                    $ppnPerItem = $item['harga'] * ($item['ppn_rate'] / 100);
+                                    $subtotalWithPpn = ($item['harga'] + $ppnPerItem) * $item['qty'];
                                 @endphp
                                 <tr
                                     class="hover:bg-gray-50 transition duration-150 
@@ -94,6 +105,7 @@
                                                 min="0" max="{{ $item['stok'] }}">
                                         </form>
                                     </td>
+                                    <td class="border px-3 py-2 text-right">Rp {{ number_format($ppnPerItem * $item['qty'], 0, ',', '.') }}</td>
                                     <td class="border px-3 py-2 text-right">
                                         {{ $item['stok'] }}
                                         @if($item['stok'] == 0)
@@ -115,7 +127,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="border px-3 py-2 text-center text-gray-400">Keranjang kosong.</td>
+                                    <td colspan="10" class="border px-3 py-2 text-center text-gray-400">Keranjang kosong.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -201,7 +213,16 @@
                         </div>
                     </div>
 
-                    {{-- Diskon Transaksi --}}
+                    <div class="grid grid-cols-3 items-center gap-2">
+                        <label class="text-sm font-medium text-gray-700">Total Harga</label>
+                        <div class="col-span-2">
+                            <input type="text" id="subtotal_display"
+                                class="w-full border rounded-lg px-3 py-2 text-right font-bold bg-gray-100"
+                                value="Rp {{ number_format($total, 0, ',', '.') }}" readonly>
+                            <input type="hidden" name="total_subtotal" id="total_subtotal" value="{{ $total }}">
+                        </div>
+                    </div>
+                    
                     <div class="grid grid-cols-3 items-center gap-2">
                         <label class="text-sm font-medium text-gray-700">Diskon</label>
                         <div class="col-span-2 flex gap-2">
@@ -215,9 +236,19 @@
                             </select>
                         </div>
                     </div>
+                    
+                    <div class="grid grid-cols-3 items-center gap-2">
+                        <label class="text-sm font-medium text-gray-700">PPN (11%)</label>
+                        <div class="col-span-2">
+                            <input type="text" id="ppn_display"
+                                class="w-full border rounded-lg px-3 py-2 text-right font-bold bg-gray-100"
+                                value="Rp {{ number_format($totalPpn, 0, ',', '.') }}" readonly>
+                            <input type="hidden" name="total_ppn" id="total_ppn" value="{{ $totalPpn }}">
+                        </div>
+                    </div>
 
                     <div class="grid grid-cols-3 items-center gap-2">
-                        <label class="text-sm font-medium text-gray-700">Total</label>
+                        <label class="text-sm font-medium text-gray-700">Total Akhir</label>
                         <div class="col-span-2">
                             <input type="text" id="total_display"
                                 class="w-full border rounded-lg px-3 py-2 text-right font-bold bg-gray-100"
@@ -250,11 +281,31 @@
             </div>
         </div>
 
+        {{-- Modal Akhiri Shift --}}
+        <div id="endShiftModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-2xl shadow-lg relative w-full max-w-sm">
+                <button onclick="closeEndShiftModal()" class="absolute top-3 right-3 text-gray-600 hover:text-black text-lg font-bold">✕</button>
+                <h2 class="text-xl font-semibold mb-4">Konfirmasi Akhiri Shift</h2>
+                <form action="{{ route('shifts.end') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <div class="mb-4">
+                        <p class="text-gray-700 text-sm">Shift aktif: <strong>{{ $activeShift->shift->name }}</strong> dimulai pada {{ $activeShift->start_time }}.</p>
+                    </div>
+                    <div>
+                        <label for="final_cash" class="block text-sm font-medium text-gray-700">Modal Akhir Kasir (Rp)</label>
+                        <input type="number" name="final_cash" id="final_cash" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required min="0" readonly>
+                    </div>
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-medium transition">
+                        Akhiri Shift & Keluar
+                    </button>
+                </form>
+            </div>
+        </div>
+        
         {{-- Modal List Obat --}}
         <div id="obatModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
             <div class="bg-white w-11/12 md:w-3/4 lg:w-1/2 p-6 rounded-2xl shadow-lg relative max-h-[90vh] overflow-hidden">
-                <button onclick="closeModal()"
-                    class="absolute top-3 right-3 text-gray-600 hover:text-black text-lg font-bold">✕</button>
+                <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-600 hover:text-black text-lg font-bold">✕</button>
                 <h2 class="text-xl font-semibold mb-4">Daftar Obat</h2>
                 
                 <div class="mb-4">
@@ -454,30 +505,45 @@
 
         // Fungsi untuk menghitung total belanja termasuk diskon
         function hitungTotal() {
-            let total = 0;
+            let subtotal = 0;
+            let totalPpn = 0;
+
             // Iterasi melalui setiap baris di tabel keranjang
             $('table tbody tr').each(function() {
-                const qty = parseInt($(this).find('input[name^="qty"]').val()) || 0;
-                const hargaText = $(this).find('td:nth-child(5)').text().replace('Rp ', '').replace(/\./g, '');
-                const harga = parseFloat(hargaText) || 0;
-                total += qty * harga;
+                // Cek apakah ini bukan baris "Keranjang kosong"
+                if ($(this).find('td').length > 1) { 
+                    const qty = parseInt($(this).find('input[name^="qty"]').val()) || 0;
+                    const hargaText = $(this).find('td:nth-child(5)').text().replace('Rp ', '').replace(/\./g, '');
+                    const harga = parseFloat(hargaText) || 0;
+                    
+                    subtotal += qty * harga;
+                    // PPN per item (misal 11%)
+                    totalPpn += (harga * 0.11) * qty;
+                }
             });
 
+            // Logika diskon
             let diskonValue = parseFloat(document.getElementById('diskon_value').value) || 0;
             let diskonType  = document.getElementById('diskon_type').value;
-
             let diskonAmount = 0;
             if (diskonType === 'persen') {
-                diskonAmount = total * (diskonValue / 100);
+                diskonAmount = subtotal * (diskonValue / 100);
             } else {
                 diskonAmount = diskonValue;
             }
 
-            let finalTotal = Math.max(total - diskonAmount, 0);
+            let finalTotal = Math.max(subtotal + totalPpn - diskonAmount, 0);
 
+            // Update tampilan
+            document.getElementById('subtotal_display').value = "Rp " + subtotal.toLocaleString('id-ID');
+            document.getElementById('ppn_display').value = "Rp " + totalPpn.toLocaleString('id-ID');
             document.getElementById('total_display').value = "Rp " + finalTotal.toLocaleString('id-ID');
-            document.getElementById('total_hidden').value = finalTotal;
 
+            // Update hidden inputs
+            document.getElementById('total_subtotal').value = subtotal;
+            document.getElementById('total_ppn').value = totalPpn;
+            document.getElementById('total_hidden').value = finalTotal;
+            
             // hitung ulang kembalian juga
             hitungKembalian();
         }
@@ -756,6 +822,35 @@
                 console.error('Error:', error);
                 alert('Terjadi kesalahan saat menambahkan pelanggan.');
             });
+        });
+
+        // --- SCRIPT AKHIRI SHIFT ---
+        function openEndShiftModal() {
+            // Ambil total penjualan dari controller (sudah dikirimkan sebagai $totalSales)
+            const totalSales = {{ $totalSales ?? 0 }};
+            // Ambil modal awal dari shift aktif
+            const initialCash = {{ $activeShift->initial_cash ?? 0 }};
+
+            // Hitung modal akhir = modal awal + total penjualan
+            const finalCash = initialCash + totalSales;
+
+            // Masukkan nilai ke input modal akhir
+            document.getElementById('final_cash').value = finalCash;
+
+            // Tampilkan modal
+            document.getElementById('endShiftModal').classList.remove('hidden');
+            document.getElementById('endShiftModal').classList.add('flex');
+        }
+
+        function closeEndShiftModal() {
+            document.getElementById('endShiftModal').classList.remove('flex');
+            document.getElementById('endShiftModal').classList.add('hidden');
+        }
+
+        document.getElementById('endShiftModal').addEventListener('click', function(e) {
+            if (e.target.id === 'endShiftModal') {
+                closeEndShiftModal();
+            }
         });
     </script>
 @endpush

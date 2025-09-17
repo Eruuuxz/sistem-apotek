@@ -81,39 +81,41 @@ class ShiftController extends Controller
     /**
      * Mengakhiri shift untuk kasir yang sedang login.
      */
-    public function endShift(Request $request)
-    {
-        $request->validate([
-            'final_cash' => 'required|numeric|min:0',
-        ]);
+    // Dalam ShiftController.php
 
-        $activeShift = CashierShift::where('user_id', Auth::id())
-                                   ->where('status', 'open')
-                                   ->first();
+public function endShift(Request $request)
+{
+    $request->validate([
+        'final_cash' => 'required|numeric|min:0',
+    ]);
 
-        if (!$activeShift) {
-            return back()->with('error', 'Anda tidak memiliki shift yang sedang berjalan.');
-        }
+    $activeShift = CashierShift::where('user_id', Auth::id())
+                               ->where('status', 'open')
+                               ->first();
 
-        DB::transaction(function () use ($activeShift, $request) {
-            // Hitung total penjualan selama shift ini
-            $totalSales = Penjualan::where('cashier_shift_id', $activeShift->id)->sum('total');
-
-            $activeShift->update([
-                'end_time' => Carbon::now(),
-                'final_cash' => $request->final_cash,
-                'total_sales' => $totalSales,
-                'status' => 'closed',
-            ]);
-        });
-
-        return redirect()->route('pos.index')->with('success', 'Shift berhasil diakhiri.');
+    if (!$activeShift) {
+        return back()->with('error', 'Anda tidak memiliki shift yang sedang berjalan.');
     }
+
+    $activeShift->update([
+        'end_time' => Carbon::now(),
+        'final_cash' => $request->final_cash,
+        // Hapus 'total_sales' di sini, karena sudah dihitung di POSController
+        'status' => 'closed',
+    ]);
+
+    // Opsional: Redirect ke halaman login setelah shift selesai
+    Auth::guard('web')->logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect()->route('login')->with('success', 'Shift Anda berhasil diakhiri.');
+}
 
     /**
      * Menampilkan ringkasan shift kasir.
      */
-    public function summary(Request $request)
+     public function summary(Request $request)
     {
         $query = CashierShift::with(['user', 'shift']);
 
@@ -121,16 +123,13 @@ class ShiftController extends Controller
         if ($request->filled('date')) {
             $query->whereDate('start_time', $request->date);
         }
-        // Filter berdasarkan kasir (hanya admin yang bisa melihat semua kasir)
-        if (Auth::user()->role === 'admin' && $request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
-        } elseif (Auth::user()->role === 'kasir') {
-            $query->where('user_id', Auth::id()); // Kasir hanya bisa melihat shiftnya sendiri
-        }
+        
+        // Kasir hanya bisa melihat shiftnya sendiri
+        $query->where('user_id', Auth::id()); 
 
         $cashierShifts = $query->latest('start_time')->paginate(10);
-        $users = Auth::user()->role === 'admin' ? \App\Models\User::where('role', 'kasir')->get() : collect(); // Untuk filter di admin
+        $users = collect(); // Untuk kasir, tidak perlu daftar user lain
 
-        return view('shifts.summary', compact('cashierShifts', 'users'));
+        return view('kasir.summary', compact('cashierShifts', 'users'));
     }
 }

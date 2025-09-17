@@ -14,47 +14,63 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Barryvdh\DomPDF\Facade\Pdf; // Pastikan ini sudah terinstal dan dikonfigurasi
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class POSController extends Controller
 {
+    /**
+     * Menampilkan halaman POS.
+     * Mengatur apakah menampilkan form "Mulai Shift" atau POS itu sendiri.
+     */
     public function index()
     {
-        $activeShift = CashierShift::where('user_id', Auth::id())
-                                   ->whereNull('end_time')
-                                   ->with('shift')
-                                   ->first();
+        // Cari shift kasir yang sedang aktif
+        $activeShift = CashierShift::with('shift')
+                                    ->where('user_id', Auth::id())
+                                    ->where('status', 'open')
+                                    ->first();
 
-        $shifts = Shift::all(); // Ini akan mengambil semua shift yang ada, termasuk Pagi dan Sore
-
-        if ($activeShift) {
-            // Logika untuk POS jika shift aktif
-            $cart = session()->get('cart', []);
-            $totalHarga = collect($cart)->sum(function($item) {
-                return $item['qty'] * $item['harga'];
-            });
-
-            // Ambil diskon dari session
-            $diskonValue = session('diskon_value', 0);
-            $diskonType = session('diskon_type', 'nominal');
-
-            $totalAkhir = $totalHarga;
-            if ($diskonType === 'persen') {
-                $totalAkhir -= $totalHarga * ($diskonValue / 100);
-            } else {
-                $totalAkhir -= $diskonValue;
-            }
-            $totalAkhir = max(0, $totalAkhir); // Pastikan total tidak negatif
-
-            $obat = Obat::where('stok', '>', 0)->get(); // Untuk modal list obat
-
-            return view('kasir.pos', compact('cart', 'activeShift', 'totalAkhir', 'diskonValue', 'diskonType', 'obat', 'shifts'));
-        } else {
-            // Tampilkan form untuk memulai shift
-            // akan menangani tampilan form memulai shift jika $activeShift null.
-            // Pastikan view 'kasir.pos' bisa menerima $shifts untuk dropdown.
+        // Jika tidak ada shift yang aktif, tampilkan form "Mulai Shift"
+        if (!$activeShift) {
+            $shifts = Shift::whereIn('name', ['Pagi', 'Sore'])->get();
             return view('kasir.pos', compact('activeShift', 'shifts'));
         }
+
+        // Jika ada shift yang aktif, lanjutkan dengan logika POS normal
+        $obat = Obat::where('stok', '>', 0)
+            ->where(function ($query) {
+                $query->whereNull('expired_date')
+                    ->orWhere('expired_date', '>', now());
+            })
+            ->orderBy('nama')
+            ->get(['id', 'kode', 'nama', 'kategori', 'expired_date', 'harga_jual', 'stok', 'is_psikotropika']);
+
+        $cart = session('cart', []);
+        $this->validateCart($cart);
+        
+        $ppnRate = 11; // PPN 11%
+        $total = collect($cart)->sum(fn($i) => $i['harga'] * $i['qty']);
+        $totalPpn = $total * ($ppnRate / 100);
+        
+        $diskonType = session('diskon_type', 'nominal');
+        $diskonValue = session('diskon_value', 0);
+
+        $diskonAmount = 0;
+        if ($diskonType === 'persen') {
+            $diskonAmount = $total * ($diskonValue / 100);
+        } else {
+            $diskonAmount = $diskonValue;
+        }
+
+        $totalAkhir = max($total + $totalPpn - $diskonAmount, 0);
+
+        $members = Pelanggan::orderBy('nama')->get();
+
+        // Hitung total penjualan selama shift aktif
+        $totalSales = Penjualan::where('cashier_shift_id', $activeShift->id)->sum('total');
+
+        // Tambahkan $totalPpn ke compact()
+        return view('kasir.pos', compact('obat', 'cart', 'total', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members', 'activeShift', 'totalSales', 'totalPpn'));
     }
 
     /**
@@ -139,12 +155,15 @@ class POSController extends Controller
             return back()->with('error', 'Stok ' . $obat->nama . ' tidak cukup dari batch yang tersedia. Stok saat ini: ' . $obat->stok);
         }
 
+        $ppnRate = 11; // Misalkan PPN 11%
+
         $cart[$obat->kode] = [
             'id' => $obat->id,
             'kode' => $obat->kode,
             'nama' => $obat->nama,
             'kategori' => $obat->kategori,
             'harga' => $obat->harga_jual,
+            'ppn_rate' => $ppnRate,
             'qty' => $qtyToAdd,
             'stok' => $obat->stok,
             'is_psikotropika' => $obat->is_psikotropika,
@@ -218,7 +237,10 @@ class POSController extends Controller
             return back()->with('error', 'Stok ' . $obat->nama . ' tidak cukup dari batch yang tersedia untuk kuantitas ini. Stok saat ini: ' . $obat->stok);
         }
 
+        $ppnRate = 11;
+
         $cart[$kode]['qty'] = $newQty;
+        $cart[$kode]['ppn_rate'] = $ppnRate;
         $cart[$kode]['batches_used'] = $tempBatchesUsed;
         session(['cart' => $cart]);
 
@@ -265,20 +287,23 @@ class POSController extends Controller
         if (empty($cart)) {
             return back()->with('error', 'Keranjang kosong');
         }
+        
+        $totalSubtotal = collect($cart)->sum(fn($i) => (float)$i['harga'] * (int)$i['qty']);
 
-        $totalCart = collect($cart)->sum(fn($i) => (float)$i['harga'] * (int)$i['qty']);
+        $ppnRate = 11;
+        $totalPpn = $totalSubtotal * ($ppnRate / 100);
 
         $diskonType = $r->input('diskon_type', 'nominal');
         $diskonValue = (float)$r->input('diskon_value', 0);
         $diskonAmount = 0;
 
         if ($diskonType === 'persen') {
-            $diskonAmount = $totalCart * ($diskonValue / 100);
+            $diskonAmount = $totalSubtotal * ($diskonValue / 100);
         } else {
             $diskonAmount = $diskonValue;
         }
 
-        $finalTotal = max($totalCart - $diskonAmount, 0);
+        $finalTotal = max($totalSubtotal + $totalPpn - $diskonAmount, 0);
 
         $validated = $r->validate([
             'nama_pelanggan' => 'required|string|max:255',
@@ -298,7 +323,7 @@ class POSController extends Controller
 
         $bayar = (float)$r->bayar;
         $kembalian = $bayar - $finalTotal;
-        $penjualan = null; // Inisialisasi variabel penjualan
+        $penjualan = null; 
 
         $activeShift = CashierShift::where('user_id', Auth::id())
                                 ->where('status', 'open')
@@ -308,7 +333,7 @@ class POSController extends Controller
             return back()->with('error', 'Anda tidak memiliki shift yang sedang berjalan. Silakan mulai shift terlebih dahulu.');
         }
 
-        DB::transaction(function () use ($cart, $finalTotal, $bayar, $kembalian, $r, $validated, $diskonType, $diskonValue, $diskonAmount, $hasPsikotropika, $activeShift, &$penjualan) {
+        DB::transaction(function () use ($cart, $totalSubtotal, $totalPpn, $finalTotal, $bayar, $kembalian, $r, $validated, $diskonType, $diskonValue, $diskonAmount, $hasPsikotropika, $activeShift, &$penjualan) {
             $no = 'PJ-' . date('Ymd') . '-' . str_pad(Penjualan::whereDate('tanggal', date('Y-m-d'))->count() + 1, 3, '0', STR_PAD_LEFT);
             $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id') ?? Cabang::first()->id;
 
@@ -327,6 +352,7 @@ class POSController extends Controller
                 'diskon_type' => $diskonType,
                 'diskon_value' => $diskonValue,
                 'diskon_amount' => $diskonAmount,
+                'ppn' => $totalPpn,
                 'cashier_shift_id' => $activeShift->id,
             ]);
 
@@ -346,6 +372,7 @@ class POSController extends Controller
                     $batchIdsUsed[] = $batchDetail['batch_id'];
                 }
                 $hpp = $totalQtyUsed > 0 ? $totalHPP / $totalQtyUsed : $obat->harga_dasar;
+                $ppnPerItem = $item['harga'] * ($item['ppn_rate'] / 100);
 
                 PenjualanDetail::create([
                     'penjualan_id' => $penjualan->id,
@@ -354,6 +381,7 @@ class POSController extends Controller
                     'harga' => $item['harga'],
                     'hpp' => $hpp,
                     'subtotal' => (float)$item['qty'] * (float)$item['harga'],
+                    'ppn' => $ppnPerItem * $item['qty'],
                     'no_ktp' => $hasPsikotropika ? $validated['no_ktp'] : null,
                     'batch_id' => count($batchIdsUsed) === 1 ? $batchIdsUsed[0] : null,
                 ]);
@@ -389,6 +417,8 @@ class POSController extends Controller
      */
     private function validateCart(&$cart)
     {
+        $ppnRate = 11;
+
         foreach ($cart as $kode => &$item) {
             $obat = Obat::where('kode', $kode)->first();
 
@@ -400,6 +430,7 @@ class POSController extends Controller
             $item['harga'] = $obat->harga_jual;
             $item['kategori'] = $obat->kategori;
             $item['is_psikotropika'] = $obat->is_psikotropika;
+            $item['ppn_rate'] = $ppnRate;
 
             $batches = BatchObat::where('obat_id', $obat->id)
                 ->where('stok_saat_ini', '>', 0)
@@ -444,7 +475,6 @@ class POSController extends Controller
         session(['cart' => $cart]);
     }
 
-    // ... (Metode untuk mencetak, riwayat, dan pelanggan tetap sama) ...
     public function printOptions($id)
     {
         $penjualan = Penjualan::findOrFail($id);
@@ -472,6 +502,11 @@ class POSController extends Controller
 
     public function riwayatKasir()
     {
+        $activeShift = CashierShift::with('shift')
+                                    ->where('user_id', Auth::id())
+                                    ->where('status', 'open')
+                                    ->first();
+
         $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id');
 
         $data = Penjualan::with('details.obat', 'pelanggan')
@@ -480,7 +515,7 @@ class POSController extends Controller
             ->orderBy('tanggal', 'desc')
             ->paginate(10);
 
-        return view('kasir.riwayat', compact('data'));
+        return view('kasir.riwayat', compact('data', 'activeShift'));
     }
 
     public function show($id)

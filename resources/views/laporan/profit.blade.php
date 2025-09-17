@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Laporan Profit Bulanan')
+@section('title', 'Laporan Laba Rugi Bulanan')
 
 @section('content')
 
@@ -30,57 +30,82 @@
 {{-- Ringkasan --}}
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
     <div class="bg-white shadow-md rounded p-4 flex flex-col items-center">
-        <span class="text-gray-500 text-sm">Total Penjualan (Harga Jual)</span>
+        <span class="text-gray-500 text-sm">Total Penjualan (Subtotal)</span>
         <span class="text-2xl font-bold text-blue-600 mt-2">Rp {{ number_format($totalPenjualan,0,',','.') }}</span>
-        <p class="text-xs text-gray-400 mt-1">Jumlah total penjualan semua transaksi bulan ini</p>
+        <p class="text-xs text-gray-400 mt-1">Total harga jual tanpa PPN</p>
     </div>
 
     <div class="bg-white shadow-md rounded p-4 flex flex-col items-center">
-        <span class="text-gray-500 text-sm">Total Modal (Harga Dasar)</span>
+        <span class="text-gray-500 text-sm">Total Modal (HPP)</span>
         <span class="text-2xl font-bold text-orange-500 mt-2">Rp {{ number_format($totalModal,0,',','.') }}</span>
-        <p class="text-xs text-gray-400 mt-1">Total biaya modal semua barang terjual bulan ini</p>
+        <p class="text-xs text-gray-400 mt-1">Total biaya modal semua barang terjual</p>
     </div>
 
     <div class="bg-white shadow-md rounded p-4 flex flex-col items-center">
-        <span class="text-gray-500 text-sm">Keuntungan</span>
-        <span class="text-2xl font-bold text-green-600 mt-2">Rp {{ number_format($keuntungan,0,',','.') }}</span>
-        <p class="text-xs text-gray-400 mt-1">Selisih antara penjualan dan modal (Profit)</p>
+        <span class="text-gray-500 text-sm">PPN Penjualan</span>
+        <span class="text-2xl font-bold text-teal-600 mt-2">Rp {{ number_format($totalPpnPenjualan,0,',','.') }}</span>
+        <p class="text-xs text-gray-400 mt-1">Jumlah PPN dari semua transaksi</p>
     </div>
 
     <div class="bg-white shadow-md rounded p-4 flex flex-col items-center">
-        <span class="text-gray-500 text-sm">Total Pengeluaran (Pembelian)</span>
-        <span class="text-2xl font-bold text-red-600 mt-2">Rp {{ number_format($totalPengeluaran,0,',','.') }}</span>
-        <p class="text-xs text-gray-400 mt-1">Jumlah total pembelian obat ke supplier bulan ini</p>
+        <span class="text-gray-500 text-sm">Biaya Operasional</span>
+        <span class="text-2xl font-bold text-red-600 mt-2">Rp {{ number_format($totalBiayaOperasional,0,',','.') }}</span>
+        <p class="text-xs text-gray-400 mt-1">Jumlah total biaya operasional bulan ini</p>
     </div>
 </div>
 
-{{-- Grafik --}}
+{{-- Ringkasan Laba --}}
+<div class="bg-white shadow-md rounded p-6 mb-6">
+    <h3 class="text-xl font-semibold mb-4 border-b pb-2">Ringkasan Laba ({{ \Carbon\Carbon::create($tahun, $bulan)->translatedFormat('F Y') }})</h3>
+    <ul class="space-y-4">
+        <li>
+            <span class="font-medium text-gray-700">Laba Kotor (Penjualan - HPP):</span>
+            <span class="float-right text-lg font-bold text-green-700">Rp {{ number_format($labaKotor, 0, ',', '.') }}</span>
+        </li>
+        <li class="border-t pt-4">
+            <span class="text-xl font-bold">Laba Bersih:</span>
+            <span class="float-right text-xl font-bold {{ $labaBersih >= 0 ? 'text-green-700' : 'text-red-700' }}">Rp {{ number_format($labaBersih, 0, ',', '.') }}</span>
+        </li>
+    </ul>
+</div>
+
+{{-- Grafik (menggunakan Chart.js) --}}
 <div class="bg-white shadow-md rounded p-4 mb-6">
     <canvas id="profitChart" height="100"></canvas>
 </div>
 
-{{-- Chart.js --}}
+@endsection
+
+@push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const ctx = document.getElementById('profitChart').getContext('2d');
     const profitChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Total Penjualan', 'Total Modal', 'Keuntungan', 'Total Pengeluaran'],
+            labels: ['Total Penjualan', 'Total Modal', 'Laba Kotor', 'Biaya Operasional', 'Laba Bersih'],
             datasets: [{
                 label: 'Rp',
-                data: [{{ $totalPenjualan }}, {{ $totalModal }}, {{ $keuntungan }}, {{ $totalPengeluaran }}],
+                data: [
+                    {{ $totalPenjualan ?? 0 }}, 
+                    {{ $totalModal ?? 0 }}, 
+                    {{ $labaKotor ?? 0 }}, 
+                    {{ $totalBiayaOperasional ?? 0 }}, 
+                    {{ $labaBersih ?? 0 }}
+                ],
                 backgroundColor: [
                     'rgba(59, 130, 246, 0.7)',
                     'rgba(249, 115, 22, 0.7)',
                     'rgba(22, 163, 74, 0.7)',
-                    'rgba(220, 38, 38, 0.7)'
+                    'rgba(220, 38, 38, 0.7)',
+                    'rgba(255, 206, 86, 0.7)'
                 ],
                 borderColor: [
                     'rgba(59, 130, 246, 1)',
                     'rgba(249, 115, 22, 1)',
                     'rgba(22, 163, 74, 1)',
-                    'rgba(220, 38, 38, 1)'
+                    'rgba(220, 38, 38, 1)',
+                    'rgba(255, 206, 86, 1)'
                 ],
                 borderWidth: 1
             }]
@@ -110,5 +135,4 @@
         }
     });
 </script>
-
-@endsection
+@endpush

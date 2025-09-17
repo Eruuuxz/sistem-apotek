@@ -72,6 +72,7 @@ Route::middleware('auth')->group(function () {
 
         // Laporan
         Route::prefix('laporan')->name('laporan.')->group(function () {
+            // Laporan yang sudah ada
             Route::get('/', [LaporanController::class, 'index'])->name('index');
             Route::get('/penjualan', [LaporanController::class, 'penjualan'])->name('penjualan');
             Route::get('/penjualan/pdf', [LaporanController::class, 'penjualanPdf'])->name('penjualan.pdf');
@@ -79,17 +80,23 @@ Route::middleware('auth')->group(function () {
             Route::get('/penjualan-bulanan', [LaporanController::class, 'penjualanBulanan'])->name('penjualan.bulanan');
             Route::get('/penjualan-bulanan/pdf', [LaporanController::class, 'penjualanBulananPdf'])->name('penjualan.bulanan.pdf');
             Route::get('/penjualan-bulanan/excel', [LaporanController::class, 'penjualanBulananExcel'])->name('penjualan.bulanan.excel');
-            Route::get('/profit', [LaporanController::class, 'profitBulanan'])->name('profit');
             Route::get('/profit-detail-json/{tanggal}', [LaporanController::class, 'profitDetailJson'])->name('profit.detail.json');
             Route::get('/stok', [LaporanController::class, 'stok'])->name('stok');
+
+            // Laporan yang baru ditambahkan
+            Route::get('/profit', [LaporanController::class, 'profitBulanan'])->name('profit');
+            Route::get('/perputaran-stok', [LaporanController::class, 'perputaranStok'])->name('perputaran-stok');
+            Route::get('/customer-analytics', [LaporanController::class, 'customerAnalytics'])->name('customer_analytics');
+            Route::get('/daily-sales-recap', [LaporanController::class, 'dailySalesRecap'])->name('daily_sales_recap');
+            Route::get('/stock-movement-analysis', [LaporanController::class, 'stockMovementAnalysis'])->name('stock_movement_analysis');
         });
 
-        // Stock Movement
+        // Stock Movement (rute yang terpisah, perlu digabungkan)
         Route::prefix('stock-movement')->name('stock.movement')->group(function () {
             Route::get('/', [StockMovementController::class, 'index']);
             Route::get('/detail', [StockMovementController::class, 'detail'])->name('.detail');
         });
-
+        
         // Surat Pesanan
         Route::resource('surat_pesanan', SuratPesananController::class);
         Route::get('surat_pesanan/{surat_pesanan}/download', [SuratPesananController::class, 'downloadTemplate'])->name('surat_pesanan.download');
@@ -100,41 +107,20 @@ Route::middleware('auth')->group(function () {
         Route::resource('shifts', ShiftController::class)->except(['show', 'edit', 'update', 'destroy']);
         Route::get('shifts/summary', [ShiftController::class, 'summary'])->name('shifts.summary');
         
-        // Laporan Customer Analytics
-        Route::prefix('customer-analytics')->name('customer_analytics.')->group(function () {
-            Route::get('/', [CustomerAnalyticsController::class, 'index'])->name('index');
-            Route::get('/daily-sales-recap', [CustomerAnalyticsController::class, 'dailySalesRecap'])->name('daily_sales_recap');
-            Route::get('/stock-movement-analysis', [CustomerAnalyticsController::class, 'stockMovementAnalysis'])->name('stock_movement_analysis');
-            Route::get('/generate-pdf/{reportType}', [CustomerAnalyticsController::class, 'generatePdf'])->name('generate_pdf');
-            Route::get('/generate-excel/{reportType}', [CustomerAnalyticsController::class, 'generateExcel'])->name('generate_excel');
-        });
-
         // Stock Opname
         Route::resource('stock-opname', StockOpnameController::class);
         Route::post('stock-opname/{stock_opname}/approve', [StockOpnameController::class, 'approve'])->name('stock_opname.approve');
         Route::post('stock-opname/{stock_opname}/reject', [StockOpnameController::class, 'reject'])->name('stock_opname.reject');
         Route::get('stock-opname/{stock_opname}/pdf', [StockOpnameController::class, 'generatePdf'])->name('stock_opname.pdf');
-
-        // Medical actions and consultations
-        Route::resource('medical-actions', MedicalActionController::class);
-        Route::resource('consultations', ConsultationController::class);
-        Route::get('consultations/{consultation}/receipt', [ConsultationController::class, 'printReceipt'])->name('consultations.receipt');
     });
 
     // Kasir Routes
     Route::middleware('role:kasir')->group(function () {
-        // POS index page is NOT under the 'check.shift' middleware.
-        // It serves as a gatekeeper, showing either the "start shift" form or the full POS.
         Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
-
-        // Shift management routes are also NOT under 'check.shift'.
-        // This allows the cashier to start and end their shifts at any time.
         Route::post('/shifts/start', [ShiftController::class, 'startShift'])->name('shifts.start');
         Route::post('/shifts/end', [ShiftController::class, 'endShift'])->name('shifts.end');
-        // Route::get('/shifts/my-summary', [ShiftController::class, 'summary'])->name('shifts.my.summary');
+        Route::get('/shifts/my-summary', [ShiftController::class, 'summary'])->name('shifts.my.summary');
 
-        // All other POS functionality is protected by the 'check.shift' middleware.
-        // This ensures no sales can be processed without an active shift.
         Route::middleware('check.shift')->group(function () {
             Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
             Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');

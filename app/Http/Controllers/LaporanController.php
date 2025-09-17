@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Penjualan, Obat, Pembelian, BiayaOperasional, Pelanggan}; // Perbaiki 'pembelian' menjadi 'Pembelian'
+use App\Models\{Penjualan, Obat, Pembelian, BiayaOperasional, Pelanggan, PenjualanDetail, BatchObat, CashierShift};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -30,7 +30,7 @@ class LaporanController extends Controller
         $data = Penjualan::with(['kasir'])
             ->withCount('details')
             ->withSum('details as total_qty', 'qty')
-            ->whereDate('tanggal', $tanggal) // Tetap gunakan whereDate untuk filter harian
+            ->whereDate('tanggal', $tanggal)
             ->orderBy('tanggal', 'desc')
             ->paginate(10);
 
@@ -51,16 +51,13 @@ class LaporanController extends Controller
     {
         $tanggal = $request->get('tanggal', now()->toDateString());
 
-        // Eager load details + obat
         $rows = Penjualan::with('details.obat')
             ->whereDate('tanggal', $tanggal)
             ->latest()
             ->get();
 
-        // Total seluruh penjualan
         $totalAll = $rows->sum('total');
 
-        // Load view PDF
         $pdf = PDF::loadView('laporan.penjualan_pdf', compact('rows', 'tanggal', 'totalAll'));
 
         return $pdf->download("Laporan-Penjualan-{$tanggal}.pdf");
@@ -71,7 +68,6 @@ class LaporanController extends Controller
     {
         $tanggal = $request->get('tanggal', now()->toDateString());
 
-        // Ambil penjualan dengan relasi details + obat
         $penjualan = Penjualan::with('details.obat')
             ->whereDate('tanggal', $tanggal)
             ->get();
@@ -87,14 +83,11 @@ class LaporanController extends Controller
             $file = fopen('php://output', 'w');
             $delimiter = ';';
 
-            // Judul laporan
             fputcsv($file, ["Laporan Penjualan - {$tanggal}"], $delimiter);
             fputcsv($file, [], $delimiter);
 
-            // Header tabel
             fputcsv($file, ['No', 'No Nota', 'Tanggal', 'Nama Obat (Qty)', 'Total Qty', 'Subtotal'], $delimiter);
 
-            // Data
             foreach ($penjualan as $i => $row) {
                 $obatList = $row->details
                     ->map(fn($d) => ($d->obat->nama ?? '-') . " ({$d->qty})")
@@ -113,7 +106,6 @@ class LaporanController extends Controller
                 ], $delimiter);
             }
 
-            // Total keseluruhan
             $totalAll = $penjualan->sum(fn($r) => $r->details->sum('subtotal'));
             $totalQtyAll = $penjualan->sum(fn($r) => $r->details->sum('qty'));
             fputcsv($file, [], $delimiter);
@@ -127,11 +119,9 @@ class LaporanController extends Controller
 
     public function penjualanBulanan(Request $request)
     {
-        // Ambil bulan & tahun dari request atau default bulan ini
         $periode = $request->get('periode', now()->format('Y-m'));
         [$tahun, $bulan] = explode('-', $periode);
 
-        // Data penjualan bulan ini
         $data = Penjualan::with(['kasir'])
             ->withCount('details')
             ->withSum('details as total_qty', 'qty')
@@ -140,14 +130,11 @@ class LaporanController extends Controller
             ->orderBy('tanggal', 'desc')
             ->paginate(10);
 
-
         $totalAll = Penjualan::whereYear('tanggal', $tahun)
             ->whereMonth('tanggal', $bulan)
             ->sum('total');
         $jumlahTransaksi = $data->total();
-
-
-        // Hitung bulan sebelumnya & berikutnya
+        
         $current = Carbon::create($tahun, $bulan, 1);
         $prevMonth = [
             'bulan' => $current->copy()->subMonth()->month,
@@ -158,7 +145,6 @@ class LaporanController extends Controller
             'tahun' => $current->copy()->addMonth()->year,
         ];
         $totalObatTerjual = $data->flatMap(fn($r) => $r->details)->sum('qty');
-
 
         return view('laporan.penjualan_bulanan', [
             'data' => $data,
@@ -190,28 +176,23 @@ class LaporanController extends Controller
         $bulan = $request->get('bulan', now()->month);
         $tahun = $request->get('tahun', now()->year);
 
-        // Ambil semua penjualan di bulan & tahun yang dipilih
         $rows = Penjualan::with('details.obat')
             ->whereYear('tanggal', $tahun)
             ->whereMonth('tanggal', $bulan)
             ->get();
 
-        // Hitung total seluruh bulan
         $totalAll = $rows->sum(fn($p) => $p->details->sum('subtotal'));
 
-        // Gunakan view yang sama seperti harian
         $pdf = \PDF::loadView('laporan.penjualan_pdf', compact('rows', 'totalAll', 'bulan', 'tahun'));
 
         return $pdf->download("Laporan-Penjualan-Bulanan-{$bulan}-{$tahun}.pdf");
     }
-
 
     public function penjualanBulananExcel(Request $request)
     {
         $bulan = $request->get('bulan', now()->month);
         $tahun = $request->get('tahun', now()->year);
 
-        // Ambil semua penjualan beserta detail obat
         $penjualan = Penjualan::with('details.obat')
             ->whereYear('tanggal', $tahun)
             ->whereMonth('tanggal', $bulan)
@@ -228,11 +209,9 @@ class LaporanController extends Controller
             $file = fopen('php://output', 'w');
             $delimiter = ';';
 
-            // Judul laporan
             fputcsv($file, ["Laporan Penjualan Bulanan"], $delimiter);
             fputcsv($file, [], $delimiter);
 
-            // Header tabel
             fputcsv($file, ['No', 'No Nota', 'Tanggal', 'Nama Obat (Qty)', 'Total Qty', 'Subtotal'], $delimiter);
 
             $no = 1;
@@ -251,7 +230,6 @@ class LaporanController extends Controller
                 ], $delimiter);
             }
 
-            // Total summary
             fputcsv($file, [], $delimiter);
             fputcsv($file, ['TOTAL', '', '', '', $penjualan->sum(fn($p) => $p->details->sum('qty')), $penjualan->sum(fn($p) => $p->details->sum('subtotal'))], $delimiter);
 
@@ -260,7 +238,6 @@ class LaporanController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
-
 
     // 📉 Laporan stok
     public function stok(Request $request)
@@ -282,62 +259,166 @@ class LaporanController extends Controller
         return view('laporan.stok', compact('data', 'threshold'));
     }
 
+    // ✅ Laporan Laba & Rugi Bulanan
     public function profitBulanan(Request $request)
     {
         $periode = $request->input('periode', now()->format('Y-m'));
         [$tahun, $bulan] = explode('-', $periode);
 
-        // Penjualan
-        $penjualan = Penjualan::with('details.obat')
-            ->whereYear('tanggal', $tahun)
-            ->whereMonth('tanggal', $bulan)
-            ->get();
-
-        $totalPenjualan = $penjualan->sum('total');
-        $totalPpnPenjualan = $penjualan->sum('ppn_amount'); // Total PPN dari penjualan
-
-        // Total Modal (HPP)
-        // HPP diambil dari PenjualanDetail, yang sudah memperhitungkan harga beli per batch
+        $penjualan = Penjualan::with('details.obat')->whereYear('tanggal', $tahun)->whereMonth('tanggal', $bulan)->get();
+        $biayaOperasional = BiayaOperasional::whereYear('tanggal', $tahun)->whereMonth('tanggal', $bulan)->get();
+        
+        $totalPenjualan = $penjualan->sum(fn($p) => $p->details->sum('subtotal'));
         $totalModal = $penjualan->flatMap->details->sum(fn($d) => $d->qty * $d->hpp);
+        $totalPpnPenjualan = $penjualan->sum('ppn');
+        $totalBiayaOperasional = $biayaOperasional->sum('jumlah');
 
-        // Biaya Operasional
-        $totalBiayaOperasional = BiayaOperasional::whereYear('tanggal', $tahun)
-            ->whereMonth('tanggal', $bulan)
-            ->sum('jumlah');
+        $labaKotor = $totalPenjualan - $totalModal;
+        $labaBersih = $labaKotor - $totalBiayaOperasional;
 
-        // Keuntungan Kotor (Gross Profit)
-        // Penjualan - HPP
-        $keuntunganKotor = $totalPenjualan - $totalModal;
-
-        // Laba Bersih (Net Profit)
-        $labaBersih = $keuntunganKotor - $totalBiayaOperasional;
-
-        // Rata-rata orang datang (jumlah transaksi unik)
-        $rataRataOrangDatang = Penjualan::whereYear('tanggal', $tahun)
-            ->whereMonth('tanggal', $bulan)
-            ->distinct('nama_pelanggan') // Asumsi nama pelanggan unik per orang
-            ->count();
-
-        // Rata-rata pembelian per orang (total penjualan / jumlah orang datang)
-        $rataRataPembelianPerOrang = $rataRataOrangDatang > 0 ? $totalPenjualan / $rataRataOrangDatang : 0;
-
-
-        // Hitung bulan sebelumnya & berikutnya
         $current = Carbon::create($tahun, $bulan, 1);
-        $prevMonth = [
-            'bulan' => $current->copy()->subMonth()->month,
-            'tahun' => $current->copy()->subMonth()->year,
-        ];
-        $nextMonth = [
-            'bulan' => $current->copy()->addMonth()->month,
-            'tahun' => $current->copy()->addMonth()->year,
-        ];
+        $prevMonth = ['bulan' => $current->copy()->subMonth()->month, 'tahun' => $current->copy()->subMonth()->year];
+        $nextMonth = ['bulan' => $current->copy()->addMonth()->month, 'tahun' => $current->copy()->addMonth()->year];
 
         return view('laporan.profit', compact(
-            'penjualan', 'bulan', 'tahun',
-            'totalPenjualan', 'totalModal', 'keuntunganKotor', 'labaBersih',
-            'totalBiayaOperasional', 'prevMonth', 'nextMonth',
-            'rataRataOrangDatang', 'rataRataPembelianPerOrang', 'totalPpnPenjualan'
+            'penjualan', 
+            'bulan', 
+            'tahun',
+            'totalPenjualan', 
+            'totalModal', 
+            'totalPpnPenjualan',
+            'totalBiayaOperasional', 
+            'labaKotor', 
+            'labaBersih',
+            'prevMonth', 
+            'nextMonth'
         ));
+    }
+    
+    // ✅ Laporan Analisis Pelanggan
+    public function customerAnalytics(Request $request)
+    {
+        $periode = $request->input('periode', now()->format('Y-m'));
+        [$tahun, $bulan] = explode('-', $periode);
+
+        $startDate = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
+        
+        $totalPelanggan = Pelanggan::count();
+
+        $pelangganBaru = Pelanggan::whereBetween('created_at', [$startDate, $endDate])->count();
+        
+        $pelangganTerbaik = Penjualan::select('pelanggan_id', DB::raw('count(*) as total_transaksi'))
+            ->with('pelanggan')
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->whereNotNull('pelanggan_id')
+            ->groupBy('pelanggan_id')
+            ->orderBy('total_transaksi', 'desc')
+            ->limit(10)
+            ->get();
+        
+        $totalPenjualan = Penjualan::whereBetween('tanggal', [$startDate, $endDate])->sum('total');
+        $jumlahTransaksi = Penjualan::whereBetween('tanggal', [$startDate, $endDate])->count();
+        $rataRataTransaksi = $jumlahTransaksi > 0 ? $totalPenjualan / $jumlahTransaksi : 0;
+
+        return view('laporan.customer_analytics', compact('totalPelanggan', 'pelangganBaru', 'pelangganTerbaik', 'rataRataTransaksi', 'periode'));
+    }
+
+    // ✅ Laporan Rekap Penjualan Harian
+    public function dailySalesRecap(Request $request)
+    {
+        $periode = $request->input('periode', now()->format('Y-m'));
+        [$tahun, $bulan] = explode('-', $periode);
+        
+        $penjualanHarian = Penjualan::select(
+                DB::raw('DATE(tanggal) as tanggal_jual'),
+                DB::raw('count(*) as jumlah_transaksi'),
+                DB::raw('sum(total) as total_penjualan')
+            )
+            ->whereYear('tanggal', $tahun)
+            ->whereMonth('tanggal', $bulan)
+            ->groupBy(DB::raw('DATE(tanggal)'))
+            ->orderBy('tanggal_jual', 'asc')
+            ->get();
+
+        return view('laporan.daily_sales_recap', compact('penjualanHarian', 'periode'));
+    }
+    
+    // ✅ Laporan Pergerakan Stok
+    public function stockMovementAnalysis(Request $request)
+    {
+        $periode = $request->input('periode', now()->format('Y-m'));
+        [$tahun, $bulan] = explode('-', $periode);
+
+        $startDate = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
+
+        $outflows = PenjualanDetail::with('obat', 'penjualan')
+            ->whereHas('penjualan', function($q) use ($startDate, $endDate) {
+                $q->whereBetween('tanggal', [$startDate, $endDate]);
+            })
+            ->get()
+            ->map(function($item) {
+                return [
+                    'tanggal' => $item->penjualan->tanggal,
+                    'obat_nama' => $item->obat->nama,
+                    'jenis' => 'Penjualan',
+                    'qty' => -$item->qty,
+                    'no_referensi' => $item->penjualan->no_nota
+                ];
+            });
+
+        $inflows = Pembelian::with('details.obat')
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->get()
+            ->flatMap(function($pembelian) {
+                return $pembelian->details->map(function($detail) use ($pembelian) {
+                    return [
+                        'tanggal' => $pembelian->tanggal,
+                        'obat_nama' => $detail->obat->nama,
+                        'jenis' => 'Pembelian',
+                        'qty' => $detail->qty,
+                        'no_referensi' => $pembelian->no_faktur
+                    ];
+                });
+            });
+        
+        $pergerakanStok = $inflows->merge($outflows)->sortBy('tanggal');
+
+        return view('laporan.stock_movement_analysis', compact('pergerakanStok', 'periode'));
+    }
+    
+    // ✅ Laporan Perputaran Stok
+    public function perputaranStok()
+    {
+        $semuaObat = \App\Models\Obat::all();
+
+        $deadStock = [];
+        $slowMoving = [];
+        $fastMoving = [];
+
+        $semuaObat->each(function ($obat) use (&$deadStock, &$slowMoving, &$fastMoving) {
+            $lastSaleDetail = \App\Models\PenjualanDetail::where('obat_id', $obat->id)
+                ->latest('created_at')
+                ->first();
+
+            if (!$lastSaleDetail) {
+                $deadStock[] = $obat;
+                return;
+            }
+
+            $lastSaleDate = \Carbon\Carbon::parse($lastSaleDetail->created_at);
+            $diffInDays = $lastSaleDate->diffInDays(\Carbon\Carbon::now());
+
+            if ($diffInDays > 180) {
+                $deadStock[] = $obat;
+            } elseif ($diffInDays >= 30) {
+                $slowMoving[] = $obat;
+            } else {
+                $fastMoving[] = $obat;
+            }
+        });
+
+        return view('laporan.perputaran-stok', compact('deadStock', 'slowMoving', 'fastMoving'));
     }
 }

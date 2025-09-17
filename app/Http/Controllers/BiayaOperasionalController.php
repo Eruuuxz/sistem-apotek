@@ -2,21 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BiayaOperasional;
 use Illuminate\Http\Request;
 
 class BiayaOperasionalController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Menampilkan daftar semua biaya operasional.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $biayaOperasionals = BiayaOperasional::latest()->paginate(10);
-        return view('biaya-operasional.index', compact('biayaOperasionals'));
+        $bulan = $request->input('bulan', now()->format('Y-m'));
+        $data = BiayaOperasional::where('tanggal', 'like', $bulan . '%')
+                                ->orderBy('tanggal', 'desc')
+                                ->paginate(10);
+
+        return view('biaya-operasional.index', compact('data', 'bulan'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Menampilkan formulir untuk membuat biaya operasional baru.
      */
     public function create()
     {
@@ -24,68 +29,52 @@ class BiayaOperasionalController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Menyimpan biaya operasional baru ke database.
      */
     public function store(Request $request)
     {
         $request->validate([
-            'nama' => 'required',
-            'jumlah' => 'required|numeric',
+            'deskripsi' => 'required|string|max:255',
+            'jumlah' => 'required|numeric|min:0',
             'tanggal' => 'required|date',
-            'keterangan' => 'nullable'
         ]);
 
         BiayaOperasional::create($request->all());
-        
-        return redirect()->route('biaya-operasional.index')
-            ->with('success', 'Biaya operasional berhasil ditambahkan.');
+
+        return redirect()->route('biaya-operasional.index')->with('success', 'Biaya operasional berhasil ditambahkan.');
     }
 
     /**
-     * Display the specified resource.
+     * Menampilkan formulir untuk mengedit biaya operasional.
      */
-    public function show(string $id)
+    public function edit(BiayaOperasional $biayaOperasional)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        $biayaOperasional = BiayaOperasional::findOrFail($id);
         return view('biaya-operasional.edit', compact('biayaOperasional'));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Memperbarui data biaya operasional di database.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, BiayaOperasional $biayaOperasional)
     {
         $request->validate([
-            'nama' => 'required',
-            'jumlah' => 'required|numeric',
+            'deskripsi' => 'required|string|max:255',
+            'jumlah' => 'required|numeric|min:0',
             'tanggal' => 'required|date',
-            'keterangan' => 'nullable'
         ]);
 
-        $biayaOperasional = BiayaOperasional::findOrFail($id);
         $biayaOperasional->update($request->all());
 
-        return redirect()->route('biaya-operasional.index')
-            ->with('success', 'Biaya operasional berhasil diperbarui.');
+        return redirect()->route('biaya-operasional.index')->with('success', 'Biaya operasional berhasil diperbarui.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Menghapus biaya operasional dari database.
      */
-    public function destroy(string $id)
+    public function destroy(BiayaOperasional $biayaOperasional)
     {
-        $biayaOperasional = BiayaOperasional::findOrFail($id);
         $biayaOperasional->delete();
 
-        return redirect()->route('biaya-operasional.index')
-            ->with('success', 'Biaya operasional berhasil dihapus.');
+        return redirect()->route('biaya-operasional.index')->with('success', 'Biaya operasional berhasil dihapus.');
     }
 }

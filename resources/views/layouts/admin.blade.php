@@ -46,10 +46,9 @@
     @auth
         @if(Auth::user()->role === 'admin')
 
-            <!-- Dashboard -->
             <a href="{{ route('dashboard') }}"
                 class="flex items-center px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors
-                                                                                    {{ request()->is('dashboard*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                                                                                          {{ request()->is('dashboard*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                 <i data-feather="home" class="w-5 h-5"></i>
                 <span class="ml-3">Dashboard</span>
             </a>
@@ -65,13 +64,11 @@
                     ->whereBetween('expired_date', [now(), now()->addMonth()])->count();
             @endphp
 
-            <!-- ================= MASTER ================= -->
             <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">MASTER</p>
 
-            <!-- Obat Dropdown -->
             <div>
                 <button @click="activeDropdown = (activeDropdown === 'obat' ? null : 'obat')" class="relative flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                               {{ request()->is('obat*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                                                                                              {{ request()->is('obat*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                     <i data-feather="box" class="w-5 h-5"></i>
                     <span class="ml-3 flex-1 text-left">Obat</span>
                     <svg :class="{ 'rotate-180': activeDropdown === 'obat' }"
@@ -104,19 +101,19 @@
 
                     <a href="{{ route('obat.index') }}"
                         class="flex justify-between px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors
-                                                                                                    {{ request()->is('obat') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                                                                                             {{ request()->is('obat') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
                         Daftar Obat
                     </a>
 
                     <a href="{{ route('obat.create') }}"
                         class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
-                                                                                                    {{ request()->is('obat/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                                                                                             {{ request()->is('obat/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
                         Tambah Obat
                     </a>
 
                     <a href="{{ route('obat.index', ['filter' => 'menipis']) }}"
                         class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
-                                                                                                    {{ request()->fullUrlIs('*obat*filter=menipis*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                                                                                             {{ request()->fullUrlIs('*obat*filter=menipis*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
                         Stok Menipis
                         @if($stokMenipis > 0)
                             <span class="bg-yellow-500 text-xs px-2 py-0.5 rounded-full">{{ $stokMenipis }}</span>
@@ -125,7 +122,7 @@
 
                     <a href="{{ route('obat.index', ['filter' => 'habis']) }}"
                         class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
-                                                                                                    {{ request()->fullUrlIs('*obat*filter=habis*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                                                                                             {{ request()->fullUrlIs('*obat*filter=habis*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
                         Stok Habis
                         @if($stokHabis > 0)
                             <span class="bg-red-500 text-xs px-2 py-0.5 rounded-full">{{ $stokHabis }}</span>
@@ -134,7 +131,7 @@
 
                     <a href="{{ route('obat.index', ['filter' => 'kadaluarsa']) }}"
                         class="flex justify-between items-center px-4 py-2 rounded hover:bg-orange-600 hover:text-white transition-colors 
-                                                        {{ request()->fullUrlIs('*obat*filter=kadaluarsa*') ? 'bg-orange-700 text-white font-semibold' : 'text-gray-300' }}">
+                                                                                             {{ request()->fullUrlIs('*obat*filter=kadaluarsa*') ? 'bg-orange-700 text-white font-semibold' : 'text-gray-300' }}">
                         <span>Kadaluarsa</span>
                         <div class="flex space-x-1">
                             @if($stokHampirExpired > 0)
@@ -153,11 +150,10 @@
                 </div>
             </div>
 
-            <!-- Supplier Dropdown -->
             <div>
                 <button @click="activeDropdown = (activeDropdown === 'supplier' ? null : 'supplier')"
                     class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                                                                                {{ request()->is('supplier*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                                                                                              {{ request()->is('supplier*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                     <i data-feather="users" class="w-5 h-5"></i>
                     <span class="ml-3 flex-1 text-left">Supplier</span>
                     <svg :class="{ 'rotate-180': activeDropdown === 'supplier' }"
@@ -177,8 +173,6 @@
                     </a>
                 </div>
             </div>
-            <!-- Pelanggan Dropdown -->
-                <!-- Pelanggan Dropdown -->
             <div>
                 <button @click="activeDropdown = activeDropdown === 'pelanggan' ? null : 'pelanggan'" 
                     class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors 
@@ -208,11 +202,34 @@
                 </div>
             </div>
 
+            <div>
+                <button @click="activeDropdown = (activeDropdown === 'biaya' ? null : 'biaya')"
+                    class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
+                    {{ request()->is('biaya-operasional*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                    <i data-feather="dollar-sign" class="w-5 h-5"></i>
+                    <span class="ml-3 flex-1 text-left">Biaya Operasional</span>
+                    <svg :class="{ 'rotate-180': activeDropdown === 'biaya' }"
+                        class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div x-show="activeDropdown === 'biaya'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
+                    <a href="{{ route('biaya-operasional.index') }}"
+                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors
+                        {{ request()->is('biaya-operasional') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                        Daftar Biaya
+                    </a>
+                    <a href="{{ route('biaya-operasional.create') }}"
+                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors
+                        {{ request()->is('biaya-operasional/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                        Tambah Biaya
+                    </a>
+                </div>
+            </div>
             
-            <!-- ================= TRANSAKSI ================= -->
             <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">Transaksi</p>
             
-            <!-- Surat Pesanan Dropdown (BARU) -->
             <div>
                 <button @click="activeDropdown = (activeDropdown === 'surat_pesanan' ? null : 'surat_pesanan')"
                     class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
@@ -237,11 +254,10 @@
                 </div>
             </div>
 
-            <!-- Pembelian Dropdown -->
             <div>
                 <button @click="activeDropdown = (activeDropdown === 'pembelian' ? null : 'pembelian')"
                     class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                                                                                {{ request()->is('pembelian*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                                                                                              {{ request()->is('pembelian*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                     <i data-feather="shopping-cart" class="w-5 h-5"></i>
                     <span class="ml-3 flex-1 text-left">Pembelian</span>
                     <svg :class="{ 'rotate-180': activeDropdown === 'pembelian' }"
@@ -262,11 +278,10 @@
                 </div>
             </div>
 
-            <!-- Retur Dropdown -->
             <div>
                 <button @click="activeDropdown = (activeDropdown === 'retur' ? null : 'retur')"
                     class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                                                                                {{ request()->is('retur*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                                                                                              {{ request()->is('retur*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                     <i data-feather="corner-up-left" class="w-5 h-5"></i>
                     <span class="ml-3 flex-1 text-left">Retur Barang</span>
                     <svg :class="{ 'rotate-180': activeDropdown === 'retur' }"
@@ -286,10 +301,8 @@
                     </a>
                 </div>
             </div>
-            <!-- ================= LAPORAN ================= -->
             <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">Laporan</p>
 
-            <!-- Laporan -->
             <a href="{{ route('laporan.index') }}"
                 class="flex items-center px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors {{ request()->is('laporan*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                 <i data-feather="bar-chart-2" class="w-5 h-5"></i>
@@ -304,14 +317,12 @@
             </a>
             {{-- END NEW --}}
 
-            <!-- ================= USER ================= -->
             <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">User</p>
 
-            <!-- Management Kasir Dropdown -->
             <div>
                 <button @click="activeDropdown = (activeDropdown === 'users' ? null : 'users')"
                     class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                                                                                {{ request()->is('users*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                                                                                              {{ request()->is('users*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
                     <i data-feather="user-plus" class="w-5 h-5"></i>
                     <span class="ml-3 flex-1 text-left">Management Kasir</span>
                     <svg :class="{ 'rotate-180': activeDropdown === 'users' }"
