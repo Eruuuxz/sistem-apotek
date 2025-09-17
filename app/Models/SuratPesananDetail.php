@@ -26,6 +26,6 @@ class SuratPesananDetail extends Model
 
     public function obat()
     {
-        return $this->belongsTo(Obat::class);
+        return $this->belongsTo(Obat::class, 'obat_id');
     }
 }

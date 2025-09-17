@@ -94,7 +94,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('surat_pesanan', SuratPesananController::class);
         Route::get('surat_pesanan/{surat_pesanan}/download', [SuratPesananController::class, 'downloadTemplate'])->name('surat_pesanan.download');
         Route::get('surat_pesanan/{id}/details', [SuratPesananController::class, 'getSpDetails'])->name('surat_pesanan.details');
-
+        Route::get('/surat_pesanan/{id}/pdf', [SuratPesananController::class, 'generatePdf'])->name('surat_pesanan.pdf');
         // Manajemen Shift (Admin)
         Route::resource('shifts', ShiftController::class)->except(['show', 'edit', 'update', 'destroy']);
         Route::get('shifts/summary', [ShiftController::class, 'summary'])->name('shifts.summary');

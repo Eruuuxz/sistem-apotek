@@ -52,7 +52,7 @@
                                 </span>
                             </td>
                             <td class="border px-4 py-3 text-center">
-                                <a href="{{ route('surat_pesanan.show', $sp->id) }}" class="text-blue-600 hover:underline mr-2">Detail</a>
+                                <a href="{{ route('surat_pesanan.pdf', $sp->id) }}" class="text-blue-600 hover:underline mr-2">Detail</a>
                                 <a href="{{ route('surat_pesanan.edit', $sp->id) }}" class="text-yellow-600 hover:underline mr-2">Edit</a>
                                 <form action="{{ route('surat_pesanan.destroy', $sp->id) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus Surat Pesanan ini?');">
                                     @csrf
