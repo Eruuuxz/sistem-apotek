@@ -19,7 +19,7 @@
         </a>
 
         <!-- Penjualan Hari Ini -->
-        <a href="{{ route('laporan.penjualan') }}" class="bg-white p-4 shadow rounded hover:bg-purple-50 transition">
+        <a href="{{ route('laporan.index') }}" class="bg-white p-4 shadow rounded hover:bg-purple-50 transition">
             <h2 class="text-lg font-semibold text-gray-600">Penjualan Hari Ini</h2>
             <p class="text-3xl font-bold text-purple-600 mt-2">
                 Rp {{ number_format($penjualanHariIni, 0, ',', '.') }}

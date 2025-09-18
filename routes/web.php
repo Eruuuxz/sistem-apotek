@@ -70,26 +70,16 @@ Route::middleware('auth')->group(function () {
         // Manajemen Biaya Operasional
         Route::resource('biaya-operasional', BiayaOperasionalController::class);
 
-        // Laporan
-        Route::prefix('laporan')->name('laporan.')->group(function () {
-            // Laporan yang sudah ada
-            Route::get('/', [LaporanController::class, 'index'])->name('index');
-            Route::get('/penjualan', [LaporanController::class, 'penjualan'])->name('penjualan');
-            Route::get('/penjualan/pdf', [LaporanController::class, 'penjualanPdf'])->name('penjualan.pdf');
-            Route::get('/penjualan/excel', [LaporanController::class, 'penjualanExcel'])->name('penjualan.excel');
-            Route::get('/penjualan-bulanan', [LaporanController::class, 'penjualanBulanan'])->name('penjualan.bulanan');
-            Route::get('/penjualan-bulanan/pdf', [LaporanController::class, 'penjualanBulananPdf'])->name('penjualan.bulanan.pdf');
-            Route::get('/penjualan-bulanan/excel', [LaporanController::class, 'penjualanBulananExcel'])->name('penjualan.bulanan.excel');
-            Route::get('/profit-detail-json/{tanggal}', [LaporanController::class, 'profitDetailJson'])->name('profit.detail.json');
-            Route::get('/stok', [LaporanController::class, 'stok'])->name('stok');
+Route::prefix('laporan')->group(function () {
+    Route::get('/', [LaporanController::class, 'index'])->name('laporan.index');
 
-            // Laporan yang baru ditambahkan
-            Route::get('/profit', [LaporanController::class, 'profitBulanan'])->name('profit');
-            Route::get('/perputaran-stok', [LaporanController::class, 'perputaranStok'])->name('perputaran-stok');
-            Route::get('/customer-analytics', [LaporanController::class, 'customerAnalytics'])->name('customer_analytics');
-            Route::get('/daily-sales-recap', [LaporanController::class, 'dailySalesRecap'])->name('daily_sales_recap');
-            Route::get('/stock-movement-analysis', [LaporanController::class, 'stockMovementAnalysis'])->name('stock_movement_analysis');
-        });
+    Route::get('/penjualan/{format}', [LaporanController::class, 'exportPenjualan'])->name('laporan.penjualan.export');
+    Route::get('/stok/{format}', [LaporanController::class, 'exportStok'])->name('laporan.stok.export');
+    Route::get('/pelanggan/{format}', [LaporanController::class, 'exportPelanggan'])->name('laporan.pelanggan.export');
+    Route::get('/laba/{format}', [LaporanController::class, 'exportLaba'])->name('laporan.laba.export');
+});
+
+
 
         // Stock Movement (rute yang terpisah, perlu digabungkan)
         Route::prefix('stock-movement')->name('stock.movement')->group(function () {
