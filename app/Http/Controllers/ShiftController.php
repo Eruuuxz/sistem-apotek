@@ -64,6 +64,43 @@ class ShiftController extends Controller
             return redirect()->route('pos.index')->with('error', 'Anda sudah memiliki shift aktif.');
         }
 
+        // --- START PERUBAHAN ---
+        $selectedShift = Shift::findOrFail($request->shift_id);
+        $now = Carbon::now();
+        $shiftStartTime = Carbon::parse($selectedShift->start_time);
+        $shiftEndTime = Carbon::parse($selectedShift->end_time);
+
+        // Jika shift berakhir di hari berikutnya (misal 20:00 - 04:00), sesuaikan end_time
+        if ($shiftEndTime->lt($shiftStartTime)) {
+            $shiftEndTime->addDay();
+        }
+
+        // Buat objek Carbon untuk waktu mulai dan berakhir shift pada hari ini
+        $currentDayShiftStart = Carbon::createFromTime($shiftStartTime->hour, $shiftStartTime->minute, 0);
+        $currentDayShiftEnd = Carbon::createFromTime($shiftEndTime->hour, $shiftEndTime->minute, 0);
+
+        // Jika shift melewati tengah malam, kita perlu memeriksa dua rentang waktu
+        // Contoh: Shift Sore 16:00 - 20:00 (hari yang sama)
+        // Contoh: Shift Malam 20:00 - 04:00 (melewati tengah malam)
+        $isWithinShift = false;
+        if ($shiftEndTime->lt($shiftStartTime)) { // Shift melewati tengah malam
+            // Cek apakah sekarang antara start_time hari ini sampai 23:59:59
+            // ATAU antara 00:00:00 sampai end_time hari berikutnya
+            if ($now->between($currentDayShiftStart, Carbon::createFromTime(23, 59, 59)) ||
+                $now->between(Carbon::createFromTime(0, 0, 0), $currentDayShiftEnd)) {
+                $isWithinShift = true;
+            }
+        } else { // Shift dalam satu hari
+            if ($now->between($currentDayShiftStart, $currentDayShiftEnd)) {
+                $isWithinShift = true;
+            }
+        }
+        
+        if (!$isWithinShift) {
+            return back()->with('error', 'Anda tidak dapat memulai shift ' . $selectedShift->name . ' pada waktu ini. Shift ini berlaku dari ' . $selectedShift->start_time . ' hingga ' . $selectedShift->end_time . '.');
+        }
+        // --- END PERUBAHAN ---
+
         // Mulai shift baru
         CashierShift::create([
             'user_id' => Auth::id(),
@@ -81,41 +118,39 @@ class ShiftController extends Controller
     /**
      * Mengakhiri shift untuk kasir yang sedang login.
      */
-    // Dalam ShiftController.php
+    public function endShift(Request $request)
+    {
+        $request->validate([
+            'final_cash' => 'required|numeric|min:0',
+        ]);
 
-public function endShift(Request $request)
-{
-    $request->validate([
-        'final_cash' => 'required|numeric|min:0',
-    ]);
+        $activeShift = CashierShift::where('user_id', Auth::id())
+                                   ->where('status', 'open')
+                                   ->first();
 
-    $activeShift = CashierShift::where('user_id', Auth::id())
-                               ->where('status', 'open')
-                               ->first();
+        if (!$activeShift) {
+            return back()->with('error', 'Anda tidak memiliki shift yang sedang berjalan.');
+        }
 
-    if (!$activeShift) {
-        return back()->with('error', 'Anda tidak memiliki shift yang sedang berjalan.');
+        DB::transaction(function () use ($activeShift, $request) {
+            // Hitung total penjualan selama shift ini
+            $totalSales = Penjualan::where('cashier_shift_id', $activeShift->id)->sum('total');
+
+            $activeShift->update([
+                'end_time' => Carbon::now(),
+                'final_cash' => $request->final_cash,
+                'total_sales' => $totalSales,
+                'status' => 'closed',
+            ]);
+        });
+
+        return redirect()->route('pos.index')->with('success', 'Shift berhasil diakhiri.');
     }
-
-    $activeShift->update([
-        'end_time' => Carbon::now(),
-        'final_cash' => $request->final_cash,
-        // Hapus 'total_sales' di sini, karena sudah dihitung di POSController
-        'status' => 'closed',
-    ]);
-
-    // Opsional: Redirect ke halaman login setelah shift selesai
-    Auth::guard('web')->logout();
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
-
-    return redirect()->route('login')->with('success', 'Shift Anda berhasil diakhiri.');
-}
 
     /**
      * Menampilkan ringkasan shift kasir.
      */
-     public function summary(Request $request)
+    public function summary(Request $request)
     {
         $query = CashierShift::with(['user', 'shift']);
 
@@ -123,13 +158,16 @@ public function endShift(Request $request)
         if ($request->filled('date')) {
             $query->whereDate('start_time', $request->date);
         }
-        
-        // Kasir hanya bisa melihat shiftnya sendiri
-        $query->where('user_id', Auth::id()); 
+        // Filter berdasarkan kasir (hanya admin yang bisa melihat semua kasir)
+        if (Auth::user()->role === 'admin' && $request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        } elseif (Auth::user()->role === 'kasir') {
+            $query->where('user_id', Auth::id()); // Kasir hanya bisa melihat shiftnya sendiri
+        }
 
         $cashierShifts = $query->latest('start_time')->paginate(10);
-        $users = collect(); // Untuk kasir, tidak perlu daftar user lain
+        $users = Auth::user()->role === 'admin' ? \App\Models\User::where('role', 'kasir')->get() : collect(); // Untuk filter di admin
 
-        return view('kasir.summary', compact('cashierShifts', 'users'));
+        return view('shifts.summary', compact('cashierShifts', 'users'));
     }
 }

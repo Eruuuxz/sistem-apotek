@@ -36,4 +36,10 @@ class PenjualanDetail extends Model
     {
         return $this->belongsTo(Obat::class, 'obat_id');
     }
+
+    public function batchObat()
+    {
+    return $this->belongsTo(BatchObat::class, 'batch_obat_id'); // adjust foreign key if needed
+    }
+
 }

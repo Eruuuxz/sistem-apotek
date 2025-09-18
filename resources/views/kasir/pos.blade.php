@@ -79,8 +79,11 @@
                                         }
                                     }
                                     // Hitung PPN per item
-                                    $ppnPerItem = $item['harga'] * ($item['ppn_rate'] / 100);
-                                    $subtotalWithPpn = ($item['harga'] + $ppnPerItem) * $item['qty'];
+                                    $hargaJualBersih = $item['harga'];
+                                    if ($item['ppn_included'] && $item['ppn_rate'] > 0) {
+                                        $hargaJualBersih = $item['harga'] / (1 + $item['ppn_rate'] / 100);
+                                    }
+                                    $ppnPerItem = $item['harga'] - $hargaJualBersih;
                                 @endphp
                                 <tr
                                     class="hover:bg-gray-50 transition duration-150 
@@ -213,13 +216,14 @@
                         </div>
                     </div>
 
+                    {{-- Perbaikan: Mengganti variabel $total menjadi $totalSubtotalBersih --}}
                     <div class="grid grid-cols-3 items-center gap-2">
                         <label class="text-sm font-medium text-gray-700">Total Harga</label>
                         <div class="col-span-2">
                             <input type="text" id="subtotal_display"
                                 class="w-full border rounded-lg px-3 py-2 text-right font-bold bg-gray-100"
-                                value="Rp {{ number_format($total, 0, ',', '.') }}" readonly>
-                            <input type="hidden" name="total_subtotal" id="total_subtotal" value="{{ $total }}">
+                                value="Rp {{ number_format($totalSubtotalBersih, 0, ',', '.') }}" readonly>
+                            <input type="hidden" name="total_subtotal" id="total_subtotal" value="{{ $totalSubtotalBersih }}">
                         </div>
                     </div>
                     

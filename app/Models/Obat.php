@@ -111,4 +111,15 @@ class Obat extends Model
         }
         return $this->harga_dasar;
     }
+
+    public function latestPenjualanDetail()
+    {
+        return $this->hasOne(PenjualanDetail::class)->latestOfMany('created_at');
+    }
+
+    public function batches()
+    {
+        return $this->hasMany(BatchObat::class,);
+    }
+
 }

@@ -26,9 +26,9 @@ class POSController extends Controller
     {
         // Cari shift kasir yang sedang aktif
         $activeShift = CashierShift::with('shift')
-                                    ->where('user_id', Auth::id())
-                                    ->where('status', 'open')
-                                    ->first();
+                                   ->where('user_id', Auth::id())
+                                   ->where('status', 'open')
+                                   ->first();
 
         // Jika tidak ada shift yang aktif, tampilkan form "Mulai Shift"
         if (!$activeShift) {
@@ -43,34 +43,41 @@ class POSController extends Controller
                     ->orWhere('expired_date', '>', now());
             })
             ->orderBy('nama')
-            ->get(['id', 'kode', 'nama', 'kategori', 'expired_date', 'harga_jual', 'stok', 'is_psikotropika']);
+            ->get(['id', 'kode', 'nama', 'kategori', 'expired_date', 'harga_jual', 'stok', 'is_psikotropika', 'ppn_rate', 'ppn_included']);
 
         $cart = session('cart', []);
         $this->validateCart($cart);
         
-        $ppnRate = 11; // PPN 11%
-        $total = collect($cart)->sum(fn($i) => $i['harga'] * $i['qty']);
-        $totalPpn = $total * ($ppnRate / 100);
+        $totalSubtotalBersih = 0;
+        $totalPpn = 0;
+        foreach ($cart as $item) {
+            $hargaJualBersihPerUnit = $item['harga']; // Asumsi harga di cart adalah harga jual
+            if ($item['ppn_included'] && $item['ppn_rate'] > 0) {
+                $hargaJualBersihPerUnit = $item['harga'] / (1 + $item['ppn_rate'] / 100);
+            }
+            $ppnAmountPerItem = $item['harga'] - $hargaJualBersihPerUnit;
+
+            $totalSubtotalBersih += $hargaJualBersihPerUnit * $item['qty'];
+            $totalPpn += $ppnAmountPerItem * $item['qty'];
+        }
         
         $diskonType = session('diskon_type', 'nominal');
         $diskonValue = session('diskon_value', 0);
 
         $diskonAmount = 0;
         if ($diskonType === 'persen') {
-            $diskonAmount = $total * ($diskonValue / 100);
+            // Diskon diterapkan pada subtotal bersih (tanpa PPN)
+            $diskonAmount = $totalSubtotalBersih * ($diskonValue / 100);
         } else {
             $diskonAmount = $diskonValue;
         }
 
-        $totalAkhir = max($total + $totalPpn - $diskonAmount, 0);
+        $totalAkhir = max($totalSubtotalBersih + $totalPpn - $diskonAmount, 0);
 
         $members = Pelanggan::orderBy('nama')->get();
-
-        // Hitung total penjualan selama shift aktif
         $totalSales = Penjualan::where('cashier_shift_id', $activeShift->id)->sum('total');
 
-        // Tambahkan $totalPpn ke compact()
-        return view('kasir.pos', compact('obat', 'cart', 'total', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members', 'activeShift', 'totalSales', 'totalPpn'));
+        return view('kasir.pos', compact('obat', 'cart', 'totalSubtotalBersih', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members', 'activeShift', 'totalSales', 'totalPpn'));
     }
 
     /**
@@ -91,7 +98,7 @@ class POSController extends Controller
             })
             ->orderBy('nama')
             ->limit(10)
-            ->get(['id', 'kode', 'nama', 'kategori', 'expired_date', 'harga_jual', 'stok', 'is_psikotropika']);
+            ->get(['id', 'kode', 'nama', 'kategori', 'expired_date', 'harga_jual', 'stok', 'is_psikotropika', 'ppn_rate', 'ppn_included']);
 
         return response()->json($obat);
     }
@@ -126,7 +133,7 @@ class POSController extends Controller
 
         $batches = BatchObat::where('obat_id', $obat->id)
             ->where('stok_saat_ini', '>', 0)
-            ->where('expired_date', '>', now()) 
+            ->where('expired_date', '>', now())
             ->orderBy('expired_date', 'asc')
             ->get();
 
@@ -155,7 +162,9 @@ class POSController extends Controller
             return back()->with('error', 'Stok ' . $obat->nama . ' tidak cukup dari batch yang tersedia. Stok saat ini: ' . $obat->stok);
         }
 
-        $ppnRate = 11; // Misalkan PPN 11%
+        // Ambil PPN rate dan ppn_included dari objek obat
+        $ppnRate = $obat->ppn_rate ?? 0;
+        $ppnIncluded = $obat->ppn_included ?? false;
 
         $cart[$obat->kode] = [
             'id' => $obat->id,
@@ -164,6 +173,7 @@ class POSController extends Controller
             'kategori' => $obat->kategori,
             'harga' => $obat->harga_jual,
             'ppn_rate' => $ppnRate,
+            'ppn_included' => $ppnIncluded,
             'qty' => $qtyToAdd,
             'stok' => $obat->stok,
             'is_psikotropika' => $obat->is_psikotropika,
@@ -237,10 +247,12 @@ class POSController extends Controller
             return back()->with('error', 'Stok ' . $obat->nama . ' tidak cukup dari batch yang tersedia untuk kuantitas ini. Stok saat ini: ' . $obat->stok);
         }
 
-        $ppnRate = 11;
+        $ppnRate = $obat->ppn_rate ?? 0;
+        $ppnIncluded = $obat->ppn_included ?? false;
 
         $cart[$kode]['qty'] = $newQty;
         $cart[$kode]['ppn_rate'] = $ppnRate;
+        $cart[$kode]['ppn_included'] = $ppnIncluded;
         $cart[$kode]['batches_used'] = $tempBatchesUsed;
         session(['cart' => $cart]);
 
@@ -287,23 +299,47 @@ class POSController extends Controller
         if (empty($cart)) {
             return back()->with('error', 'Keranjang kosong');
         }
-        
-        $totalSubtotal = collect($cart)->sum(fn($i) => (float)$i['harga'] * (int)$i['qty']);
 
-        $ppnRate = 11;
-        $totalPpn = $totalSubtotal * ($ppnRate / 100);
+        // --- Perbaikan: Eager Loading untuk menghindari N+1 query ---
+        $obatIdsInCart = collect($cart)->pluck('id')->unique()->toArray();
+        // Ambil semua obat dan batch terkait dalam satu query
+        $obats = Obat::with('batches')->whereIn('id', $obatIdsInCart)->get()->keyBy('id');
+        // --- Akhir Perbaikan ---
+        
+        $totalSubtotalBersih = 0;
+        $totalPpn = 0;
+        $hasPsikotropika = false;
+        
+        foreach ($cart as $item) {
+            $obat = $obats->get($item['id']);
+            if (!$obat) {
+                return back()->with('error', 'Obat di keranjang tidak ditemukan di database. Keranjang dikosongkan.');
+            }
+            if ($obat->is_psikotropika) {
+                $hasPsikotropika = true;
+            }
+
+            $hargaJualBersihPerUnit = $item['harga'];
+            if ($obat->ppn_included && $obat->ppn_rate > 0) {
+                $hargaJualBersihPerUnit = $item['harga'] / (1 + $obat->ppn_rate / 100);
+            }
+            $ppnAmountPerItem = $item['harga'] - $hargaJualBersihPerUnit;
+
+            $totalSubtotalBersih += $hargaJualBersihPerUnit * $item['qty'];
+            $totalPpn += $ppnAmountPerItem * $item['qty'];
+        }
 
         $diskonType = $r->input('diskon_type', 'nominal');
         $diskonValue = (float)$r->input('diskon_value', 0);
         $diskonAmount = 0;
 
         if ($diskonType === 'persen') {
-            $diskonAmount = $totalSubtotal * ($diskonValue / 100);
+            $diskonAmount = $totalSubtotalBersih * ($diskonValue / 100);
         } else {
             $diskonAmount = $diskonValue;
         }
 
-        $finalTotal = max($totalSubtotal + $totalPpn - $diskonAmount, 0);
+        $finalTotal = max($totalSubtotalBersih + $totalPpn - $diskonAmount, 0);
 
         $validated = $r->validate([
             'nama_pelanggan' => 'required|string|max:255',
@@ -316,24 +352,23 @@ class POSController extends Controller
             'bayar.min' => 'Pembayaran kurang dari total belanja setelah diskon.'
         ]);
 
-        $hasPsikotropika = collect($cart)->contains(fn($item) => $item['is_psikotropika']);
         if ($hasPsikotropika && empty($validated['no_ktp'])) {
             return back()->withErrors(['no_ktp' => 'Nomor KTP wajib diisi untuk pembelian obat psikotropika.'])->withInput();
         }
 
         $bayar = (float)$r->bayar;
         $kembalian = $bayar - $finalTotal;
-        $penjualan = null; 
+        $penjualan = null;
 
         $activeShift = CashierShift::where('user_id', Auth::id())
-                                ->where('status', 'open')
-                                ->first();
+                                 ->where('status', 'open')
+                                 ->first();
 
         if (!$activeShift) {
             return back()->with('error', 'Anda tidak memiliki shift yang sedang berjalan. Silakan mulai shift terlebih dahulu.');
         }
 
-        DB::transaction(function () use ($cart, $totalSubtotal, $totalPpn, $finalTotal, $bayar, $kembalian, $r, $validated, $diskonType, $diskonValue, $diskonAmount, $hasPsikotropika, $activeShift, &$penjualan) {
+        DB::transaction(function () use ($cart, $totalSubtotalBersih, $totalPpn, $finalTotal, $bayar, $kembalian, $r, $validated, $diskonType, $diskonValue, $diskonAmount, $hasPsikotropika, $activeShift, &$penjualan, $obats) {
             $no = 'PJ-' . date('Ymd') . '-' . str_pad(Penjualan::whereDate('tanggal', date('Y-m-d'))->count() + 1, 3, '0', STR_PAD_LEFT);
             $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id') ?? Cabang::first()->id;
 
@@ -352,12 +387,16 @@ class POSController extends Controller
                 'diskon_type' => $diskonType,
                 'diskon_value' => $diskonValue,
                 'diskon_amount' => $diskonAmount,
-                'ppn' => $totalPpn,
+                'ppn_percent' => $totalSubtotalBersih > 0 ? ($totalPpn / $totalSubtotalBersih) * 100 : 0,
+                'ppn_amount' => $totalPpn,
                 'cashier_shift_id' => $activeShift->id,
             ]);
 
             foreach ($cart as $item) {
-                $obat = Obat::find($item['id']);
+                // --- Perbaikan: Gunakan koleksi obat yang sudah di eager load ---
+                $obat = $obats->get($item['id']);
+                // --- Akhir Perbaikan ---
+                
                 if (!$obat) {
                     throw new \Exception("Obat dengan ID {$item['id']} tidak ditemukan.");
                 }
@@ -372,16 +411,21 @@ class POSController extends Controller
                     $batchIdsUsed[] = $batchDetail['batch_id'];
                 }
                 $hpp = $totalQtyUsed > 0 ? $totalHPP / $totalQtyUsed : $obat->harga_dasar;
-                $ppnPerItem = $item['harga'] * ($item['ppn_rate'] / 100);
+                
+                $hargaJualBersihPerItem = $item['harga'];
+                if ($obat->ppn_included && $obat->ppn_rate > 0) {
+                    $hargaJualBersihPerItem = $item['harga'] / (1 + $obat->ppn_rate / 100);
+                }
+                $ppnAmountPerItem = $item['harga'] - $hargaJualBersihPerItem;
 
                 PenjualanDetail::create([
                     'penjualan_id' => $penjualan->id,
                     'obat_id' => $obat->id,
                     'qty' => $item['qty'],
-                    'harga' => $item['harga'],
+                    'harga' => $item['harga'], // Harga jual yang diinput (termasuk PPN jika ppn_included)
                     'hpp' => $hpp,
                     'subtotal' => (float)$item['qty'] * (float)$item['harga'],
-                    'ppn' => $ppnPerItem * $item['qty'],
+                    'ppn_amount_per_item' => $ppnAmountPerItem * $item['qty'],
                     'no_ktp' => $hasPsikotropika ? $validated['no_ktp'] : null,
                     'batch_id' => count($batchIdsUsed) === 1 ? $batchIdsUsed[0] : null,
                 ]);
@@ -389,10 +433,12 @@ class POSController extends Controller
                 $obat->decrement('stok', $item['qty']);
 
                 foreach ($item['batches_used'] as $batchDetail) {
-                    $batch = BatchObat::find($batchDetail['batch_id']);
+                    // --- Perbaikan: Gunakan eager loading batches ---
+                    $batch = $obat->batches->find($batchDetail['batch_id']);
                     if ($batch) {
                         $batch->decrement('stok_saat_ini', $batchDetail['qty_from_batch']);
                     }
+                    // --- Akhir Perbaikan ---
                 }
             }
 
@@ -417,10 +463,19 @@ class POSController extends Controller
      */
     private function validateCart(&$cart)
     {
-        $ppnRate = 11;
+        if (empty($cart)) {
+            return;
+        }
 
+        // --- Perbaikan: Eager Loading untuk menghindari N+1 query ---
+        $obatCodesInCart = array_keys($cart);
+        $obats = Obat::with('batches')->whereIn('kode', $obatCodesInCart)->get()->keyBy('kode');
+        // --- Akhir Perbaikan ---
+        
         foreach ($cart as $kode => &$item) {
-            $obat = Obat::where('kode', $kode)->first();
+            // --- Perbaikan: Gunakan koleksi obat yang sudah di eager load ---
+            $obat = $obats->get($kode);
+            // --- Akhir Perbaikan ---
 
             if (!$obat || $obat->stok <= 0 || ($obat->expired_date && Carbon::parse($obat->expired_date)->isPast())) {
                 unset($cart[$kode]);
@@ -430,13 +485,14 @@ class POSController extends Controller
             $item['harga'] = $obat->harga_jual;
             $item['kategori'] = $obat->kategori;
             $item['is_psikotropika'] = $obat->is_psikotropika;
-            $item['ppn_rate'] = $ppnRate;
+            // --- Perbaikan: Ambil PPN rate dan ppn_included dari model Obat ---
+            $item['ppn_rate'] = $obat->ppn_rate ?? 0;
+            $item['ppn_included'] = $obat->ppn_included ?? false;
+            // --- Akhir Perbaikan ---
 
-            $batches = BatchObat::where('obat_id', $obat->id)
-                ->where('stok_saat_ini', '>', 0)
-                ->where('expired_date', '>', now())
-                ->orderBy('expired_date', 'asc')
-                ->get();
+            $batches = $obat->batches->where('stok_saat_ini', '>', 0)
+                                     ->where('expired_date', '>', now())
+                                     ->sortBy('expired_date');
 
             $tempBatchesUsed = [];
             $remainingQtyNeeded = $item['qty'];
@@ -503,9 +559,9 @@ class POSController extends Controller
     public function riwayatKasir()
     {
         $activeShift = CashierShift::with('shift')
-                                    ->where('user_id', Auth::id())
-                                    ->where('status', 'open')
-                                    ->first();
+                                   ->where('user_id', Auth::id())
+                                   ->where('status', 'open')
+                                   ->first();
 
         $cabangId = Auth::user()->cabang_id ?? Cabang::where('is_pusat', true)->value('id');
 

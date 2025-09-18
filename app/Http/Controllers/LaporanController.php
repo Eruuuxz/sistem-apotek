@@ -391,17 +391,17 @@ class LaporanController extends Controller
     // ✅ Laporan Perputaran Stok
     public function perputaranStok()
     {
-        $semuaObat = \App\Models\Obat::all();
+        // Menggunakan eager loading untuk menghindari N+1 query dan meningkatkan performa.
+        $semuaObat = \App\Models\Obat::with('latestPenjualanDetail')->get();
 
         $deadStock = [];
         $slowMoving = [];
         $fastMoving = [];
 
         $semuaObat->each(function ($obat) use (&$deadStock, &$slowMoving, &$fastMoving) {
-            $lastSaleDetail = \App\Models\PenjualanDetail::where('obat_id', $obat->id)
-                ->latest('created_at')
-                ->first();
-
+            $lastSaleDetail = $obat->latestPenjualanDetail;
+            
+            // Logika selanjutnya untuk mengkategorikan obat
             if (!$lastSaleDetail) {
                 $deadStock[] = $obat;
                 return;
