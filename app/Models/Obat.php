@@ -21,8 +21,8 @@ class Obat extends Model
         'satuan_terkecil',
         'rasio_konversi',
         'is_psikotropika',
-        'is_prekursor', // Ditambahkan
-        'zat_aktif_prekursor', // Ditambahkan
+        'is_prekursor', 
+        'zat_aktif_prekursor', 
         'stok',
         'min_stok',
         'expired_date',
@@ -39,7 +39,7 @@ class Obat extends Model
         'harga_dasar' => 'decimal:2',
         'harga_jual' => 'decimal:2',
         'ppn_included' => 'boolean',
-        'is_prekursor' => 'boolean', // Ditambahkan
+        'is_prekursor' => 'boolean', 
         'ppn_rate' => 'decimal:2',
     ];
 

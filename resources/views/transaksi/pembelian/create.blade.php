@@ -6,7 +6,7 @@
 
     <div class="bg-white shadow rounded p-6 space-y-6">
 
-        <form action="{{ route('pembelian.store') }}" method="POST" class="space-y-6">
+        <form id="purchase-form" action="{{ route('pembelian.store') }}" method="POST" class="space-y-6">
             @csrf
 
             {{-- Informasi Faktur --}}
@@ -69,22 +69,20 @@
                         </thead>
                         <tbody id="table-items">
                             {{-- Baris akan ditambahkan otomatis --}}
-                            @if(old('obat_id'))
-                                @foreach(old('obat_id') as $index => $obatId)
+                            @if(old('items'))
+                                @foreach(old('items') as $index => $item)
                                     @php
-                                        $obat = \App\Models\Obat::find($obatId);
-                                        $qty = old('jumlah.'.$index);
-                                        $harga = old('harga.'.$index);
-                                        $subtotal = $qty * $harga;
+                                        $obat = \App\Models\Obat::find($item['obat_id']);
+                                        $subtotal = $item['jumlah'] * $item['harga_beli'];
                                     @endphp
-                                    <tr data-id="{{ $obatId }}" data-sp-qty-pesan="{{ old('sp_qty_pesan.'.$index) }}" data-sp-qty-terima="{{ old('sp_qty_terima.'.$index) }}" data-sp-harga-satuan="{{ old('sp_harga_satuan.'.$index) }}">
+                                    <tr data-id="{{ $item['obat_id'] }}" data-index="{{ $index }}">
                                         <td class="px-2 py-1 border">{{ $obat->kode }} - {{ $obat->nama }}</td>
                                         <td class="px-2 py-1 border">
-                                            <input type="number" name="jumlah[]" value="{{ $qty }}" min="1"
+                                            <input type="number" name="items[{{ $index }}][jumlah]" value="{{ $item['jumlah'] }}" min="1"
                                                    class="w-full jumlah px-2 py-1 border rounded">
                                         </td>
                                         <td class="px-2 py-1 border">
-                                            <input type="number" name="harga[]" value="{{ $harga }}"
+                                            <input type="number" name="items[{{ $index }}][harga_beli]" value="{{ $item['harga_beli'] }}"
                                                    class="w-full harga px-2 py-1 border rounded">
                                         </td>
                                         <td class="px-2 py-1 border text-right subtotal" data-subtotal="{{ $subtotal }}">
@@ -93,7 +91,10 @@
                                         <td class="px-2 py-1 border text-center">
                                             <button type="button" class="text-red-500 font-bold remove-item">✖</button>
                                         </td>
-                                        <input type="hidden" name="obat_id[]" value="{{ $obatId }}">
+                                        <input type="hidden" name="items[{{ $index }}][obat_id]" value="{{ $item['obat_id'] }}">
+                                        @if(isset($item['sp_detail_id']))
+                                            <input type="hidden" name="items[{{ $index }}][sp_detail_id]" value="{{ $item['sp_detail_id'] }}">
+                                        @endif
                                     </tr>
                                 @endforeach
                             @endif
@@ -107,9 +108,9 @@
 
             <div class="flex gap-2 justify-end">
                 <button type="submit"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">Simpan</button>
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">Simpan</button>
                 <a href="{{ route('pembelian.index') }}"
-                    class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition">Batal</a>
+                   class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition">Batal</a>
             </div>
         </form>
     </div>
@@ -124,8 +125,10 @@
             const obatList = document.getElementById('obat-list');
             const tableItems = document.getElementById('table-items');
             const totalHargaEl = document.getElementById('total-harga');
+            const form = document.getElementById('purchase-form');
 
-            let selectedObatFromSP = {}; // Menyimpan data obat dari SP yang dipilih
+            // Set a global counter to ensure unique names for new inputs
+            let itemIndex = {{ old('items') ? count(old('items')) : 0 }};
 
             function formatRupiah(angka) {
                 if (isNaN(angka) || angka === null || angka === undefined) {
@@ -161,6 +164,21 @@
                 totalHargaEl.innerText = formatRupiah(total);
             }
 
+            function addEventListenersToRow(row) {
+                row.querySelector('.jumlah').addEventListener('input', () => hitungSubtotal(row));
+                row.querySelector('.harga').addEventListener('input', () => hitungSubtotal(row));
+                row.querySelector('.remove-item').addEventListener('click', function() {
+                    const id = row.dataset.id;
+                    const checkbox = document.querySelector(`.obat-checkbox[data-obat*='"id":${id}']`) || 
+                                     document.querySelector(`.obat-checkbox-sp[data-obat*='"id":${id}']`);
+                    if (checkbox) {
+                        checkbox.checked = false;
+                    }
+                    row.remove();
+                    hitungTotal();
+                });
+            }
+
             function tambahItem(obat, spData = null) {
                 if ([...tableItems.querySelectorAll('tr')].some(tr => tr.dataset.id == obat.id)) {
                     alert('Obat ini sudah ada di daftar pembelian.');
@@ -169,49 +187,43 @@
 
                 let row = document.createElement('tr');
                 row.dataset.id = obat.id;
+                row.dataset.index = itemIndex; // Set the unique index
                 row.classList.add('hover:bg-gray-50');
 
                 let hargaDasar = parseFloat(obat.harga_dasar) || 0;
-                let maxQty = obat.stok; // Default max qty dari stok obat
+                let qtyAwal = 1;
+                let spDetailId = '';
 
-                // Jika dari SP, gunakan data SP
                 if (spData) {
                     hargaDasar = parseFloat(spData.harga_satuan) || 0;
-                    maxQty = spData.qty_pesan - spData.qty_terima; // Sisa yang bisa dibeli dari SP
-                    row.dataset.spQtyPesan = spData.qty_pesan;
-                    row.dataset.spQtyTerima = spData.qty_terima;
-                    row.dataset.spHargaSatuan = spData.harga_satuan;
+                    const sisaPesan = spData.qty_pesan - spData.qty_terima;
+                    qtyAwal = sisaPesan;
+                    spDetailId = spData.id;
                 }
 
                 row.innerHTML = `
                     <td class="px-2 py-1 border">${obat.kode} - ${obat.nama}</td>
                     <td class="px-2 py-1 border">
-                        <input type="number" name="jumlah[]" value="1" min="1" max="${maxQty}"
+                        <input type="number" name="items[${itemIndex}][jumlah]" value="${qtyAwal}" min="1"
                                class="w-full jumlah px-2 py-1 border rounded">
                     </td>
                     <td class="px-2 py-1 border">
-                        <input type="number" name="harga[]" value="${hargaDasar}" step="0.01" min="0"
+                        <input type="number" name="items[${itemIndex}][harga_beli]" value="${hargaDasar}" step="0.01" min="0"
                                class="w-full harga px-2 py-1 border rounded">
                     </td>
-                    <td class="px-2 py-1 border text-right subtotal" data-subtotal="${hargaDasar}">
-                        ${formatRupiah(hargaDasar)}
+                    <td class="px-2 py-1 border text-right subtotal" data-subtotal="${hargaDasar * qtyAwal}">
+                        ${formatRupiah(hargaDasar * qtyAwal)}
                     </td>
                     <td class="px-2 py-1 border text-center">
                         <button type="button" class="text-red-500 font-bold remove-item">✖</button>
                     </td>
-                    <input type="hidden" name="obat_id[]" value="${obat.id}">
-                    <input type="hidden" name="sp_qty_pesan[]" value="${spData ? spData.qty_pesan : ''}">
-                    <input type="hidden" name="sp_qty_terima[]" value="${spData ? spData.qty_terima : ''}">
-                    <input type="hidden" name="sp_harga_satuan[]" value="${spData ? spData.harga_satuan : ''}">
+                    <input type="hidden" name="items[${itemIndex}][obat_id]" value="${obat.id}">
+                    ${spDetailId ? `<input type="hidden" name="items[${itemIndex}][sp_detail_id]" value="${spDetailId}">` : ''}
                 `;
                 tableItems.appendChild(row);
 
-                row.querySelector('.jumlah').addEventListener('input', () => hitungSubtotal(row));
-                row.querySelector('.harga').addEventListener('input', () => hitungSubtotal(row));
-                row.querySelector('.remove-item').addEventListener('click', function() {
-                    row.remove();
-                    hitungTotal();
-                });
+                addEventListenersToRow(row);
+                itemIndex++;
                 hitungTotal();
             }
 
@@ -219,10 +231,9 @@
             supplierSelect.addEventListener('change', function () {
                 const supplierId = this.value;
                 suratPesananSelect.value = ''; // Reset SP saat supplier berubah
-                selectedObatFromSP = {}; // Clear SP data
-
                 obatList.innerHTML = '<div class="text-gray-500 text-sm">Memuat...</div>';
                 tableItems.innerHTML = ''; // Clear item pembelian
+                itemIndex = 0; // Reset counter
 
                 if (!supplierId) {
                     obatList.innerHTML = 'Pilih supplier atau Surat Pesanan terlebih dahulu.';
@@ -250,15 +261,15 @@
                                 <td class="px-2 py-1 text-right">${formatRupiah(obat.harga_dasar)}</td>
                             </tr>`;
                         });
-
                         html += '</tbody></table>';
                         obatList.innerHTML = html;
 
                         document.querySelectorAll('.obat-checkbox').forEach(cb => {
                             cb.addEventListener('change', function () {
                                 const obat = JSON.parse(this.dataset.obat);
-                                if (this.checked) tambahItem(obat);
-                                else {
+                                if (this.checked) {
+                                    tambahItem(obat);
+                                } else {
                                     const row = tableItems.querySelector(`tr[data-id='${obat.id}']`);
                                     if (row) row.remove();
                                     hitungTotal();
@@ -276,12 +287,14 @@
             suratPesananSelect.addEventListener('change', function () {
                 const spId = this.value;
                 const selectedOption = this.options[this.selectedIndex];
-                const spSupplierId = selectedOption.dataset.supplierId;
-
-                supplierSelect.value = spSupplierId; // Otomatis pilih supplier dari SP
+                if (selectedOption) {
+                    const spSupplierId = selectedOption.dataset.supplierId;
+                    supplierSelect.value = spSupplierId; // Otomatis pilih supplier dari SP
+                }
+                
                 obatList.innerHTML = '<div class="text-gray-500 text-sm">Memuat...</div>';
                 tableItems.innerHTML = ''; // Clear item pembelian
-                selectedObatFromSP = {}; // Clear SP data
+                itemIndex = 0; // Reset counter
 
                 if (!spId) {
                     obatList.innerHTML = 'Pilih supplier atau Surat Pesanan terlebih dahulu.';
@@ -303,7 +316,6 @@
                         sp.details.forEach(spDetail => {
                             const sisaPesan = spDetail.qty_pesan - spDetail.qty_terima;
                             if (sisaPesan > 0) { // Hanya tampilkan obat yang masih ada sisa pesanan
-                                selectedObatFromSP[spDetail.obat_id] = spDetail; // Simpan data SP detail
                                 html += `<tr class="hover:bg-gray-50">
                                     <td class="text-center px-2 py-1"><input type="checkbox" class="obat-checkbox-sp" data-obat='${JSON.stringify(spDetail.obat)}' data-sp-detail='${JSON.stringify(spDetail)}'></td>
                                     <td class="px-2 py-1">${spDetail.obat.kode}</td>
@@ -323,8 +335,9 @@
                             cb.addEventListener('change', function () {
                                 const obat = JSON.parse(this.dataset.obat);
                                 const spDetail = JSON.parse(this.dataset.spDetail);
-                                if (this.checked) tambahItem(obat, spDetail);
-                                else {
+                                if (this.checked) {
+                                    tambahItem(obat, spDetail);
+                                } else {
                                     const row = tableItems.querySelector(`tr[data-id='${obat.id}']`);
                                     if (row) row.remove();
                                     hitungTotal();
@@ -337,8 +350,19 @@
                         obatList.innerHTML = '<div class="text-red-500 text-sm">Gagal memuat data Surat Pesanan.</div>';
                     });
             });
+            
+            // Validasi formulir sebelum pengiriman
+            form.addEventListener('submit', function(e) {
+                const items = tableItems.querySelectorAll('tr');
+                if (items.length === 0) {
+                    e.preventDefault();
+                    alert('Pilih minimal 1 obat untuk pembelian!');
+                    return false;
+                }
+            });
 
-            // Initial calculation for old input values
+            // Initial calculation for existing items (if any)
+            tableItems.querySelectorAll('tr').forEach(addEventListenersToRow);
             hitungTotal();
         });
     </script>

@@ -310,8 +310,8 @@
             </a>
 
             <!-- {{-- NEW: Stock Movement --}}
-            <a href="{{ route('stock.movement') }}"
-                class="flex items-center px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors {{ request()->is('stock-movement*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+            {{-- <a href="{{ route('stock.movement') }}" --}}
+                {{-- class="flex items-center px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors {{ request()->is('stock-movement*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}"> --}}
                 <i data-feather="trending-up" class="w-5 h-5"></i>
                 <span class="ml-3 flex-1">Stock Movement</span>
             </a>

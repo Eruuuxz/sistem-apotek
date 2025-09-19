@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('consultations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('pelanggan_id')->nullable()->constrained('pelanggans')->onDelete('set null');
+            $table->foreignId('pelanggan_id')->nullable()->constrained('pelanggan')->onDelete('set null');
             $table->string('doctor_name');
             $table->dateTime('tanggal_konsultasi');
             $table->decimal('biaya_konsultasi', 15, 2);

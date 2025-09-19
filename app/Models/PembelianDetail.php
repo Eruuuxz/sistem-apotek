@@ -22,6 +22,7 @@ class PembelianDetail extends Model
     ];
 
     protected $casts = [
+        'harga_beli' => 'decimal:2',
         'ppn_amount' => 'decimal:2',
         'expired_date' => 'date', // Ditambahkan
     ];

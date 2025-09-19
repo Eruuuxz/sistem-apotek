@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('consultation_obat', function (Blueprint $table) {
             $table->foreignId('consultation_id')->constrained('consultations')->onDelete('cascade');
-            $table->foreignId('obat_id')->constrained('obats')->onDelete('cascade');
+            $table->foreignId('obat_id')->constrained('obat')->onDelete('cascade');
             $table->integer('qty');
             $table->decimal('harga_satuan', 15, 2);
             $table->decimal('subtotal', 15, 2);

@@ -70,6 +70,7 @@ Route::middleware('auth')->group(function () {
         Route::get('pembelian/{pembelian}/faktur', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
         Route::get('pembelian/{pembelian}/pdf', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
         Route::get('/pembelian/get-obat-by-supplier/{supplierId}', [PembelianController::class, 'getObatBySupplier'])->name('pembelian.getObatBySupplier');
+        Route::get('/supplier/{supplierId}/obat', [PembelianController::class, 'getObatBySupplier']);
 
         Route::resource('retur', ReturController::class);
         Route::get('/retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');

@@ -22,6 +22,7 @@ class Pembelian extends Model
         'diskon_type',
         'ppn_amount',
         'status', // Ditambahkan
+        'cabang_id',
     ];
 
     protected $casts = [
@@ -42,5 +43,10 @@ class Pembelian extends Model
     public function detail()
     {
         return $this->hasMany(PembelianDetail::class);
+    }
+
+    public function cabang()
+    {
+        return $this->  belongsTo(Cabang::class);
     }
 }

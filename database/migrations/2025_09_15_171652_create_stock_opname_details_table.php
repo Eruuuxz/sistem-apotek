@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('stock_opnames', function (Blueprint $table) {
+        Schema::create('stock_opname_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users'); // Admin yang melakukan SO
             $table->dateTime('tanggal_so');

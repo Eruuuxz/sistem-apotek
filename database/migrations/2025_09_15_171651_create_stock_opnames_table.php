@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('stock_opname_details', function (Blueprint $table) {
+        Schema::create('stock_opnames', function (Blueprint $table) {
             $table->id();
             $table->foreignId('stock_opname_id')->constrained('stock_opnames')->onDelete('cascade');
-            $table->foreignId('obat_id')->constrained('obats');
+            $table->foreignId('obat_id')->constrained('obat');
             $table->integer('stok_sistem'); // Stok di sistem saat SO dimulai
             $table->integer('stok_fisik');  // Stok hasil perhitungan fisik
             $table->integer('selisih');     // stok_fisik - stok_sistem

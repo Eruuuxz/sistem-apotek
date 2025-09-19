@@ -49,41 +49,51 @@ class SuratPesananController extends Controller
             'keterangan' => 'nullable|string',
         ]);
 
-        $suratPesanan = SuratPesanan::create([
-            'no_sp' => $request->no_sp,
-            'tanggal_sp' => $request->tanggal_sp,
-            'supplier_id' => $request->supplier_id,
-            'user_id' => Auth::id(),
-            'keterangan' => $request->keterangan,
-            'sp_mode' => $request->sp_mode,
-            'jenis_sp' => $request->jenis_sp,
-        ]);
+        DB::beginTransaction();
+        try {
+            $suratPesanan = SuratPesanan::create([
+                'no_sp' => $request->no_sp,
+                'tanggal_sp' => $request->tanggal_sp,
+                'supplier_id' => $request->supplier_id,
+                'user_id' => Auth::id(),
+                'keterangan' => $request->keterangan,
+                'sp_mode' => $request->sp_mode,
+                'jenis_sp' => $request->jenis_sp,
+                'status' => 'pending', // Status awal SP
+            ]);
 
-        // Simpan detail
-        if ($request->sp_mode === 'dropdown') {
-            foreach ($request->obat_id as $key => $obatId) {
-                SuratPesananDetail::create([
-                    'surat_pesanan_id' => $suratPesanan->id,
-                    'obat_id' => $obatId,
-                    'qty_pesan' => $request->qty_pesan[$key],
-                    'harga_satuan' => $request->harga_satuan[$key] ?? 0,
-                ]);
+            // Simpan detail
+            if ($request->sp_mode === 'dropdown') {
+                foreach ($request->obat_id as $key => $obatId) {
+                    SuratPesananDetail::create([
+                        'surat_pesanan_id' => $suratPesanan->id,
+                        'obat_id' => $obatId,
+                        'qty_pesan' => $request->qty_pesan[$key],
+                        'harga_satuan' => $request->harga_satuan[$key] ?? 0,
+                        'qty_terima' => 0, // Awalnya 0
+                    ]);
+                }
+            } elseif ($request->sp_mode === 'manual') {
+                foreach ($request->obat_manual as $key => $namaManual) {
+                    SuratPesananDetail::create([
+                        'surat_pesanan_id' => $suratPesanan->id,
+                        'nama_manual' => $namaManual,
+                        'qty_pesan' => $request->qty_pesan[$key],
+                        'harga_satuan' => $request->harga_satuan[$key] ?? 0,
+                        'qty_terima' => 0, // Awalnya 0
+                    ]);
+                }
             }
-        } elseif ($request->sp_mode === 'manual') {
-            foreach ($request->obat_manual as $key => $namaManual) {
-                SuratPesananDetail::create([
-                    'surat_pesanan_id' => $suratPesanan->id,
-                    'nama_manual' => $namaManual,
-                    'qty_pesan' => $request->qty_pesan[$key],
-                    'harga_satuan' => $request->harga_satuan[$key] ?? 0,
-                ]);
-            }
+            DB::commit();
+
+            return redirect()->back()->with([
+                'success' => 'Surat Pesanan berhasil dibuat!',
+                'sp_id' => $suratPesanan->id
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->with('error', 'Gagal membuat Surat Pesanan: ' . $e->getMessage());
         }
-
-        return redirect()->back()->with([
-            'success' => 'Surat Pesanan berhasil dibuat!',
-            'sp_id' => $suratPesanan->id
-        ]);
     }
 
     public function show(SuratPesanan $suratPesanan)
@@ -107,6 +117,7 @@ class SuratPesananController extends Controller
             'tanggal_sp' => 'required|date_format:Y-m-d\TH:i',
             'supplier_id' => 'required|exists:supplier,id',
             'sp_mode' => 'required|in:dropdown,manual,blank',
+            'jenis_sp' => 'required|in:reguler,prekursor', // Tambahkan validasi jenis_sp
             'obat_id' => 'required_if:sp_mode,dropdown|array',
             'obat_id.*' => 'exists:obat,id',
             'obat_manual' => 'required_if:sp_mode,manual|array',
@@ -119,85 +130,80 @@ class SuratPesananController extends Controller
             'status' => 'required|in:pending,parsial,selesai,dibatalkan',
         ]);
 
-        $oldStatus = $suratPesanan->status;
-        
-        $suratPesanan->update([
-            'no_sp' => $request->no_sp,
-            'tanggal_sp' => $request->tanggal_sp,
-            'supplier_id' => $request->supplier_id,
-            'keterangan' => $request->keterangan,
-            'sp_mode' => $request->sp_mode,
-            'status' => $request->status,
-        ]);
+        DB::beginTransaction();
+        try {
+            $suratPesanan->update([
+                'no_sp' => $request->no_sp,
+                'tanggal_sp' => $request->tanggal_sp,
+                'supplier_id' => $request->supplier_id,
+                'keterangan' => $request->keterangan,
+                'sp_mode' => $request->sp_mode,
+                'jenis_sp' => $request->jenis_sp, // Update jenis_sp
+                'status' => $request->status,
+            ]);
 
-        // Hapus detail lama dan buat baru
-        $suratPesanan->details()->delete();
-        if ($request->sp_mode === 'dropdown') {
-            foreach ($request->obat_id as $key => $obatId) {
-                SuratPesananDetail::create([
-                    'surat_pesanan_id' => $suratPesanan->id,
-                    'obat_id' => $obatId,
-                    'qty_pesan' => $request->qty_pesan[$key],
-                    'harga_satuan' => $request->harga_satuan[$key] ?? 0,
-                ]);
-            }
-        } elseif ($request->sp_mode === 'manual') {
-            foreach ($request->obat_manual as $key => $namaManual) {
-                SuratPesananDetail::create([
-                    'surat_pesanan_id' => $suratPesanan->id,
-                    'nama_manual' => $namaManual,
-                    'qty_pesan' => $request->qty_pesan[$key],
-                    'harga_satuan' => $request->harga_satuan[$key] ?? 0,
-                ]);
-            }
-        }
-
-        // Jika status diubah menjadi 'selesai' dan sebelumnya bukan 'selesai'
-        if ($validatedData['status'] === 'selesai' && $oldStatus !== 'selesai') {
-            $existingPembelian = Pembelian::where('surat_pesanan_id', $suratPesanan->id)->first();
-
-            if (!$existingPembelian) {
-                DB::transaction(function () use ($suratPesanan) {
-                    $pembelian = Pembelian::create([
-                        'no_faktur' => 'FPB-' . date('Ymd') . '-' . str_pad((Pembelian::count() + 1), 4, '0', STR_PAD_LEFT),
-                        'tanggal' => now(),
-                        'supplier_id' => $suratPesanan->supplier_id,
+            // Hapus detail lama dan buat baru
+            $suratPesanan->details()->delete();
+            if ($request->sp_mode === 'dropdown') {
+                foreach ($request->obat_id as $key => $obatId) {
+                    SuratPesananDetail::create([
                         'surat_pesanan_id' => $suratPesanan->id,
-                        'total' => $suratPesanan->details->sum(function ($detail) {
-                            return $detail->qty_pesan * $detail->harga_satuan;
-                        }),
-                        'status' => 'draft'
+                        'obat_id' => $obatId,
+                        'qty_pesan' => $request->qty_pesan[$key],
+                        'harga_satuan' => $request->harga_satuan[$key] ?? 0,
+                        'qty_terima' => 0, // Reset qty_terima saat update
                     ]);
-
-                    foreach ($suratPesanan->details as $spDetail) {
-                        if ($spDetail->obat_id) {
-                            PembelianDetail::create([
-                                'pembelian_id' => $pembelian->id,
-                                'obat_id' => $spDetail->obat_id,
-                                'jumlah' => $spDetail->qty_pesan,
-                                'harga_beli' => $spDetail->harga_satuan,
-                            ]);
-                            $spDetail->update(['qty_terima' => $spDetail->qty_pesan]);
-                        }
-                    }
-                });
+                }
+            } elseif ($request->sp_mode === 'manual') {
+                foreach ($request->obat_manual as $key => $namaManual) {
+                    SuratPesananDetail::create([
+                        'surat_pesanan_id' => $suratPesanan->id,
+                        'nama_manual' => $namaManual,
+                        'qty_pesan' => $request->qty_pesan[$key],
+                        'harga_satuan' => $request->harga_satuan[$key] ?? 0,
+                        'qty_terima' => 0, // Reset qty_terima saat update
+                    ]);
+                }
             }
-        }
+            DB::commit();
 
-        return redirect()->route('surat_pesanan.index')->with('success', 'Surat Pesanan berhasil diperbarui.');
+            return redirect()->route('surat_pesanan.index')->with('success', 'Surat Pesanan berhasil diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->with('error', 'Gagal memperbarui Surat Pesanan: ' . $e->getMessage());
+        }
     }
 
     public function destroy(SuratPesanan $suratPesanan)
     {
-        $suratPesanan->details()->delete();
-        $suratPesanan->delete();
-        return redirect()->route('surat_pesanan.index')->with('success', 'Surat Pesanan berhasil dihapus.');
+        DB::beginTransaction();
+        try {
+            // Cek apakah ada pembelian yang terkait dengan SP ini
+            $relatedPembelian = Pembelian::where('surat_pesanan_id', $suratPesanan->id)->first();
+            if ($relatedPembelian) {
+                // Jika ada, kita tidak bisa langsung menghapus SP
+                // Opsi:
+                // 1. Batalkan pembelian terkait (jika statusnya masih draft)
+                // 2. Hapus relasi SP dari pembelian (set surat_pesanan_id ke null)
+                // 3. Beri pesan error bahwa SP tidak bisa dihapus karena sudah ada pembelian terkait
+                DB::rollBack();
+                return back()->with('error', 'Surat Pesanan tidak dapat dihapus karena sudah ada pembelian terkait.');
+            }
+
+            $suratPesanan->details()->delete();
+            $suratPesanan->delete();
+            DB::commit();
+            return redirect()->route('surat_pesanan.index')->with('success', 'Surat Pesanan berhasil dihapus.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal menghapus Surat Pesanan: ' . $e->getMessage());
+        }
     }
 
     public function generatePdf($id)
     {
         $suratPesanan = SuratPesanan::with('details.obat', 'supplier', 'user')->findOrFail($id);
-        
+
         $clinicData = [
             'nama' => 'Klinik SINDANG SARI',
             'alamat' => 'JL. H. Abdul Halim No. 121, Cigugur, Tangah, Kota Cimahi',
@@ -216,21 +222,21 @@ class SuratPesananController extends Controller
             return $detail->obat && $detail->obat->is_prekursor;
         });
 
-        $viewName = $containsPrekursor 
-                    ? 'transaksi.surat_pesanan.pdf_prekursor' 
+        $viewName = $containsPrekursor
+                    ? 'transaksi.surat_pesanan.pdf_prekursor'
                     : 'transaksi.surat_pesanan.pdf_regular';
 
         $pdf = PDF::loadView($viewName, compact('suratPesanan', 'clinicData', 'apotekerData'));
         $pdf->setPaper('A4', 'portrait');
         $filename = 'SP_' . $suratPesanan->no_sp . '.pdf';
-        
+
         return $pdf->stream($filename);
     }
 
     private function generateNoSp()
     {
         $latestSp = SuratPesanan::latest()->first();
-        $lastNumber = $latestSp ? (int) Str::substr($latestSp->no_sp, 3) : 0;
+        $lastNumber = $latestSp ? (int) Str::afterLast($latestSp->no_sp, '-') : 0; // Menggunakan Str::afterLast
         return 'SP-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
     }
 
