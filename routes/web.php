@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\CustomAuthenticatedSessionController;
 use App\Http\Controllers\Auth\RoleLoginController;
 use App\Http\Controllers\DashboardController;
@@ -19,111 +18,118 @@ use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\SuratPesananController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\PelangganController;
+use App\Http\Controllers\StockOpnameController;
 use App\Models\Shift;
 use App\Models\CashierShift;
 
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// Route Publik
 Route::get('/', function () {
     return view('auth.pilih-login');
 });
 
-// Route untuk memilih jenis login
 Route::get('/login/admin', [RoleLoginController::class, 'showAdminLoginForm'])->name('login.admin');
 Route::get('/login/kasir', [RoleLoginController::class, 'showKasirLoginForm'])->name('login.kasir');
-
-// Route untuk proses login
 Route::post('/login', [CustomAuthenticatedSessionController::class, 'store'])->name('login');
 
-// Route yang memerlukan autentikasi
+
+// Route yang Memerlukan Autentikasi
 Route::middleware('auth')->group(function () {
+    Route::post('/logout', [CustomAuthenticatedSessionController::class, 'destroy'])->name('logout');
+
+    // Profil Pengguna
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::post('/logout', [CustomAuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-    // Admin Routes
+    // ===================================================================
+    // GRUP ROUTE ADMIN
+    // ===================================================================
     Route::middleware('role:admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-        // Manajemen Obat
+        // --- Master Data ---
         Route::resource('obat', ObatController::class);
         Route::get('/obat-search', [ObatController::class, 'search'])->name('obat.search');
-
-        // Manajemen Supplier
-        Route::resource('supplier', SupplierController::class);
         
-        // Manajemen Pelanggan
+        Route::resource('supplier', SupplierController::class);
         Route::resource('pelanggan', PelangganController::class);
+        Route::resource('users', UserController::class);
+        
+        // --- Transaksi ---
+        Route::resource('surat_pesanan', SuratPesananController::class);
+        Route::get('surat_pesanan/{id}/details', [SuratPesananController::class, 'getSpDetails'])->name('surat_pesanan.details');
+        Route::get('/surat_pesanan/{id}/pdf', [SuratPesananController::class, 'generatePdf'])->name('surat_pesanan.pdf');
 
-        // Manajemen Pembelian
         Route::resource('pembelian', PembelianController::class);
         Route::get('pembelian/{pembelian}/faktur', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
         Route::get('pembelian/{pembelian}/pdf', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
         Route::get('/pembelian/get-obat-by-supplier/{supplierId}', [PembelianController::class, 'getObatBySupplier'])->name('pembelian.getObatBySupplier');
 
-        // Manajemen Retur
         Route::resource('retur', ReturController::class);
         Route::get('/retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');
 
-        // Manajemen User (Kasir)
-        Route::resource('users', UserController::class);
-
-        // Manajemen Biaya Operasional
+        // --- Keuangan ---
         Route::resource('biaya-operasional', BiayaOperasionalController::class);
 
-Route::prefix('laporan')->group(function () {
-    Route::get('/', [LaporanController::class, 'index'])->name('laporan.index');
-
-    Route::get('/penjualan/{format}', [LaporanController::class, 'exportPenjualan'])->name('laporan.penjualan.export');
-    Route::get('/stok/{format}', [LaporanController::class, 'exportStok'])->name('laporan.stok.export');
-    Route::get('/pelanggan/{format}', [LaporanController::class, 'exportPelanggan'])->name('laporan.pelanggan.export');
-    Route::get('/laba/{format}', [LaporanController::class, 'exportLaba'])->name('laporan.laba.export');
-});
-
-
-
-        // Stock Movement (rute yang terpisah, perlu digabungkan)
-        Route::prefix('stock-movement')->name('stock.movement')->group(function () {
-            Route::get('/', [StockMovementController::class, 'index']);
-            Route::get('/detail', [StockMovementController::class, 'detail'])->name('.detail');
+        // --- Laporan ---
+        Route::prefix('laporan')->name('laporan.')->group(function () {
+            Route::get('/', [LaporanController::class, 'index'])->name('index');
+            Route::get('/penjualan/{format}', [LaporanController::class, 'exportPenjualan'])->name('penjualan.export');
+            Route::get('/stok/{format}', [LaporanController::class, 'exportStok'])->name('stok.export');
+            Route::get('/pelanggan/{format}', [LaporanController::class, 'exportPelanggan'])->name('pelanggan.export');
+            Route::get('/laba/{format}', [LaporanController::class, 'exportLaba'])->name('laba.export');
         });
-        
-        // Surat Pesanan
-        Route::resource('surat_pesanan', SuratPesananController::class);
-        Route::get('surat_pesanan/{surat_pesanan}/download', [SuratPesananController::class, 'downloadTemplate'])->name('surat_pesanan.download');
-        Route::get('surat_pesanan/{id}/details', [SuratPesananController::class, 'getSpDetails'])->name('surat_pesanan.details');
-        Route::get('/surat_pesanan/{id}/pdf', [SuratPesananController::class, 'generatePdf'])->name('surat_pesanan.pdf');
 
-        // Manajemen Shift (Admin)
-        Route::resource('shifts', ShiftController::class)->except(['show', 'edit', 'update', 'destroy']);
-        Route::get('shifts/summary', [ShiftController::class, 'summary'])->name('shifts.summary');
-        
-        // Stock Opname
+        // // --- Inventaris & Stok (INI PERBAIKANNYA) ---
+        // Route::prefix('stock-movement')->name('stock.movement.')->group(function () {
+        //     Route::get('/', [StockMovementController::class, 'index'])->name('index'); // Sekarang menjadi stock.movement.index
+        //     Route::get('/detail', [StockMovementController::class, 'detail'])->name('detail'); // Sekarang menjadi stock.movement.detail
+        // });
+
         Route::resource('stock-opname', StockOpnameController::class);
         Route::post('stock-opname/{stock_opname}/approve', [StockOpnameController::class, 'approve'])->name('stock_opname.approve');
         Route::post('stock-opname/{stock_opname}/reject', [StockOpnameController::class, 'reject'])->name('stock_opname.reject');
         Route::get('stock-opname/{stock_opname}/pdf', [StockOpnameController::class, 'generatePdf'])->name('stock_opname.pdf');
+        
+        // --- Manajemen Shift ---
+        Route::resource('shifts', ShiftController::class)->except(['show', 'edit', 'update', 'destroy']);
+        Route::get('shifts/summary', [ShiftController::class, 'summary'])->name('shifts.summary');
     });
 
-    // Kasir Routes
+    // ===================================================================
+    // GRUP ROUTE KASIR
+    // ===================================================================
     Route::middleware('role:kasir')->group(function () {
         Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
+
+        // Manajemen Shift Kasir
         Route::post('/shifts/start', [ShiftController::class, 'startShift'])->name('shifts.start');
         Route::post('/shifts/end', [ShiftController::class, 'endShift'])->name('shifts.end');
         Route::get('/shifts/my-summary', [ShiftController::class, 'summary'])->name('shifts.my.summary');
 
+        // Operasi POS yang memerlukan shift aktif
         Route::middleware('check.shift')->group(function () {
             Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
             Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
             Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
             Route::post('/pos/set-diskon', [POSController::class, 'setDiskon'])->name('pos.setDiskon');
             Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
+
             Route::get('/pos/print-options/{id}', [POSController::class, 'printOptions'])->name('pos.print.options');
             Route::get('/pos/print-faktur/{id}', [POSController::class, 'printFaktur'])->name('pos.print.faktur');
             Route::get('/pos/print-kwitansi/{id}', [POSController::class, 'printKwitansi'])->name('pos.print.kwitansi');
             Route::get('/pos/struk-pdf/{id}', [POSController::class, 'strukPdf'])->name('pos.struk.pdf');
+            
             Route::get('/pos/riwayat', [POSController::class, 'riwayatKasir'])->name('kasir.riwayat');
             Route::get('/pos/riwayat/{id}', [POSController::class, 'show'])->name('penjualan.show');
             Route::get('/pos/success/{id}', [POSController::class, 'success'])->name('kasir.success');
+
             Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
             Route::get('/pos/search-pelanggan', [POSController::class, 'searchPelanggan'])->name('pos.searchPelanggan');
             Route::post('/pos/add-pelanggan-cepat', [POSController::class, 'addPelangganCepat'])->name('pos.addPelangganCepat');

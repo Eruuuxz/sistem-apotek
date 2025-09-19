@@ -16,11 +16,14 @@ class PembelianDetail extends Model
         'obat_id',
         'jumlah',
         'harga_beli',
-        'ppn_amount', 
+        'ppn_amount',
+        'no_batch',      // Ditambahkan
+        'expired_date',  // Ditambahkan
     ];
 
     protected $casts = [
         'ppn_amount' => 'decimal:2',
+        'expired_date' => 'date', // Ditambahkan
     ];
 
     public function pembelian()

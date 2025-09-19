@@ -18,9 +18,10 @@ class Pembelian extends Model
         'supplier_id',
         'surat_pesanan_id', 
         'total',
-        'diskon', // Pastikan ini ada jika digunakan
-        'diskon_type', // Pastikan ini ada jika digunakan
-        'ppn_amount', 
+        'diskon',
+        'diskon_type',
+        'ppn_amount',
+        'status', // Ditambahkan
     ];
 
     protected $casts = [
@@ -33,7 +34,7 @@ class Pembelian extends Model
         return $this->belongsTo(Supplier::class);
     }
 
-    public function suratPesanan() // Tambahkan relasi ini
+    public function suratPesanan()
     {
         return $this->belongsTo(SuratPesanan::class);
     }

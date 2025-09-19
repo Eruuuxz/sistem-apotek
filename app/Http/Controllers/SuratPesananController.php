@@ -6,8 +6,11 @@ use App\Models\SuratPesanan;
 use App\Models\SuratPesananDetail;
 use App\Models\Supplier;
 use App\Models\Obat;
+use App\Models\Pembelian;
+use App\Models\PembelianDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use PDF;
 
@@ -34,6 +37,7 @@ class SuratPesananController extends Controller
             'tanggal_sp' => 'required|date_format:Y-m-d\TH:i',
             'supplier_id' => 'required|exists:supplier,id',
             'sp_mode' => 'required|in:dropdown,manual,blank',
+            'jenis_sp' => 'required|in:reguler,prekursor',
             'obat_id' => 'required_if:sp_mode,dropdown|array',
             'obat_id.*' => 'exists:obat,id',
             'obat_manual' => 'required_if:sp_mode,manual|array',
@@ -52,6 +56,7 @@ class SuratPesananController extends Controller
             'user_id' => Auth::id(),
             'keterangan' => $request->keterangan,
             'sp_mode' => $request->sp_mode,
+            'jenis_sp' => $request->jenis_sp,
         ]);
 
         // Simpan detail
@@ -97,7 +102,7 @@ class SuratPesananController extends Controller
 
     public function update(Request $request, SuratPesanan $suratPesanan)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'no_sp' => 'required|unique:surat_pesanan,no_sp,' . $suratPesanan->id,
             'tanggal_sp' => 'required|date_format:Y-m-d\TH:i',
             'supplier_id' => 'required|exists:supplier,id',
@@ -114,6 +119,8 @@ class SuratPesananController extends Controller
             'status' => 'required|in:pending,parsial,selesai,dibatalkan',
         ]);
 
+        $oldStatus = $suratPesanan->status;
+        
         $suratPesanan->update([
             'no_sp' => $request->no_sp,
             'tanggal_sp' => $request->tanggal_sp,
@@ -123,6 +130,7 @@ class SuratPesananController extends Controller
             'status' => $request->status,
         ]);
 
+        // Hapus detail lama dan buat baru
         $suratPesanan->details()->delete();
         if ($request->sp_mode === 'dropdown') {
             foreach ($request->obat_id as $key => $obatId) {
@@ -144,6 +152,38 @@ class SuratPesananController extends Controller
             }
         }
 
+        // Jika status diubah menjadi 'selesai' dan sebelumnya bukan 'selesai'
+        if ($validatedData['status'] === 'selesai' && $oldStatus !== 'selesai') {
+            $existingPembelian = Pembelian::where('surat_pesanan_id', $suratPesanan->id)->first();
+
+            if (!$existingPembelian) {
+                DB::transaction(function () use ($suratPesanan) {
+                    $pembelian = Pembelian::create([
+                        'no_faktur' => 'FPB-' . date('Ymd') . '-' . str_pad((Pembelian::count() + 1), 4, '0', STR_PAD_LEFT),
+                        'tanggal' => now(),
+                        'supplier_id' => $suratPesanan->supplier_id,
+                        'surat_pesanan_id' => $suratPesanan->id,
+                        'total' => $suratPesanan->details->sum(function ($detail) {
+                            return $detail->qty_pesan * $detail->harga_satuan;
+                        }),
+                        'status' => 'draft'
+                    ]);
+
+                    foreach ($suratPesanan->details as $spDetail) {
+                        if ($spDetail->obat_id) {
+                            PembelianDetail::create([
+                                'pembelian_id' => $pembelian->id,
+                                'obat_id' => $spDetail->obat_id,
+                                'jumlah' => $spDetail->qty_pesan,
+                                'harga_beli' => $spDetail->harga_satuan,
+                            ]);
+                            $spDetail->update(['qty_terima' => $spDetail->qty_pesan]);
+                        }
+                    }
+                });
+            }
+        }
+
         return redirect()->route('surat_pesanan.index')->with('success', 'Surat Pesanan berhasil diperbarui.');
     }
 
@@ -156,10 +196,34 @@ class SuratPesananController extends Controller
 
     public function generatePdf($id)
     {
-        $suratPesanan = SuratPesanan::with('details.obat', 'supplier')->findOrFail($id);
-        $pdf = PDF::loadView('transaksi.surat_pesanan.pdf', compact('suratPesanan'));
+        $suratPesanan = SuratPesanan::with('details.obat', 'supplier', 'user')->findOrFail($id);
+        
+        $clinicData = [
+            'nama' => 'Klinik SINDANG SARI',
+            'alamat' => 'JL. H. Abdul Halim No. 121, Cigugur, Tangah, Kota Cimahi',
+            'telepon' => '+62 811 2044 6611',
+            'email' => 'kliniksindangsari@gmail.com',
+            'sio' => 'SIO: 03022300571070001',
+        ];
+
+        $apotekerData = [
+            'nama' => 'apt. MIRA YULIANTI, S.Farm',
+            'sipa' => 'SIPA: 440/0027/SIPA/DPMPTSP/X/2024',
+            'jabatan' => 'Apoteker Penanggung Jawab',
+        ];
+
+        $containsPrekursor = $suratPesanan->details->contains(function ($detail) {
+            return $detail->obat && $detail->obat->is_prekursor;
+        });
+
+        $viewName = $containsPrekursor 
+                    ? 'transaksi.surat_pesanan.pdf_prekursor' 
+                    : 'transaksi.surat_pesanan.pdf_regular';
+
+        $pdf = PDF::loadView($viewName, compact('suratPesanan', 'clinicData', 'apotekerData'));
         $pdf->setPaper('A4', 'portrait');
-        $filename = 'SP_'.$suratPesanan->no_sp.'.pdf';
+        $filename = 'SP_' . $suratPesanan->no_sp . '.pdf';
+        
         return $pdf->stream($filename);
     }
 
