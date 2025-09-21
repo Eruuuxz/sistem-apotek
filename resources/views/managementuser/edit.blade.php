@@ -28,10 +28,26 @@
             </div>
 
             <div>
+                <label class="block font-semibold mb-1">Konfirmasi Password</label>
+                <input type="password" name="password_confirmation" class="w-full border rounded px-3 py-2"
+                    placeholder="Kosongkan jika tidak ingin diubah">
+            </div>
+
+            <div>
                 <label class="block font-semibold mb-1">Role</label>
                 <select name="role" class="w-full border rounded px-3 py-2" required>
                     <option value="kasir" @if($user->role == 'kasir') selected @endif>Kasir</option>
                     <option value="admin" @if($user->role == 'admin') selected @endif>Admin</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-semibold mb-1">Cabang</label>
+                <select name="cabang_id" class="w-full border rounded px-3 py-2">
+                    <option value="">Pilih Cabang (Opsional)</option>
+                    @foreach($cabangs as $cabang)
+                        <option value="{{ $cabang->id }}" @if($user->cabang_id == $cabang->id) selected @endif>{{ $cabang->nama }}</option>
+                    @endforeach
                 </select>
             </div>
 

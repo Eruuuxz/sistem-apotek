@@ -118,33 +118,38 @@ class ShiftController extends Controller
     /**
      * Mengakhiri shift untuk kasir yang sedang login.
      */
-    public function endShift(Request $request)
+     public function endShift(Request $request)
     {
-        $request->validate([
-            'final_cash' => 'required|numeric|min:0',
-        ]);
-
         $activeShift = CashierShift::where('user_id', Auth::id())
-                                   ->where('status', 'open')
-                                   ->first();
+                                      ->where('status', 'open')
+                                      ->first();
 
         if (!$activeShift) {
             return back()->with('error', 'Anda tidak memiliki shift yang sedang berjalan.');
         }
 
-        DB::transaction(function () use ($activeShift, $request) {
-            // Hitung total penjualan selama shift ini
+        DB::transaction(function () use ($activeShift) {
+            // 1. Hitung total penjualan selama shift ini.
             $totalSales = Penjualan::where('cashier_shift_id', $activeShift->id)->sum('total');
 
+            // 2. Hitung modal akhir di server agar akurat.
+            $finalCash = $activeShift->initial_cash + $totalSales;
+
+            // 3. Simpan semua data yang sudah terverifikasi.
             $activeShift->update([
                 'end_time' => Carbon::now(),
-                'final_cash' => $request->final_cash,
-                'total_sales' => $totalSales,
+                'final_cash' => $finalCash,       // Gunakan hasil perhitungan server
+                'total_sales' => $totalSales,     // Simpan juga total penjualan
                 'status' => 'closed',
             ]);
         });
 
-        return redirect()->route('pos.index')->with('success', 'Shift berhasil diakhiri.');
+        // Logout otomatis untuk keamanan
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/login')->with('success', 'Shift berhasil diakhiri. Sampai jumpa!');
     }
 
     /**

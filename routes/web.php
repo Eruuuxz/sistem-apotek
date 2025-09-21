@@ -125,8 +125,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/pos/print-faktur/{id}', [POSController::class, 'printFaktur'])->name('pos.print.faktur');
             Route::get('/pos/print-kwitansi/{id}', [POSController::class, 'printKwitansi'])->name('pos.print.kwitansi');
             Route::get('/pos/struk-pdf/{id}', [POSController::class, 'strukPdf'])->name('pos.struk.pdf');
+            Route::get('/pos/print/invoice/{id}', [POSController::class, 'printInvoice'])->name('pos.print.invoice');
             
             Route::get('/pos/riwayat', [POSController::class, 'riwayatKasir'])->name('kasir.riwayat');
+            Route::get('/pos/summary', [POSController::class, 'shiftSummary'])->name('kasir.summary');
             Route::get('/pos/riwayat/{id}', [POSController::class, 'show'])->name('penjualan.show');
             Route::get('/pos/success/{id}', [POSController::class, 'success'])->name('kasir.success');
 

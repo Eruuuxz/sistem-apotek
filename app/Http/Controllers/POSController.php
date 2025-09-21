@@ -77,8 +77,26 @@ class POSController extends Controller
         $members = Pelanggan::orderBy('nama')->get();
         $totalSales = Penjualan::where('cashier_shift_id', $activeShift->id)->sum('total');
 
-        return view('kasir.pos', compact('obat', 'cart', 'totalSubtotalBersih', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members', 'activeShift', 'totalPpn'));
+        return view('kasir.pos', compact('obat', 'cart', 'totalSubtotalBersih', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members', 'activeShift', 'totalSales', 'totalPpn'));
     }
+
+    public function shiftSummary(Request $request)
+{
+    // Mengambil data shift hanya untuk user yang sedang login (Auth::id())
+    $query = CashierShift::with('shift')
+                         ->withSum('penjualan as total_sales', 'total') // Menghitung total penjualan
+                         ->where('user_id', Auth::id());
+
+    // Filter berdasarkan tanggal jika ada input
+    if ($request->filled('date')) {
+        $query->whereDate('start_time', $request->date);
+    }
+
+    $cashierShifts = $query->orderBy('start_time', 'desc')->paginate(10);
+
+    return view('kasir.summary', compact('cashierShifts'));
+}
+
 
     /**
      * Mencari obat untuk fitur autocomplete.
@@ -547,6 +565,12 @@ class POSController extends Controller
     {
         $penjualan = Penjualan::with('kasir', 'pelanggan')->findOrFail($id);
         return view('kasir.kwitansi', compact('penjualan'));
+    }
+
+        public function printInvoice($id)
+    {
+        $penjualan = Penjualan::with('details.obat', 'kasir', 'pelanggan')->findOrFail($id);
+        return view('kasir.invoice', compact('penjualan'));
     }
 
     public function strukPdf($id)

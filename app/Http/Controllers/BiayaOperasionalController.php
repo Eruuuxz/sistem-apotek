@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BiayaOperasional;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class BiayaOperasionalController extends Controller
 {
@@ -29,17 +30,29 @@ class BiayaOperasionalController extends Controller
     }
 
     /**
-     * Menyimpan biaya operasional baru ke database.
+     * Menyimpan beberapa biaya operasional baru ke database.
      */
     public function store(Request $request)
     {
         $request->validate([
-            'deskripsi' => 'required|string|max:255',
-            'jumlah' => 'required|numeric|min:0',
             'tanggal' => 'required|date',
+            'biaya' => 'required|array|min:1'
         ]);
 
-        BiayaOperasional::create($request->all());
+        Validator::make($request->all(), [
+            'biaya.*.jenis_biaya' => 'required|string|max:255',
+            'biaya.*.keterangan' => 'nullable|string',
+            'biaya.*.jumlah' => 'required|numeric|min:0',
+        ])->validate();
+
+        foreach ($request->biaya as $item) {
+            BiayaOperasional::create([
+                'tanggal' => $request->tanggal,
+                'jenis_biaya' => $item['jenis_biaya'],
+                'keterangan' => $item['keterangan'],
+                'jumlah' => $item['jumlah'],
+            ]);
+        }
 
         return redirect()->route('biaya-operasional.index')->with('success', 'Biaya operasional berhasil ditambahkan.');
     }
@@ -58,9 +71,10 @@ class BiayaOperasionalController extends Controller
     public function update(Request $request, BiayaOperasional $biayaOperasional)
     {
         $request->validate([
-            'deskripsi' => 'required|string|max:255',
-            'jumlah' => 'required|numeric|min:0',
             'tanggal' => 'required|date',
+            'jenis_biaya' => 'required|string|max:255',
+            'keterangan' => 'nullable|string',
+            'jumlah' => 'required|numeric|min:0',
         ]);
 
         $biayaOperasional->update($request->all());

@@ -41,29 +41,34 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($cashierShifts as $shift)
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ $shift->shift->name }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($shift->start_time)->format('Y-m-d H:i') }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @if($shift->end_time)
-                                    {{ \Carbon\Carbon::parse($shift->end_time)->format('Y-m-d H:i') }}
-                                @else
-                                    <span class="text-yellow-500">Aktif</span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">Rp {{ number_format($shift->initial_cash, 0, ',', '.') }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">Rp {{ number_format($shift->total_sales, 0, ',', '.') }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">Rp {{ number_format($shift->final_cash, 0, ',', '.') }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
-                                Tidak ada data shift yang ditemukan.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
+    @forelse($cashierShifts as $shift)
+        <tr>
+            <td class="px-6 py-4 whitespace-nowrap">{{ $shift->shift->name }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($shift->start_time)->format('Y-m-d H:i') }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                @if($shift->end_time)
+                    {{ \Carbon\Carbon::parse($shift->end_time)->format('Y-m-d H:i') }}
+                @else
+                    <span class="px-2 py-1 text-xs font-semibold bg-yellow-200 text-yellow-800 rounded-full">
+                        Masih Aktif
+                    </span>
+                @endif
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">Rp {{ number_format($shift->initial_cash, 0, ',', '.') }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">Rp {{ number_format($shift->total_sales, 0, ',', '.') }}</td>
+            <td class="px-6 py-4 whitespace-nowrap font-semibold">
+                {{-- Logika ini sekarang konsisten untuk shift aktif dan berakhir --}}
+                Rp {{ number_format($shift->initial_cash + $shift->total_sales, 0, ',', '.') }}
+            </td>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                Tidak ada data shift yang ditemukan.
+            </td>
+        </tr>
+    @endforelse
+</tbody>
             </table>
         </div>
         <div class="p-4">

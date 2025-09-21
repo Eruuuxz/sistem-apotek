@@ -14,6 +14,10 @@
            class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow">
            Cetak Kwitansi
         </a>
+        <a href="{{ route('pos.print.invoice', $penjualan->id) }}" target="_blank"
+           class="px-6 py-3 bg-gray-800 hover:bg-gray-900 text-white rounded-lg shadow">
+           Cetak Invoice (58mm)
+        </a>
     </div>
     <div class="mt-8">
         <a href="{{ route('kasir.success',  $penjualan->id) }}" 

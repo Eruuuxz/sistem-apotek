@@ -47,9 +47,9 @@
             </a>
 
             {{-- Ringkasan Shift --}}
-            <a href="{{ route('shifts.my.summary') }}"
+            <a href="{{ route('kasir.summary') }}"
                class="flex items-center px-4 py-3 rounded-lg transition-colors
-               {{ request()->routeIs('shifts.my.summary') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-800 text-gray-200' }}">
+               {{ request()->routeIs('kasir.summary') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-800 text-gray-200' }}">
                 <i data-feather="briefcase" class="w-5 h-5 mr-3"></i>
                 <span>Ringkasan Shift</span>
             </a>

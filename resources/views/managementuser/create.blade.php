@@ -37,6 +37,16 @@
                 </select>
             </div>
 
+            <div>
+                <label class="block font-semibold mb-1">Cabang</label>
+                <select name="cabang_id" class="w-full border rounded px-3 py-2">
+                    <option value="">Pilih Cabang (Opsional)</option>
+                    @foreach($cabangs as $cabang)
+                        <option value="{{ $cabang->id }}">{{ $cabang->nama }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <div class="flex gap-2 mt-4">
                 <button type="submit"
                     class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Simpan</button>

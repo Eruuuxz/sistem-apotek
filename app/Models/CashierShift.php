@@ -44,4 +44,8 @@ class CashierShift extends Model
     {
         return $this->hasMany(Penjualan::class, 'cashier_shift_id');
     }
+    public function penjualan()
+{
+    return $this->hasMany(Penjualan::class);
+}
 }

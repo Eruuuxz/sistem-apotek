@@ -12,8 +12,8 @@ class UserController extends Controller
 {
     public function index()
     {
-        // Hanya tampilkan user dengan role 'kasir'
-        $users = User::where('role', 'kasir')->paginate(10);
+        // Tampilkan user dengan role 'kasir' dan 'admin'
+        $users = User::whereIn('role', ['kasir', 'admin'])->paginate(10);
         return view('managementuser.index', compact('users'));
     }
 
@@ -29,6 +29,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
+            'role' => 'required|in:kasir,admin', // Validasi role
             'cabang_id' => 'nullable|exists:cabang,id', // Validasi cabang_id
         ]);
 
@@ -36,34 +37,26 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'kasir', // Default role adalah kasir
+            'role' => $request->role, // Ambil role dari request
             'cabang_id' => $request->cabang_id,
         ]);
 
-        return redirect()->route('users.index')->with('success', 'Kasir berhasil ditambahkan.');
+        return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan.');
     }
 
     public function edit(User $user)
     {
-        // Pastikan hanya admin yang bisa mengedit kasir
-        if ($user->role !== 'kasir') {
-            abort(403, 'Anda tidak diizinkan mengedit pengguna dengan peran ini.');
-        }
         $cabangs = Cabang::all();
         return view('managementuser.edit', compact('user', 'cabangs'));
     }
 
     public function update(Request $request, User $user)
     {
-        // Pastikan hanya admin yang bisa mengupdate kasir
-        if ($user->role !== 'kasir') {
-            abort(403, 'Anda tidak diizinkan mengupdate pengguna dengan peran ini.');
-        }
-
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'password' => 'nullable|min:6|confirmed', // Password opsional saat update
+            'role' => 'required|in:kasir,admin',
             'cabang_id' => 'nullable|exists:cabang,id',
         ]);
 
@@ -72,19 +65,16 @@ class UserController extends Controller
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
         }
+        $user->role = $request->role;
         $user->cabang_id = $request->cabang_id;
         $user->save();
 
-        return redirect()->route('users.index')->with('success', 'Kasir berhasil diperbarui.');
+        return redirect()->route('users.index')->with('success', 'User berhasil diperbarui.');
     }
 
     public function destroy(User $user)
     {
-        // Pastikan hanya admin yang bisa menghapus kasir
-        if ($user->role !== 'kasir') {
-            abort(403, 'Anda tidak diizinkan menghapus pengguna dengan peran ini.');
-        }
         $user->delete();
-        return redirect()->route('users.index')->with('success', 'Kasir berhasil dihapus.');
+        return redirect()->route('users.index')->with('success', 'User berhasil dihapus.');
     }
 }

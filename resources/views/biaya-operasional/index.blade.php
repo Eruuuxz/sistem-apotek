@@ -17,7 +17,6 @@
         </div>
     @endif
 
-    {{-- Filter Bulan --}}
     <div class="bg-white p-4 rounded-lg shadow-md mb-6">
         <form action="{{ route('biaya-operasional.index') }}" method="GET" class="flex items-center space-x-4">
             <label for="bulan" class="font-medium">Filter Bulan:</label>
@@ -31,7 +30,8 @@
             <thead class="bg-gray-100">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Biaya</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keterangan</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah</th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
@@ -40,7 +40,8 @@
                 @forelse ($data as $item)
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ $item->deskripsi }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ $item->jenis_biaya }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ $item->keterangan }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">Rp {{ number_format($item->jumlah, 0, ',', '.') }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <a href="{{ route('biaya-operasional.edit', $item->id) }}" class="text-indigo-600 hover:text-indigo-900 transition">Edit</a>
@@ -53,7 +54,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">Tidak ada data biaya operasional.</td>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">Tidak ada data biaya operasional.</td>
                     </tr>
                 @endforelse
             </tbody>
