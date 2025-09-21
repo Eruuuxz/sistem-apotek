@@ -51,10 +51,9 @@ class POSController extends Controller
         $totalSubtotalBersih = 0;
         $totalPpn = 0;
         foreach ($cart as $item) {
-            $hargaJualBersihPerUnit = $item['harga']; // Asumsi harga di cart adalah harga jual
-            if ($item['ppn_included'] && $item['ppn_rate'] > 0) {
-                $hargaJualBersihPerUnit = $item['harga'] / (1 + $item['ppn_rate'] / 100);
-            }
+            // Menggunakan logika baru: asumsikan harga sudah termasuk PPN, ekstrak PPN dari harga jual
+            $ppnRate = $item['ppn_rate'] ?? 0;
+            $hargaJualBersihPerUnit = $item['harga'] / (1 + $ppnRate / 100);
             $ppnAmountPerItem = $item['harga'] - $hargaJualBersihPerUnit;
 
             $totalSubtotalBersih += $hargaJualBersihPerUnit * $item['qty'];
@@ -65,19 +64,20 @@ class POSController extends Controller
         $diskonValue = session('diskon_value', 0);
 
         $diskonAmount = 0;
+        $totalSebelumDiskon = $totalSubtotalBersih + $totalPpn;
         if ($diskonType === 'persen') {
-            // Diskon diterapkan pada subtotal bersih (tanpa PPN)
-            $diskonAmount = $totalSubtotalBersih * ($diskonValue / 100);
+            // Perbaikan: Diskon persentase diterapkan pada total keseluruhan
+            $diskonAmount = $totalSebelumDiskon * ($diskonValue / 100);
         } else {
             $diskonAmount = $diskonValue;
         }
 
-        $totalAkhir = max($totalSubtotalBersih + $totalPpn - $diskonAmount, 0);
+        $totalAkhir = max($totalSebelumDiskon - $diskonAmount, 0);
 
         $members = Pelanggan::orderBy('nama')->get();
         $totalSales = Penjualan::where('cashier_shift_id', $activeShift->id)->sum('total');
 
-        return view('kasir.pos', compact('obat', 'cart', 'totalSubtotalBersih', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members', 'activeShift', 'totalSales', 'totalPpn'));
+        return view('kasir.pos', compact('obat', 'cart', 'totalSubtotalBersih', 'diskonType', 'diskonValue', 'diskonAmount', 'totalAkhir', 'members', 'activeShift', 'totalPpn'));
     }
 
     /**
@@ -162,7 +162,7 @@ class POSController extends Controller
             return back()->with('error', 'Stok ' . $obat->nama . ' tidak cukup dari batch yang tersedia. Stok saat ini: ' . $obat->stok);
         }
 
-        // Ambil PPN rate dan ppn_included dari objek obat
+        // Ambil PPN rate dari objek obat
         $ppnRate = $obat->ppn_rate ?? 0;
         $ppnIncluded = $obat->ppn_included ?? false;
 
@@ -318,11 +318,10 @@ class POSController extends Controller
             if ($obat->is_psikotropika) {
                 $hasPsikotropika = true;
             }
-
-            $hargaJualBersihPerUnit = $item['harga'];
-            if ($obat->ppn_included && $obat->ppn_rate > 0) {
-                $hargaJualBersihPerUnit = $item['harga'] / (1 + $obat->ppn_rate / 100);
-            }
+            
+            // Logika baru: asumsikan harga sudah termasuk PPN, ekstrak PPN dari harga jual
+            $ppnRate = $obat->ppn_rate ?? 0;
+            $hargaJualBersihPerUnit = $item['harga'] / (1 + $ppnRate / 100);
             $ppnAmountPerItem = $item['harga'] - $hargaJualBersihPerUnit;
 
             $totalSubtotalBersih += $hargaJualBersihPerUnit * $item['qty'];
@@ -332,14 +331,16 @@ class POSController extends Controller
         $diskonType = $r->input('diskon_type', 'nominal');
         $diskonValue = (float)$r->input('diskon_value', 0);
         $diskonAmount = 0;
-
+        
+        $totalSebelumDiskon = $totalSubtotalBersih + $totalPpn;
         if ($diskonType === 'persen') {
-            $diskonAmount = $totalSubtotalBersih * ($diskonValue / 100);
+            // Perbaikan: Diskon persentase diterapkan pada total keseluruhan
+            $diskonAmount = $totalSebelumDiskon * ($diskonValue / 100);
         } else {
             $diskonAmount = $diskonValue;
         }
 
-        $finalTotal = max($totalSubtotalBersih + $totalPpn - $diskonAmount, 0);
+        $finalTotal = max($totalSebelumDiskon - $diskonAmount, 0);
 
         $validated = $r->validate([
             'nama_pelanggan' => 'required|string|max:255',
@@ -361,8 +362,8 @@ class POSController extends Controller
         $penjualan = null;
 
         $activeShift = CashierShift::where('user_id', Auth::id())
-                                 ->where('status', 'open')
-                                 ->first();
+                                   ->where('status', 'open')
+                                   ->first();
 
         if (!$activeShift) {
             return back()->with('error', 'Anda tidak memiliki shift yang sedang berjalan. Silakan mulai shift terlebih dahulu.');
@@ -412,10 +413,9 @@ class POSController extends Controller
                 }
                 $hpp = $totalQtyUsed > 0 ? $totalHPP / $totalQtyUsed : $obat->harga_dasar;
                 
-                $hargaJualBersihPerItem = $item['harga'];
-                if ($obat->ppn_included && $obat->ppn_rate > 0) {
-                    $hargaJualBersihPerItem = $item['harga'] / (1 + $obat->ppn_rate / 100);
-                }
+                // Logika baru: asumsikan harga sudah termasuk PPN, ekstrak PPN dari harga jual
+                $ppnRate = $obat->ppn_rate ?? 0;
+                $hargaJualBersihPerItem = $item['harga'] / (1 + $ppnRate / 100);
                 $ppnAmountPerItem = $item['harga'] - $hargaJualBersihPerItem;
 
                 PenjualanDetail::create([

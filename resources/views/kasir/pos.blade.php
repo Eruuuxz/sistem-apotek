@@ -450,7 +450,7 @@
 
     <script>
         $(document).ready(function () {
-            // Inisialisasi Select2 untuk pencarian pelanggan
+            // Inisialisasi Select2
             $('#member_search_select2').select2({
                 placeholder: "Cari Member...",
                 allowClear: true,
@@ -460,9 +460,7 @@
                     dataType: 'json',
                     delay: 250,
                     data: function (params) {
-                        return {
-                            q: params.term // search term
-                        };
+                        return { q: params.term };
                     },
                     processResults: function (data) {
                         return {
@@ -470,85 +468,74 @@
                                 return {
                                     text: item.nama + (item.telepon ? ' (' + item.telepon + ')' : ''),
                                     id: item.id,
-                                    data: item // Simpan seluruh objek item untuk digunakan nanti
+                                    data: item
                                 }
                             })
                         };
                     },
                     cache: true
                 },
-                minimumInputLength: 2 // Minimal 2 karakter untuk mulai mencari
+                minimumInputLength: 2
             });
 
-            // Isi otomatis field pelanggan dari member yang dipilih
             $('#member_search_select2').on('select2:select', function (e) {
-                const data = e.params.data.data; // Ambil objek data pelanggan
+                const data = e.params.data.data;
                 $('#nama_pelanggan').val(data.nama || "");
                 $('#alamat_pelanggan').val(data.alamat || "");
                 $('#telepon_pelanggan').val(data.telepon || "");
-                // Hidden input pelanggan_id sudah otomatis terisi oleh Select2
             });
 
-            // Clear form pelanggan jika pilihan member dihapus
             $('#member_search_select2').on('select2:clear', function (e) {
                 $('#nama_pelanggan').val("");
                 $('#alamat_pelanggan').val("");
                 $('#telepon_pelanggan').val("");
-                // pelanggan_id akan otomatis kosong
             });
 
             // Panggil fungsi checkPsikotropikaInCart saat halaman dimuat
             checkPsikotropikaInCart();
-            hitungTotal(); // Pastikan total dihitung ulang saat halaman dimuat
-        });
-
-        // Fungsi bantu untuk membersihkan angka dari format mata uang
-        function cleanNumber(str) {
-            return parseInt(str.replace(/[^\d]/g,'')) || 0;
-        }
-
-        // Fungsi untuk menghitung total belanja termasuk diskon
-        function hitungTotal() {
-            let subtotal = 0;
-            let totalPpn = 0;
-
-            // Iterasi melalui setiap baris di tabel keranjang
-            $('table tbody tr').each(function() {
-                // Cek apakah ini bukan baris "Keranjang kosong"
-                if ($(this).find('td').length > 1) { 
-                    const qty = parseInt($(this).find('input[name^="qty"]').val()) || 0;
-                    const hargaText = $(this).find('td:nth-child(5)').text().replace('Rp ', '').replace(/\./g, '');
-                    const harga = parseFloat(hargaText) || 0;
-                    
-                    subtotal += qty * harga;
-                    // PPN per item (misal 11%)
-                    totalPpn += (harga * 0.11) * qty;
-                }
+            hitungTotal(); // Panggil pertama kali untuk menghitung total berdasarkan nilai yang ada
+            
+            // Perbarui total setiap kali diskon berubah
+            $('#diskon_value, #diskon_type').on('input change', function() {
+                hitungTotal();
             });
 
-            // Logika diskon
-            let diskonValue = parseFloat(document.getElementById('diskon_value').value) || 0;
-            let diskonType  = document.getElementById('diskon_type').value;
+            // Perbarui kembalian setiap kali bayar berubah
+            $('#bayar_display').on('input', function() {
+                formatBayar();
+            });
+        });
+        
+        // Fungsi bantu untuk membersihkan angka dari format mata uang
+        function cleanNumber(str) {
+            return parseFloat(str.replace(/[^\d]/g, '')) || 0;
+        }
+
+        // FUNGSI INI AKAN DIUBAH TOTAL
+        function hitungTotal() {
+            // Ambil nilai dari hidden input yang sudah dihitung di backend
+            const subtotal = parseFloat(document.getElementById('total_subtotal').value) || 0;
+            const ppn = parseFloat(document.getElementById('total_ppn').value) || 0;
+            const diskonValue = parseFloat(document.getElementById('diskon_value').value) || 0;
+            const diskonType = document.getElementById('diskon_type').value;
+
             let diskonAmount = 0;
             if (diskonType === 'persen') {
+                // Diskon diterapkan pada subtotal bersih (tanpa PPN)
                 diskonAmount = subtotal * (diskonValue / 100);
             } else {
                 diskonAmount = diskonValue;
             }
 
-            let finalTotal = Math.max(subtotal + totalPpn - diskonAmount, 0);
+            let finalTotal = Math.max(subtotal + ppn - diskonAmount, 0);
 
-            // Update tampilan
-            document.getElementById('subtotal_display').value = "Rp " + subtotal.toLocaleString('id-ID');
-            document.getElementById('ppn_display').value = "Rp " + totalPpn.toLocaleString('id-ID');
+            // Update tampilan di frontend
             document.getElementById('total_display').value = "Rp " + finalTotal.toLocaleString('id-ID');
 
-            // Update hidden inputs
-            document.getElementById('total_subtotal').value = subtotal;
-            document.getElementById('total_ppn').value = totalPpn;
+            // Update hidden input total akhir
             document.getElementById('total_hidden').value = finalTotal;
             
-            // hitung ulang kembalian juga
+            // Hitung ulang kembalian
             hitungKembalian();
         }
 
@@ -556,8 +543,8 @@
         function formatBayar() {
             let input = document.getElementById('bayar_display');
             let hidden = document.getElementById('bayar');
-
             let value = input.value.replace(/\D/g, '');
+
             if (!value) {
                 hidden.value = 0;
                 input.value = "";
@@ -565,9 +552,11 @@
                 return;
             }
 
-            hidden.value = parseInt(value, 10);
-            input.value = 'Rp ' + hidden.value.toLocaleString('id-ID');
-
+            // Perbaiki bug: Gunakan value.replace untuk menghilangkan leading zeros
+            value = parseInt(value, 10);
+            hidden.value = value;
+            input.value = 'Rp ' + value.toLocaleString('id-ID');
+            
             hitungKembalian();
         }
 
@@ -577,30 +566,32 @@
             let bayar = parseFloat(document.getElementById('bayar').value) || 0;
             let kembalian = bayar - total;
 
-            document.getElementById('kembalian').value = 'Rp ' +
-                (kembalian > 0 ? kembalian.toLocaleString('id-ID') : "0");
+            document.getElementById('kembalian').value = 'Rp ' + (kembalian > 0 ? kembalian.toLocaleString('id-ID') : "0");
         }
 
-        // Fungsi untuk memeriksa apakah ada obat psikotropika di keranjang
+        // --- Fungsi lainnya tidak berubah ---
         function checkPsikotropikaInCart() {
-            const ktpInputGroup = document.getElementById('ktp-input-group');
-            let hasPsikotropika = false;
+             const ktpInputGroup = document.getElementById('ktp-input-group');
+             // Cek apakah tabel keranjang tidak kosong
+             const cartRows = $('table tbody tr').filter(function() {
+                 return $(this).find('td').length > 1;
+             });
+             let hasPsikotropika = false;
+             cartRows.each(function() {
+                 if ($(this).data('is-psikotropika') === true || $(this).data('is-psikotropika') === 'true') {
+                     hasPsikotropika = true;
+                     return false;
+                 }
+             });
 
-            $('table tbody tr').each(function() {
-                if ($(this).data('is-psikotropika') === true || $(this).data('is-psikotropika') === 'true') {
-                    hasPsikotropika = true;
-                    return false; // Keluar dari loop each
-                }
-            });
-
-            if (hasPsikotropika) {
-                ktpInputGroup.style.display = 'grid'; // Tampilkan input KTP
-                document.getElementById('no_ktp').setAttribute('required', 'required');
-            } else {
-                ktpInputGroup.style.display = 'none'; // Sembunyikan input KTP
-                document.getElementById('no_ktp').removeAttribute('required');
-                document.getElementById('no_ktp').value = ''; // Kosongkan nilai KTP
-            }
+             if (hasPsikotropika) {
+                 ktpInputGroup.style.display = 'grid';
+                 document.getElementById('no_ktp').setAttribute('required', 'required');
+             } else {
+                 ktpInputGroup.style.display = 'none';
+                 document.getElementById('no_ktp').removeAttribute('required');
+                 document.getElementById('no_ktp').value = '';
+             }
         }
 
         // --- AUTOCOMPLETE SEARCH OBAT ---
