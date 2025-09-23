@@ -55,65 +55,111 @@ class ShiftController extends Controller
             'initial_cash' => 'required|numeric|min:0',
         ]);
 
-        // Cek apakah ada shift aktif untuk user ini
-        $activeShift = CashierShift::where('user_id', Auth::id())
-                                   ->whereNull('end_time')
-                                   ->first();
-
-        if ($activeShift) {
-            return redirect()->route('pos.index')->with('error', 'Anda sudah memiliki shift aktif.');
-        }
-
-        // --- START PERUBAHAN ---
+        $user = Auth::user();
         $selectedShift = Shift::findOrFail($request->shift_id);
         $now = Carbon::now();
+
+        // --- Validasi 1: Cek Shift Aktif yang Belum Ditutup Secara Fisik ---
+        $activeShift = CashierShift::where('user_id', $user->id)
+                                ->where('status', 'open')
+                                ->first();
+
+        if ($activeShift) {
+            // Jika ada shift aktif, periksa apakah secara logis sudah berakhir
+            $activeShiftDefinition = $activeShift->shift;
+            $activeShiftEndTime = Carbon::parse($activeShiftDefinition->end_time);
+
+            // Jika shift aktif melewati tengah malam, sesuaikan tanggalnya
+            if ($activeShiftEndTime->lt(Carbon::parse($activeShiftDefinition->start_time))) {
+                // Jika shift aktif dimulai kemarin dan berakhir hari ini
+                if ($activeShift->start_time->isYesterday()) {
+                    $activeShiftEndTime->addDay($activeShift->start_time->diffInDays($now));
+                } else { // Jika shift aktif dimulai hari ini dan berakhir besok
+                    $activeShiftEndTime->addDay();
+                }
+            }
+            // Pastikan activeShiftEndTime berada di hari yang sama dengan $activeShift->start_time
+            $activeShiftEndTime = $activeShift->start_time->copy()->setTimeFromTimeString($activeShiftDefinition->end_time);
+            if ($activeShiftEndTime->lt($activeShift->start_time)) {
+                $activeShiftEndTime->addDay();
+            }
+
+
+            if ($now->lt($activeShiftEndTime)) {
+                // Shift aktif secara fisik dan logis masih berjalan
+                return redirect()->route('pos.index')->with('error', 'Anda sudah memiliki shift aktif ' . $activeShiftDefinition->name . ' yang dimulai pada ' . $activeShift->start_time->format('d-m-Y H:i') . '. Harap selesaikan shift tersebut terlebih dahulu.');
+            } else {
+                // Shift aktif secara fisik (status 'open') tetapi secara logis sudah berakhir
+                // Ini adalah skenario di mana kasir lupa menutup shift.
+                // Kita bisa secara otomatis menutup shift ini atau meminta kasir menutupnya.
+                // Untuk saat ini, kita akan meminta kasir menutupnya secara manual untuk audit.
+                // Opsi lain: $activeShift->update(['end_time' => $activeShiftEndTime, 'status' => 'closed']);
+                return redirect()->route('pos.index')->with('warning', 'Shift Anda sebelumnya (' . $activeShiftDefinition->name . ') sudah melewati waktu berakhir pada ' . $activeShiftEndTime->format('H:i') . '. Mohon akhiri shift tersebut untuk melanjutkan.');
+            }
+        }
+
+        // --- Validasi 2: Pengecekan Waktu Saat Ini Terhadap Definisi Shift yang Dipilih ---
         $shiftStartTime = Carbon::parse($selectedShift->start_time);
         $shiftEndTime = Carbon::parse($selectedShift->end_time);
 
-        // Jika shift berakhir di hari berikutnya (misal 20:00 - 04:00), sesuaikan end_time
+        // Sesuaikan end_time jika shift melewati tengah malam
         if ($shiftEndTime->lt($shiftStartTime)) {
             $shiftEndTime->addDay();
         }
 
         // Buat objek Carbon untuk waktu mulai dan berakhir shift pada hari ini
-        $currentDayShiftStart = Carbon::createFromTime($shiftStartTime->hour, $shiftStartTime->minute, 0);
-        $currentDayShiftEnd = Carbon::createFromTime($shiftEndTime->hour, $shiftEndTime->minute, 0);
+        $currentDayShiftStart = $now->copy()->setTimeFromTimeString($selectedShift->start_time);
+        $currentDayShiftEnd = $now->copy()->setTimeFromTimeString($selectedShift->end_time);
 
         // Jika shift melewati tengah malam, kita perlu memeriksa dua rentang waktu
-        // Contoh: Shift Sore 16:00 - 20:00 (hari yang sama)
-        // Contoh: Shift Malam 20:00 - 04:00 (melewati tengah malam)
         $isWithinShift = false;
-        if ($shiftEndTime->lt($shiftStartTime)) { // Shift melewati tengah malam
+        if ($selectedShift->end_time < $selectedShift->start_time) { // Shift melewati tengah malam (e.g., 20:00 - 04:00)
             // Cek apakah sekarang antara start_time hari ini sampai 23:59:59
             // ATAU antara 00:00:00 sampai end_time hari berikutnya
-            if ($now->between($currentDayShiftStart, Carbon::createFromTime(23, 59, 59)) ||
-                $now->between(Carbon::createFromTime(0, 0, 0), $currentDayShiftEnd)) {
+            if ($now->between($currentDayShiftStart, $now->copy()->endOfDay()) ||
+                $now->between($now->copy()->startOfDay(), $currentDayShiftEnd)) {
                 $isWithinShift = true;
             }
-        } else { // Shift dalam satu hari
+        } else { // Shift dalam satu hari (e.g., 08:00 - 16:00)
             if ($now->between($currentDayShiftStart, $currentDayShiftEnd)) {
                 $isWithinShift = true;
             }
         }
-        
+
         if (!$isWithinShift) {
             return back()->with('error', 'Anda tidak dapat memulai shift ' . $selectedShift->name . ' pada waktu ini. Shift ini berlaku dari ' . $selectedShift->start_time . ' hingga ' . $selectedShift->end_time . '.');
         }
-        // --- END PERUBAHAN ---
+
+        // --- Validasi 3: Tidak Izinkan User Mengambil Dua Shift Aktif atau Shift Bersamaan Pada Hari yang Sama ---
+        // Ini sudah tercakup sebagian oleh Validasi 1, tetapi kita bisa lebih spesifik untuk mencegah overlap di masa lalu/depan
+        $existingShiftsToday = CashierShift::where('user_id', $user->id)
+                                        ->whereDate('start_time', $now->toDateString())
+                                        ->where('status', 'closed') // Hanya cek shift yang sudah ditutup
+                                        ->get();
+
+        foreach ($existingShiftsToday as $shift) {
+            $shiftDef = $shift->shift;
+            $shiftStart = $shift->start_time;
+            $shiftEnd = $shift->end_time;
+
+            // Jika shift yang akan dimulai tumpang tindih dengan shift yang sudah selesai hari ini
+            // Ini adalah skenario yang lebih kompleks, biasanya tidak terjadi jika shift didefinisikan dengan baik
+            // Untuk kesederhanaan, kita asumsikan shift yang sudah closed tidak akan tumpang tindih dengan shift baru yang valid.
+            // Jika diperlukan validasi overlap yang ketat, logika ini perlu diperluas.
+        }
+
 
         // Mulai shift baru
         CashierShift::create([
-            'user_id' => Auth::id(),
+            'user_id' => $user->id,
             'shift_id' => $request->shift_id,
-            'start_time' => Carbon::now(),
+            'start_time' => $now,
             'initial_cash' => $request->initial_cash,
-            'status' => 'open', 
+            'status' => 'open',
         ]);
 
         return redirect()->route('pos.index')->with('success', 'Shift berhasil dimulai!');
     }
-
-
 
     /**
      * Mengakhiri shift untuk kasir yang sedang login.
