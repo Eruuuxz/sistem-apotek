@@ -25,7 +25,6 @@
 <body class="bg-gray-100 flex min-h-screen font-sans">
 
 
-    <!-- Sidebar -->
     <aside class="w-64 bg-blue-900 text-white flex flex-col shadow-xl fixed inset-y-0 left-0 z-20">
         @php
             $stokHabis = \App\Models\Obat::where('stok', 0)->count();
@@ -37,7 +36,6 @@
             $stokHampirExpired = \App\Models\Obat::whereNotNull('expired_date')
                 ->whereBetween('expired_date', [now(), now()->addMonth()])->count();
         @endphp
-        <!-- Brand -->
         <div class="p-6 text-2xl font-bold border-b border-blue-800 flex items-center justify-center tracking-wide">
             Apotek <span class="text-blue-300 ml-1">LIZ Farma 02</span>
         </div>
@@ -76,18 +74,6 @@
                         viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
-
-                    {{-- Badge notif total --}}
-                    @php
-                        $totalNotif = $stokMenipis + $stokHabis + $stokHampirExpired + $stokExpired;
-                    @endphp
-                    @if($totalNotif > 0)
-                        <span
-                            class="absolute -top-1 right-2 flex items-center justify-center bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md">
-                            <i data-feather="bell" class="w-3 h-3 mr-0.5"></i>
-                            {{ $totalNotif }}
-                        </span>
-                    @endif
                 </button>
 
 
@@ -110,6 +96,10 @@
                                                                                              {{ request()->is('obat/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
                         Tambah Obat
                     </a>
+                    <a href="{{ route('stock_movement.detail') }}"
+                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
+                                                                                             {{ request()->is('stock-movement/detail') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                        Analisis Pergerakan Stok    
 
                     <a href="{{ route('obat.index', ['filter' => 'menipis']) }}"
                         class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
@@ -309,14 +299,6 @@
                 <span class="ml-3 flex-1">Laporan</span>
             </a>
 
-            <!-- {{-- NEW: Stock Movement --}}
-            {{-- <a href="{{ route('stock.movement') }}" --}}
-                {{-- class="flex items-center px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors {{ request()->is('stock-movement*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}"> --}}
-                <i data-feather="trending-up" class="w-5 h-5"></i>
-                <span class="ml-3 flex-1">Stock Movement</span>
-            </a>
-            {{-- END NEW --}} -->
-
             <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">User</p>
 
             <div>
@@ -353,36 +335,38 @@
     </script>
 
 
-    <!-- Main Content -->
     <div class="flex-1 flex flex-col ml-64">
-        <!-- Header -->
         <header
             class="bg-white shadow-md p-4 flex justify-between items-center border-b border-gray-200 sticky top-0 z-20">
-            <!-- Judul Halaman -->
-            <h1 class="text-2xl font-bold text-gray-800 tracking-wide">
-                @yield('title', 'Dashboard')
-            </h1>
+            <div class="flex items-center gap-4">
+                {{-- Tombol Kembali --}}
+                @if (!request()->routeIs('dashboard'))
+                    <a href="{{ url()->previous() }}" title="Kembali" class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-full transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </a>
+                @endif
+                <h1 class="text-2xl font-bold text-gray-800 tracking-wide">
+                    @yield('title', 'Dashboard')
+                </h1>
+            </div>
 
-            <!-- Info user & aksi -->
             <div class="flex items-center space-x-4">
-                <!-- Clock -->
                 <div id="clock" class="text-sm text-gray-500 font-medium"></div>
 
                 @auth
-                    <!-- Role -->
                     <span
                         class="text-sm text-gray-600 px-3 py-1 bg-gray-100 rounded-full border border-gray-200 hidden md:inline-block">
                         {{ ucfirst(Auth::user()->role) }}
                     </span>
 
-                    <!-- Nama user dengan avatar -->
                     <div class="flex items-center space-x-2 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
                         <span class="text-gray-700 font-medium">{{ Auth::user()->name }}</span>
                         <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=0D8ABC&color=fff&size=32"
                             alt="Avatar" class="w-8 h-8 rounded-full">
                     </div>
 
-                    <!-- Logout button -->
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
                         <button type="submit"
@@ -394,7 +378,6 @@
             </div>
         </header>
 
-        <!-- Script Clock -->
         <script>
             function updateClock() {
                 const now = new Date();
@@ -406,7 +389,6 @@
             updateClock();
         </script>
 
-        <!-- Page Content -->
         <main class="p-6 flex-1 overflow-auto">
             @yield('content')
         </main>

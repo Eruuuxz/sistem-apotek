@@ -97,6 +97,8 @@ Route::middleware('auth')->group(function () {
         Route::post('stock-opname/{stock_opname}/reject', [StockOpnameController::class, 'reject'])->name('stock_opname.reject');
         Route::get('stock-opname/{stock_opname}/pdf', [StockOpnameController::class, 'generatePdf'])->name('stock_opname.pdf');
         
+        Route::get('/stock-movement/detail', [StockMovementController::class, 'detail'])->name('stock_movement.detail');
+        
         // --- Manajemen Shift ---
         Route::resource('shifts', ShiftController::class)->except(['show', 'edit', 'update', 'destroy']);
         Route::get('shifts/summary', [ShiftController::class, 'summary'])->name('shifts.summary');

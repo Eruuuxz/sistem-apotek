@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\StockMovementService;
+use App\Models\Obat;
 
 class StockMovementController extends Controller
 {
@@ -22,6 +23,7 @@ class StockMovementController extends Controller
         $period = $request->get('period', '3'); // default 3 bulan
         $summary = $this->stockMovementService->getSummaryCount($period);
 
+        // Note: Pastikan view 'dashboard.stock_movement' ada jika fungsi ini digunakan
         return view('dashboard.stock_movement', compact('summary', 'period'));
     }
 
@@ -45,13 +47,12 @@ class StockMovementController extends Controller
             });
         }
 
-        // Pagination manual (optional, bisa pakai Laravel paginator jika data besar)
+        // Pagination manual
         $page = $request->get('page', 1);
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
         $pagedData = array_slice($data, $offset, $perPage);
 
-        // Buat paginator manual
         $total = count($data);
         $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
             $pagedData,
@@ -61,7 +62,8 @@ class StockMovementController extends Controller
             ['path' => url()->current(), 'query' => $request->query()]
         );
 
-        return view('obat.stock_movement_detail', [
+        // PERBAIKAN: Menggunakan path view yang konsisten dengan controller lain
+        return view('master.obat.stock_movement_detail', [
             'data' => $paginator,
             'period' => $period,
             'search' => $search,

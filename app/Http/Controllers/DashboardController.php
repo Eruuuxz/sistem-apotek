@@ -3,11 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\{Obat, Supplier, Penjualan};
+use App\Services\StockMovementService; // 1. Import service
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    /**
+     * @var StockMovementService
+     */
+    protected $stockMovementService;
+
+    // 2. Gunakan constructor untuk dependency injection
+    public function __construct(StockMovementService $stockMovementService)
+    {
+        $this->stockMovementService = $stockMovementService;
+    }
+
     public function index()
     {
         $totalObat = Obat::where('stok', '>', 0)->count();
@@ -16,8 +28,13 @@ class DashboardController extends Controller
         $stokMenipis = Obat::whereBetween('stok', [1, 10])->count();
         $stokHabis = Obat::where('stok', 0)->count();
 
+        // 3. Tambah query untuk obat yang akan expired dalam 1 bulan
+        $obatHampirExpired = Obat::whereNotNull('expired_date')
+                                 ->whereBetween('expired_date', [Carbon::now(), Carbon::now()->addMonth()])
+                                 ->count();
+
         //penjualan 7 hari terakhir
-        $startDate = Carbon::now()->subDays(6)->startOfDay(); // 6 hari lalu + hari ini = 7 hari
+        $startDate = Carbon::now()->subDays(6)->startOfDay();
         $endDate = Carbon::now()->endOfDay();
 
         $penjualanHarian = Penjualan::selectRaw('DATE(tanggal) as tgl, SUM(total) as total')
@@ -26,7 +43,7 @@ class DashboardController extends Controller
             ->orderBy('tgl', 'asc')
             ->get();
 
-            //obat terlaris bulan ini
+        //obat terlaris bulan ini
         $bulanIni = Carbon::now()->month;
         $tahunIni = Carbon::now()->year;
 
@@ -40,6 +57,9 @@ class DashboardController extends Controller
             ->orderByDesc('total_terjual')
             ->limit(5)
             ->get();
+        
+        // 4. Panggil service untuk mendapatkan ringkasan stock movement (periode 3 bulan)
+        $stockMovementSummary = $this->stockMovementService->getSummaryCount(3);
 
 
         return view('dashboard', compact(
@@ -49,7 +69,9 @@ class DashboardController extends Controller
             'stokMenipis',
             'penjualanHarian',
             'obatTerlaris',
-            'stokHabis'
+            'stokHabis',
+            'obatHampirExpired', // 5. Kirim data baru ke view
+            'stockMovementSummary'
         ));
     }
 }

@@ -93,9 +93,19 @@
     <div class="flex-1 flex flex-col ml-64">
         <header
             class="bg-white shadow-md p-4 flex justify-between items-center border-b border-gray-200 sticky top-0 z-20">
-            <h1 class="text-2xl font-bold text-gray-800 tracking-wide">
-                @yield('title', 'Dashboard')
-            </h1>
+            <div class="flex items-center gap-4">
+                {{-- Tombol Kembali --}}
+                @if (!request()->routeIs('pos.index'))
+                    <a href="{{ url()->previous() }}" title="Kembali" class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-full transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </a>
+                @endif
+                <h1 class="text-2xl font-bold text-gray-800 tracking-wide">
+                    @yield('title', 'Dashboard')
+                </h1>
+            </div>
 
             <div class="flex items-center space-x-4">
                 <div id="clock" class="text-sm text-gray-500 font-medium"></div>

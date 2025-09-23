@@ -32,14 +32,11 @@
                         <th class="px-4 py-3 cursor-pointer" onclick="sortTable(0)">Kode</th>
                         <th class="px-4 py-3 cursor-pointer" onclick="sortTable(1)">Nama</th>
                         <th class="px-4 py-3 cursor-pointer" onclick="sortTable(2)">Kategori</th>
-                        <th class="px-4 py-3 cursor-pointer" onclick="sortTable(3)">Sediaan</th> {{-- NEW --}}
-                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(4)">Stok</th> {{-- Index berubah --}}
-                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(5)">Harga Dasar</th> {{-- Index berubah --}}
-                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(6)">Untung (%)</th> {{-- Index berubah --}}
-                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(7)">Harga Jual</th> {{-- Index berubah --}}
-                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(8)">Keuntungan/Unit</th> {{-- Index berubah --}}
-                        <th class="px-4 py-3 cursor-pointer" onclick="sortTable(9)">Supplier</th> {{-- Index berubah --}}
-                        <th class="px-2 py-1 cursor-pointer" onclick="sortTable(10)">Kadaluarsa</th> {{-- Index berubah --}}
+                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(3)">Total Stok</th>
+                        <th class="px-4 py-3">Batch / ED / Stok</th> {{-- NEW: Kolom Batch --}}
+                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(4)">Harga Jual</th>
+                        <th class="px-4 py-3 cursor-pointer" onclick="sortTable(5)">Supplier</th>
+                        <th class="px-2 py-1 cursor-pointer" onclick="sortTable(6)">Kadaluarsa Utama</th>
                         <th class="px-4 py-3">Aksi</th>
                     </tr>
                 </thead>
@@ -52,21 +49,29 @@
                             <td class="border px-4 py-3">{{ $obat->kode }}</td>
                             <td class="border px-4 py-3">{{ $obat->nama }}</td>
                             <td class="border px-4 py-3">{{ $obat->kategori }}</td>
-                            <td class="border px-4 py-3">{{ $obat->sediaan ?? '-' }}</td> {{-- NEW --}}
                             <td class="border px-4 py-3 text-right">
-                                {{ $obat->stok_formatted }} {{-- Menggunakan accessor baru --}}
+                                {{ $obat->stok_formatted }}
                                 @if($obat->stok == 0)
                                     <span class="ml-2 px-2 py-1 text-xs bg-red-600 text-white rounded-full">Habis</span>
                                 @elseif($obat->stok > 0 && $obat->stok <= 10)
                                     <span class="ml-2 px-2 py-1 text-xs bg-yellow-500 text-white rounded-full">Menipis</span>
                                 @endif
                             </td>
-                            <td class="border px-4 py-3 text-right">Rp {{ number_format($obat->harga_dasar, 0, ',', '.') }}</td>
-                            <td class="border px-4 py-3 text-right">{{ $obat->persen_untung }}%</td>
-                            <td class="border px-4 py-3 text-right">Rp {{ number_format($obat->harga_jual, 0, ',', '.') }}</td>
-                            <td class="border px-4 py-3 text-right">Rp
-                                {{ number_format($obat->harga_jual - $obat->harga_dasar, 0, ',', '.') }}
+                            {{-- NEW: Tampilkan data batch --}}
+                            <td class="border px-4 py-3 text-xs">
+                                @if($obat->batches->isNotEmpty())
+                                    @foreach($obat->batches as $batch)
+                                        <div class="whitespace-nowrap">
+                                            <span class="font-semibold">{{ $batch->no_batch }}</span> /
+                                            <span>{{ $batch->expired_date ? $batch->expired_date->format('d-m-Y') : '-' }}</span> /
+                                            <span class="font-bold text-blue-600">{{ $batch->stok_saat_ini }}</span>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    -
+                                @endif
                             </td>
+                            <td class="border px-4 py-3 text-right">Rp {{ number_format($obat->harga_jual, 0, ',', '.') }}</td>
                             <td class="border px-4 py-3">{{ $obat->supplier->nama ?? '-' }}</td>
                             <td class="border px-4 py-3 text-center">
                                 @if($obat->expired_date)
@@ -121,17 +126,15 @@
             const tbody = table.tBodies[0];
             const rows = Array.from(tbody.querySelectorAll("tr"));
 
-            // toggle arah sort
             if (forceAsc) {
                 sortDirection[colIndex] = true;
             } else {
                 sortDirection[colIndex] = !sortDirection[colIndex];
             }
 
-            // Reset icon semua header
             table.querySelectorAll("th").forEach((th, i) => {
                 th.innerHTML = th.innerHTML.replace(/ ▲| ▼/g, "");
-                if (i === colIndex) {
+                if (i === colIndex && th.classList.contains('cursor-pointer')) { // Hanya tambah icon ke kolom yang bisa disort
                     th.innerHTML += sortDirection[colIndex] ? " ▲" : " ▼";
                 }
             });
@@ -140,24 +143,22 @@
                 let valA = a.cells[colIndex].innerText.trim();
                 let valB = b.cells[colIndex].innerText.trim();
 
-                // --- Kolom Kadaluarsa (index 10 sekarang) ---
-                if (colIndex === 10) { 
+                // --- Kolom Kadaluarsa (indeks 7 sekarang) ---
+                if (colIndex === 6) { 
                     valA = valA.split(" ")[0];
                     valB = valB.split(" ")[0];
                     let dateA = valA === "-" ? null : new Date(valA.split("-").reverse().join("-"));
                     let dateB = valB === "-" ? null : new Date(valB.split("-").reverse().join("-"));
 
                     if (!dateA && !dateB) return 0;
-                    if (!dateA && dateB) return -1; // kosong di atas
+                    if (!dateA && dateB) return -1;
                     if (dateA && !dateB) return 1;
                     return (dateA - dateB) * (sortDirection[colIndex] ? 1 : -1);
                 }
 
-                // --- Angka (Stok, Harga Dasar, Untung, Harga Jual, Keuntungan/Unit) ---
-                // Indeks kolom angka: 4 (Stok), 5 (Harga Dasar), 6 (Untung), 7 (Harga Jual), 8 (Keuntungan/Unit)
-                if ([4, 5, 6, 7, 8].includes(colIndex)) { 
-                    // Khusus untuk kolom stok, perlu parsing yang lebih kompleks
-                    if (colIndex === 4) {
+                // --- Angka (Stok, Harga Jual) ---
+                if ([3, 4].includes(colIndex)) { 
+                    if (colIndex === 3) { // Stok
                         valA = valA.split(' ')[0];
                         valB = valB.split(' ')[0];
                     }
@@ -173,7 +174,7 @@
                 valA = valA.toLowerCase();
                 valB = valB.toLowerCase();
                 if (!valA && !valB) return 0;
-                if (!valA && valB) return -1; // kosong di atas
+                if (!valA && valB) return -1;
                 if (valA && !valB) return 1;
                 if (valA < valB) return sortDirection[colIndex] ? -1 : 1;
                 if (valA > valB) return sortDirection[colIndex] ? 1 : -1;
@@ -184,7 +185,6 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            // popup konfirmasi hapus
             const popup = document.getElementById("confirm-popup");
             const cancelBtn = document.getElementById("cancel-btn");
             const confirmBtn = document.getElementById("confirm-btn");
@@ -207,12 +207,10 @@
             confirmBtn.addEventListener("click", () => {
                 if (formToSubmit) formToSubmit.submit();
             });
+            
+            // Default sort by Kadaluarsa ASC
+            sortTable(6, true);
 
-            // --- Default sort by Kadaluarsa ASC saat load ---
-            // Perbarui indeks kolom kadaluarsa dari 9 ke 10
-            sortTable(10, true);
-
-            // fitur search
             document.getElementById("searchInput").addEventListener("keyup", function () {
                 let filter = this.value.toLowerCase();
                 document.querySelectorAll("#tabel_obat tr").forEach(row => {

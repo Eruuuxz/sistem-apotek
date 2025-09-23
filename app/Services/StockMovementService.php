@@ -16,7 +16,7 @@ class StockMovementService
      */
     public function getStockMovementData(string $period = '3'): array
     {
-        $cacheKey = "stock_movement_data_{$period}m";
+        $cacheKey = "stock_movement_data_v2_{$period}m"; // v2 untuk cache baru
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($period) {
             $months = (int) $period;
@@ -24,9 +24,10 @@ class StockMovementService
 
             // Query total penjualan per obat selama periode
             $salesData = DB::table('penjualan_detail')
-                ->select('obat_id', DB::raw('SUM(qty) as total_terjual'))
-                ->where('created_at', '>=', $startDate)
-                ->groupBy('obat_id')
+                ->join('penjualan', 'penjualan_detail.penjualan_id', '=', 'penjualan.id')
+                ->select('penjualan_detail.obat_id', DB::raw('SUM(penjualan_detail.qty) as total_terjual'))
+                ->where('penjualan.tanggal', '>=', $startDate)
+                ->groupBy('penjualan_detail.obat_id')
                 ->orderByDesc('total_terjual')
                 ->get();
 
@@ -41,10 +42,11 @@ class StockMovementService
                 $contribution = $totalSales > 0 ? ($item->total_terjual / $totalSales) * 100 : 0;
                 $cumulative += $contribution;
 
-                if ($cumulative <= 20) {
-                    $status = 'Fast Moving';
-                } elseif ($cumulative <= 50) {
-                    $status = 'Slow Moving';
+                // PERBAIKAN: Menggunakan nama status yang konsisten dengan view
+                if ($cumulative <= 80) { // Prinsip Pareto 80/20
+                    $status = 'Fast-Moving';
+                } elseif ($cumulative <= 95) {
+                    $status = 'Slow-Moving';
                 } else {
                     $status = 'Dead Stock';
                 }
@@ -69,21 +71,25 @@ class StockMovementService
                 ];
             }
 
-            // Ambil metadata obat (kode, nama, kategori)
+            // Ambil metadata obat (termasuk stok)
             $obatData = DB::table('obat')
                 ->whereIn('id', array_column($classified, 'obat_id'))
                 ->get()
                 ->keyBy('id');
 
             // Gabungkan data lengkap
-            $result = array_map(function ($item) use ($obatData) {
+            $result = array_map(function ($item) use ($obatData, $months) {
                 $meta = $obatData[$item['obat_id']] ?? null;
                 return [
                     'id' => $item['obat_id'],
                     'kode' => $meta->kode ?? '-',
                     'nama' => $meta->nama ?? '-',
                     'kategori' => $meta->kategori ?? '-',
+                    // PENAMBAHAN: Menyertakan data stok
+                    'stok' => $meta->stok ?? 0,
                     'total_terjual' => $item['total_terjual'],
+                    // PENAMBAHAN: Menghitung rata-rata penjualan
+                    'avg_sales' => $months > 0 ? $item['total_terjual'] / $months : 0,
                     'status' => $item['status'],
                 ];
             }, $classified);
@@ -103,14 +109,18 @@ class StockMovementService
         $data = $this->getStockMovementData($period);
 
         $summary = [
-            'Fast Moving' => 0,
-            'Slow Moving' => 0,
-            'Dead Stock' => 0,
+            'fast_moving' => 0,
+            'slow_moving' => 0,
+            'dead_stock' => 0,
         ];
 
         foreach ($data as $item) {
-            if (isset($summary[$item['status']])) {
-                $summary[$item['status']]++;
+            if ($item['status'] === 'Fast-Moving') {
+                $summary['fast_moving']++;
+            } elseif ($item['status'] === 'Slow-Moving') {
+                $summary['slow_moving']++;
+            } else {
+                $summary['dead_stock']++;
             }
         }
 

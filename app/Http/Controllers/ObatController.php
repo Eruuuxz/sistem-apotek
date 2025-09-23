@@ -10,7 +10,8 @@ class ObatController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Obat::with('supplier'); // langsung include supplier di query
+        // MODIFIED: Eager load relasi 'batches' untuk mengambil data batch
+        $query = Obat::with('supplier', 'batches'); 
 
         // filter stok
         if ($request->filter === 'menipis') {
@@ -119,4 +120,3 @@ class ObatController extends Controller
         return response()->json($results);
     }
 }
-

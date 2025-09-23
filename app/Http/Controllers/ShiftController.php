@@ -149,7 +149,7 @@ class ShiftController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/login')->with('success', 'Shift berhasil diakhiri. Sampai jumpa!');
+        return redirect('/auth.pilih-login')->with('success', 'Shift berhasil diakhiri. Sampai jumpa!');
     }
 
     /**
