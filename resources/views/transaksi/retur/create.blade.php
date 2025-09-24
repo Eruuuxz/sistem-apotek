@@ -1,240 +1,168 @@
 @extends('layouts.admin')
 
-@section('title', 'Tambah Retur')
+@section('title', 'Tambah Retur Baru')
 
 @section('content')
-    <div class="max-w-4xl mx-auto space-y-4">
+    <div class="max-w-4xl mx-auto space-y-4" x-data="returForm()">
+        <div class="bg-white p-8 shadow-xl rounded-xl">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800">Formulir Retur Barang</h2>
+                <p class="text-sm text-gray-500">Pilih jenis retur dan ikuti langkah-langkah selanjutnya.</p>
+            </div>
 
-        <form action="{{ route('retur.store') }}" method="POST" class="bg-white shadow rounded p-6 space-y-4">
-            @csrf
+            <form action="{{ route('retur.store') }}" method="POST" class="space-y-6">
+                @csrf
 
-            {{-- Informasi Retur --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">No Retur</label>
-                    <input type="text" name="no_retur" value="{{ $noRetur }}"
-                        class="w-full border rounded px-3 py-2 bg-gray-100" readonly>
+                {{-- Step 1: Informasi Dasar --}}
+                <div class="border-t pt-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Langkah 1: Informasi Dasar Retur</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block font-medium text-gray-700 mb-1 text-sm">No Retur</label>
+                            <input type="text" name="no_retur" value="{{ $noRetur }}" class="w-full border rounded-lg px-3 py-2 bg-gray-100" readonly>
+                        </div>
+                        <div>
+                            <label class="block font-medium text-gray-700 mb-1 text-sm">Tanggal</label>
+                            <input type="datetime-local" name="tanggal" value="{{ date('Y-m-d\TH:i') }}" class="w-full border rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-gray-700 mb-1 text-sm">Jenis Retur</label>
+                            <select name="jenis" x-model="jenisRetur" class="w-full border rounded-lg px-3 py-2">
+                                <option value="">-- Pilih Jenis --</option>
+                                <option value="pembelian">Retur Pembelian (ke Supplier)</option>
+                                <option value="penjualan">Retur Penjualan (dari Customer)</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">Tanggal</label>
-                    {{-- Ubah input type menjadi datetime-local jika ingin input tanggal dan waktu --}}
-                    <input type="datetime-local" name="tanggal" value="{{ date('Y-m-d\TH:i:s') }}" class="w-full border rounded px-3 py-2">
+
+                {{-- Step 2: Pilih Transaksi --}}
+                <div class="border-t pt-6" x-show="jenisRetur" x-transition>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Langkah 2: Pilih Transaksi Sumber</h3>
+                    <div x-show="jenisRetur === 'pembelian'">
+                        <label class="block font-medium text-gray-700 mb-1">Pilih Faktur Pembelian</label>
+                        <select name="transaksi_pembelian_id" @change="fetchItems('pembelian', $event.target.value)" class="w-full border rounded-lg px-3 py-2">
+                            <option value="">-- Pilih Faktur --</option>
+                            @foreach($pembelian as $p)
+                                <option value="{{ $p->id }}">{{ $p->no_faktur_pbf ?? $p->no_faktur }} ({{ $p->supplier->nama }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div x-show="jenisRetur === 'penjualan'">
+                        <label class="block font-medium text-gray-700 mb-1">Pilih Nota Penjualan</label>
+                        <select name="transaksi_penjualan_id" @change="fetchItems('penjualan', $event.target.value)" class="w-full border rounded-lg px-3 py-2">
+                            <option value="">-- Pilih Nota --</option>
+                            @foreach($penjualan as $pj)
+                                <option value="{{ $pj->id }}">{{ $pj->no_transaksi }} ({{ $pj->pelanggan->nama ?? 'Umum' }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <input type="hidden" name="transaksi_id" x-model="transaksiId">
                 </div>
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">Jenis Retur</label>
-                    <select name="jenis" id="jenis_retur" class="w-full border rounded px-3 py-2">
-                        <option value="">-- Pilih Jenis Retur --</option>
-                        <option value="pembelian">Retur Pembelian (ke Supplier)</option>
-                        <option value="penjualan">Retur Penjualan (dari Customer)</option>
-                    </select>
+
+                {{-- Step 3: Item Retur --}}
+                <div class="border-t pt-6" x-show="items.length > 0" x-transition>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Langkah 3: Pilih Item yang Diretur</h3>
+                    <div class="overflow-x-auto border rounded-lg bg-gray-50">
+                        <table class="w-full table-auto">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-2 py-2 text-left">Nama Item</th>
+                                    <th class="px-2 py-2 text-right">Harga Satuan</th>
+                                    <th class="px-2 py-2 text-center">Qty Retur</th>
+                                    <th class="px-2 py-2 text-center">Qty Maksimal</th>
+                                    <th class="px-2 py-2 text-right">Subtotal</th>
+                                    <th class="px-2 py-2 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(item, index) in items" :key="index">
+                                    <tr class="hover:bg-gray-50 border-b">
+                                        <td class="px-2 py-2">
+                                            <input type="hidden" :name="'items[' + index + '][id]'" :value="item.id">
+                                            <span x-text="item.nama"></span>
+                                        </td>
+                                        <td class="px-2 py-2 text-right" x-text="formatRupiah(item.harga)"></td>
+                                        <td class="px-2 py-2 text-center">
+                                            <input type="number" :name="'items[' + index + '][qty]'" x-model.number="item.qty" @input="calculateSubtotal(index)" class="w-20 px-2 py-1 border rounded" min="1" :max="item.max_qty">
+                                        </td>
+                                        <td class="px-2 py-2 text-center" x-text="item.max_qty"></td>
+                                        <td class="px-2 py-2 text-right font-semibold" x-text="formatRupiah(item.subtotal)"></td>
+                                        <td class="px-2 py-2 text-center">
+                                            <button type="button" @click="removeItem(index)" class="text-red-500 hover:text-red-700">&times; Hapus</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                     <div class="text-right text-lg font-bold mt-4">
+                        Total Retur: <span x-text="formatRupiah(total)" class="text-blue-600"></span>
+                    </div>
                 </div>
-            </div>
 
-            {{-- Pilih Transaksi --}}
-            <div id="transaksi_pembelian_div" class="space-y-2 hidden">
-                <label class="block font-medium text-gray-700">Pilih Transaksi Pembelian</label>
-                <select name="transaksi_pembelian_id" id="transaksi_pembelian_id" class="w-full border rounded px-3 py-2">
-                    <option value="">-- Pilih Faktur Pembelian --</option>
-                    @foreach($pembelian as $p)
-                        <option value="{{ $p->id }}">FPB-{{ $p->no_faktur }}
-                            ({{ \Carbon\Carbon::parse($p->tanggal)->format('Y-m-d H:i:s') }})</option> {{-- Tambahkan format jam --}}
-                    @endforeach
-                </select>
-            </div>
-
-            <div id="transaksi_penjualan_div" class="space-y-2 hidden">
-                <label class="block font-medium text-gray-700">Pilih Transaksi Penjualan</label>
-                <select name="transaksi_penjualan_id" id="transaksi_penjualan_id" class="w-full border rounded px-3 py-2">
-                    <option value="">-- Pilih Nota Penjualan --</option>
-                    @foreach($penjualan as $pj)
-                        <option value="{{ $pj->id }}">PJ-{{ $pj->no_nota }}
-                            ({{ \Carbon\Carbon::parse($pj->tanggal)->format('Y-m-d H:i:s') }})</option> {{-- Tambahkan format jam --}}
-                    @endforeach
-                </select>
-            </div>
-
-            <input type="hidden" name="transaksi_id" id="hidden_transaksi_id">
-
-            {{-- Tabel Item Retur --}}
-            <div>
-                <label class="block font-medium text-gray-700 mb-2">Daftar Item Retur</label>
-                <div class="overflow-x-auto border rounded bg-gray-50">
-                    <table class="w-full table-auto border-collapse">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="border px-2 py-1">Kode</th>
-                                <th class="border px-2 py-1">Nama Item</th>
-                                <th class="border px-2 py-1">Harga Satuan</th>
-                                <th class="border px-2 py-1">Jumlah Retur</th>
-                                <th class="border px-2 py-1">Max Qty</th>
-                                <th class="border px-2 py-1 text-right">Subtotal</th>
-                                <th class="border px-2 py-1 text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-items">
-                            {{-- Rows akan ditambahkan JS --}}
-                        </tbody>
-                    </table>
+                {{-- Keterangan --}}
+                 <div class="border-t pt-6">
+                    <label class="block font-medium text-gray-700 mb-1">Keterangan (Opsional)</label>
+                    <textarea name="keterangan" class="w-full border rounded-lg px-3 py-2" rows="3"></textarea>
                 </div>
-                <button type="button" id="add_item_btn"
-                    class="mt-2 bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded transition hidden">+ Tambah
-                    Item</button>
-            </div>
 
-            {{-- Total --}}
-            <div class="text-right text-lg font-bold">
-                Total Retur: <span id="total-harga" class="text-blue-600">0</span>
-            </div>
-
-            {{-- Keterangan --}}
-            <div>
-                <label class="block font-medium text-gray-700 mb-1">Keterangan (Opsional)</label>
-                <textarea name="keterangan" class="w-full border rounded px-3 py-2" rows="3"></textarea>
-            </div>
-
-            {{-- Aksi --}}
-            <div class="flex gap-2">
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">Simpan
-                    Retur</button>
-                <a href="{{ route('retur.index') }}"
-                    class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition">Batal</a>
-            </div>
-        </form>
+                {{-- Aksi --}}
+                <div class="flex items-center justify-end gap-4">
+                    <a href="{{ route('retur.index') }}" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 font-semibold">Batal</a>
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-bold">Simpan Retur</button>
+                </div>
+            </form>
+        </div>
     </div>
 @endsection
 
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const jenisReturSelect = document.getElementById('jenis_retur');
-            const transaksiPembelianDiv = document.getElementById('transaksi_pembelian_div');
-            const transaksiPenjualanDiv = document.getElementById('transaksi_penjualan_div');
-            const transaksiPembelianIdSelect = document.getElementById('transaksi_pembelian_id');
-            const transaksiPenjualanIdSelect = document.getElementById('transaksi_penjualan_id');
-            const hiddenTransaksiIdInput = document.getElementById('hidden_transaksi_id');
-            const tableItemsBody = document.getElementById('table-items');
-            const addItemBtn = document.getElementById('add_item_btn');
-            const totalHargaSpan = document.getElementById('total-harga');
-
-            let availableItems = [];
-
-            function toggleTransaksiSelect() {
-                const jenis = jenisReturSelect.value;
-                transaksiPembelianDiv.style.display = 'none';
-                transaksiPenjualanDiv.style.display = 'none';
-                transaksiPembelianIdSelect.value = '';
-                transaksiPenjualanIdSelect.value = '';
-                hiddenTransaksiIdInput.value = '';
-                tableItemsBody.innerHTML = '';
-                addItemBtn.style.display = 'none';
-                availableItems = [];
-                hitungTotal();
-
-                if (jenis === 'pembelian') transaksiPembelianDiv.style.display = 'block';
-                else if (jenis === 'penjualan') transaksiPenjualanDiv.style.display = 'block';
-            }
-
-            async function fetchTransaksiItems(jenis, id) {
-                if (!jenis || !id) {
-                    tableItemsBody.innerHTML = '';
-                    addItemBtn.style.display = 'none';
-                    availableItems = [];
-                    hitungTotal();
-                    return;
-                }
-
-                try {
-                    const res = await fetch(`/retur/sumber/${jenis}/${id}`);
-                    const data = await res.json();
-                    availableItems = data.items;
-                    renderAvailableItems();
-                    addItemBtn.style.display = 'block'; // Tampilkan tombol tambah item setelah data dimuat
-                } catch (err) {
-                    console.error(err);
-                    alert('Gagal memuat data transaksi.');
-                    tableItemsBody.innerHTML = '';
-                    addItemBtn.style.display = 'none';
-                    availableItems = [];
-                    hitungTotal();
+        function returForm() {
+            return {
+                jenisRetur: '',
+                transaksiId: '',
+                items: [],
+                total: 0,
+                async fetchItems(jenis, id) {
+                    if (!jenis || !id) {
+                        this.items = [];
+                        this.transaksiId = '';
+                        this.calculateTotal();
+                        return;
+                    }
+                    this.transaksiId = id;
+                    try {
+                        const response = await fetch(`/retur/sumber/${jenis}/${id}`);
+                        const data = await response.json();
+                        this.items = data.items.map(item => ({...item, qty: 1, subtotal: item.harga }));
+                        this.calculateTotal();
+                    } catch (error) {
+                        console.error('Error fetching items:', error);
+                        alert('Gagal memuat item dari transaksi.');
+                        this.items = [];
+                        this.calculateTotal();
+                    }
+                },
+                calculateSubtotal(index) {
+                    const item = this.items[index];
+                    if (item.qty > item.max_qty) item.qty = item.max_qty;
+                    if (item.qty < 1) item.qty = 1;
+                    item.subtotal = item.qty * item.harga;
+                    this.calculateTotal();
+                },
+                calculateTotal() {
+                    this.total = this.items.reduce((acc, item) => acc + item.subtotal, 0);
+                },
+                removeItem(index) {
+                    this.items.splice(index, 1);
+                    this.calculateTotal();
+                },
+                formatRupiah(angka) {
+                    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
                 }
             }
-
-            function renderAvailableItems() {
-                tableItemsBody.innerHTML = '';
-                availableItems.forEach(item => addRow(item));
-                hitungTotal();
-            }
-
-            function addRow(item) {
-                const row = document.createElement('tr');
-                row.classList.add('hover:bg-gray-50');
-                row.innerHTML = `
-                <td class="border px-2 py-1">
-                    <input type="hidden" name="item_id[]" value="${item.id}">
-                    <span class="item-kode">${item.kode}</span>
-                </td>
-                <td class="border px-2 py-1">
-                    <span class="item-nama">${item.nama}</span>
-                </td>
-                <td class="border px-2 py-1">
-                    <input type="number" name="harga[]" class="w-full px-2 py-1 border rounded harga" value="${item.harga}" readonly>
-                    <input type="hidden" name="hpp[]" value="${item.hpp_obat || ''}"> <!-- Tambahkan HPP untuk penjualan -->
-                    <input type="hidden" name="harga_beli_item[]" value="${item.harga_dasar_obat || ''}"> <!-- Tambahkan harga_beli untuk pembelian -->
-                </td>
-                <td class="border px-2 py-1">
-                    <input type="number" name="qty[]" class="w-full px-2 py-1 border rounded qty" value="1" min="1" max="${item.max_qty}">
-                </td>
-                <td class="border px-2 py-1 text-center max-qty">${item.max_qty}</td>
-                <td class="border px-2 py-1 text-right subtotal">0</td>
-                <td class="border px-2 py-1 text-center">
-                    <button type="button" class="text-red-500" onclick="hapusRow(this)">✖</button>
-                </td>
-            `;
-                tableItemsBody.appendChild(row);
-                hitungSubtotal(row);
-
-                row.querySelector('.qty').addEventListener('input', () => hitungSubtotal(row));
-            }
-
-            function hitungSubtotal(row) {
-                const qty = Math.min(Math.max(parseInt(row.querySelector('.qty').value) || 0, 1), parseInt(row.querySelector('.max-qty').innerText));
-                row.querySelector('.qty').value = qty;
-                const harga = parseFloat(row.querySelector('.harga').value) || 0;
-                row.querySelector('.subtotal').innerText = (qty * harga).toLocaleString('id-ID');
-                hitungTotal();
-            }
-
-            function hitungTotal() {
-                let total = 0;
-                tableItemsBody.querySelectorAll('tr').forEach(row => {
-                    total += (parseInt(row.querySelector('.qty').value) || 0) * (parseFloat(row.querySelector('.harga').value) || 0);
-                });
-                totalHargaSpan.innerText = total.toLocaleString('id-ID');
-            }
-
-            jenisReturSelect.addEventListener('change', toggleTransaksiSelect);
-
-            transaksiPembelianIdSelect.addEventListener('change', function () {
-                hiddenTransaksiIdInput.value = this.value;
-                fetchTransaksiItems('pembelian', this.value);
-            });
-            transaksiPenjualanIdSelect.addEventListener('change', function () {
-                hiddenTransaksiIdInput.value = this.value;
-                fetchTransaksiItems('penjualan', this.value);
-            });
-
-            // Tombol tambah item tidak lagi berfungsi untuk menambahkan baris kosong,
-            // melainkan untuk memicu pemuatan item dari transaksi yang dipilih.
-            // Karena item sudah otomatis dimuat saat transaksi dipilih, tombol ini bisa disembunyikan atau diubah fungsinya.
-            // Untuk saat ini, saya akan menyembunyikannya dan membiarkan item dimuat otomatis.
-            addItemBtn.style.display = 'none'; // Sembunyikan tombol ini
-
-            window.hapusRow = function (btn) {
-                btn.closest('tr').remove();
-                hitungTotal();
-            };
-
-            toggleTransaksiSelect();
-        });
+        }
     </script>
 @endpush

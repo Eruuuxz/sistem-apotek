@@ -10,384 +10,207 @@
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
     <style>
-        /* Efek fade untuk halaman */
-        body {
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-        }
-
-        body.loaded {
-            opacity: 1;
-        }
+        body { opacity: 0; transition: opacity 0.3s ease-in-out; }
+        body.loaded { opacity: 1; }
     </style>
 </head>
 
 <body class="bg-gray-100 flex min-h-screen font-sans">
 
-
     <aside class="w-64 bg-blue-900 text-white flex flex-col shadow-xl fixed inset-y-0 left-0 z-20">
         @php
             $stokHabis = \App\Models\Obat::where('stok', 0)->count();
             $stokMenipis = \App\Models\Obat::whereBetween('stok', [1, 10])->count();
-
-            $stokExpired = \App\Models\Obat::whereNotNull('expired_date')
-                ->where('expired_date', '<', now())->count();
-
-            $stokHampirExpired = \App\Models\Obat::whereNotNull('expired_date')
-                ->whereBetween('expired_date', [now(), now()->addMonth()])->count();
+            $stokExpired = \App\Models\Obat::whereNotNull('expired_date')->where('expired_date', '<', now())->count();
+            $stokHampirExpired = \App\Models\Obat::whereNotNull('expired_date')->whereBetween('expired_date', [now(), now()->addMonth()])->count();
+            $totalObatNotif = $stokHabis + $stokMenipis + $stokExpired + $stokHampirExpired;
+            $pendingSP = \App\Models\SuratPesanan::where('status', 'pending')->count();
         @endphp
         <div class="p-6 text-2xl font-bold border-b border-blue-800 flex items-center justify-center tracking-wide">
             Apotek <span class="text-blue-300 ml-1">LIZ Farma 02</span>
         </div>
 
-<nav class="mt-6 flex-1 overflow-auto" x-data="{ activeDropdown: null }">
-    @auth
-        @if(Auth::user()->role === 'admin')
+        <nav class="mt-6 flex-1 overflow-auto" x-data="{ activeDropdown: null }">
+            @auth
+                @if(Auth::user()->role === 'admin')
 
-            <a href="{{ route('dashboard') }}"
-                class="flex items-center px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors
-                                                                                          {{ request()->is('dashboard*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
-                <i data-feather="home" class="w-5 h-5"></i>
-                <span class="ml-3">Dashboard</span>
-            </a>
-
-            @php
-                $stokHabis = \App\Models\Obat::where('stok', 0)->count();
-                $stokMenipis = \App\Models\Obat::where('stok', '<=', 10)->where('stok', '>', 0)->count();
-
-                $stokExpired = \App\Models\Obat::whereNotNull('expired_date')
-                    ->where('expired_date', '<', now())->count();
-
-                $stokHampirExpired = \App\Models\Obat::whereNotNull('expired_date')
-                    ->whereBetween('expired_date', [now(), now()->addMonth()])->count();
-            @endphp
-
-            <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">MASTER</p>
-
-            <div>
-                <button @click="activeDropdown = (activeDropdown === 'obat' ? null : 'obat')" class="relative flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                                                                              {{ request()->is('obat*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
-                    <i data-feather="box" class="w-5 h-5"></i>
-                    <span class="ml-3 flex-1 text-left">Obat</span>
-                    <svg :class="{ 'rotate-180': activeDropdown === 'obat' }"
-                        class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-
-
-                <div x-show="activeDropdown === 'obat'" x-transition:enter="transition ease-out duration-300"
-                    x-transition:enter-start="opacity-0 transform -translate-y-2"
-                    x-transition:enter-end="opacity-100 transform translate-y-0"
-                    x-transition:leave="transition ease-in duration-200"
-                    x-transition:leave-start="opacity-100 transform translate-y-0"
-                    x-transition:leave-end="opacity-0 transform -translate-y-2" class="ml-10 mt-1 space-y-1">
-
-
-                    <a href="{{ route('obat.index') }}"
-                        class="flex justify-between px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors
-                                                                                             {{ request()->is('obat') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Daftar Obat
+                    <a href="{{ route('dashboard') }}" class="flex items-center px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors {{ request()->is('dashboard*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                        <i data-feather="home" class="w-5 h-5"></i>
+                        <span class="ml-3">Dashboard</span>
                     </a>
 
-                    <a href="{{ route('obat.create') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
-                                                                                             {{ request()->is('obat/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Tambah Obat
-                    </a>
-                    <a href="{{ route('stock_movement.detail') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
-                                                                                             {{ request()->is('stock-movement/detail') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Analisis Pergerakan Stok    
+                    <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">MASTER</p>
 
-                    <a href="{{ route('obat.index', ['filter' => 'menipis']) }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
-                                                                                             {{ request()->fullUrlIs('*obat*filter=menipis*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Stok Menipis
-                        @if($stokMenipis > 0)
-                            <span class="bg-yellow-500 text-xs px-2 py-0.5 rounded-full">{{ $stokMenipis }}</span>
-                        @endif
-                    </a>
-
-                    <a href="{{ route('obat.index', ['filter' => 'habis']) }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
-                                                                                             {{ request()->fullUrlIs('*obat*filter=habis*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Stok Habis
-                        @if($stokHabis > 0)
-                            <span class="bg-red-500 text-xs px-2 py-0.5 rounded-full">{{ $stokHabis }}</span>
-                        @endif
-                    </a>
-
-                    <a href="{{ route('obat.index', ['filter' => 'kadaluarsa']) }}"
-                        class="flex justify-between items-center px-4 py-2 rounded hover:bg-orange-600 hover:text-white transition-colors 
-                                                                                             {{ request()->fullUrlIs('*obat*filter=kadaluarsa*') ? 'bg-orange-700 text-white font-semibold' : 'text-gray-300' }}">
-                        <span>Kadaluarsa</span>
-                        <div class="flex space-x-1">
-                            @if($stokHampirExpired > 0)
-                                <span class="bg-orange-500 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
-                                    {{ $stokHampirExpired }}
-                                </span>
+                    <div>
+                        <button @click="activeDropdown = (activeDropdown === 'obat' ? null : 'obat')" class="relative flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors {{ request()->is('obat*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                            <i data-feather="box" class="w-5 h-5"></i>
+                            <span class="ml-3 flex-1 text-left">Obat</span>
+                            @if($totalObatNotif > 0)
+                                <div class="relative mr-2">
+                                    <i data-feather="bell" class="w-5 h-5 text-yellow-300"></i>
+                                    <span class="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">{{ $totalObatNotif }}</span>
+                                </div>
                             @endif
-                            @if($stokExpired > 0)
-                                <span class="bg-red-900 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
-                                    {{ $stokExpired }}
-                                </span>
-                            @endif
+                            <svg :class="{ 'rotate-180': activeDropdown === 'obat' }" class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+
+                        <div x-show="activeDropdown === 'obat'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" class="ml-10 mt-1 space-y-1">
+                            <a href="{{ route('obat.index') }}" class="flex justify-between px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('obat') && !request('filter') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Daftar Obat</a>
+                            <a href="{{ route('obat.create') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('obat/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Tambah Obat</a>
+                            <a href="{{ route('stock_movement.detail') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('stock-movement/detail') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Analisis Stok</a>
+                            <a href="{{ route('obat.index', ['filter' => 'menipis']) }}" class="flex justify-between items-center px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->fullUrlIs('*obat*filter=menipis*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                                Stok Menipis
+                                @if($stokMenipis > 0)<span class="bg-yellow-500 text-xs px-2 py-0.5 rounded-full">{{ $stokMenipis }}</span>@endif
+                            </a>
+                            <a href="{{ route('obat.index', ['filter' => 'habis']) }}" class="flex justify-between items-center px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->fullUrlIs('*obat*filter=habis*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                                Stok Habis
+                                @if($stokHabis > 0)<span class="bg-red-500 text-xs px-2 py-0.5 rounded-full">{{ $stokHabis }}</span>@endif
+                            </a>
+                            <a href="{{ route('obat.index', ['filter' => 'kadaluarsa']) }}" class="flex justify-between items-center px-4 py-2 rounded hover:bg-orange-600 hover:text-white transition-colors {{ request()->fullUrlIs('*obat*filter=kadaluarsa*') ? 'bg-orange-700 text-white font-semibold' : 'text-gray-300' }}">
+                                <span>Kadaluarsa</span>
+                                <div class="flex space-x-1">
+                                    @if($stokHampirExpired > 0)<span class="bg-orange-500 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">{{ $stokHampirExpired }}</span>@endif
+                                    @if($stokExpired > 0)<span class="bg-red-900 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">{{ $stokExpired }}</span>@endif
+                                </div>
+                            </a>
                         </div>
-                    </a>
+                    </div>
 
-                </div>
-            </div>
+                    <div>
+                        <button @click="activeDropdown = (activeDropdown === 'supplier' ? null : 'supplier')" class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors {{ request()->is('supplier*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                            <i data-feather="truck" class="w-5 h-5"></i>
+                            <span class="ml-3 flex-1 text-left">Supplier</span>
+                            <svg :class="{ 'rotate-180': activeDropdown === 'supplier' }" class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="activeDropdown === 'supplier'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
+                            <a href="{{ route('supplier.index') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('supplier') && !request('create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Daftar Supplier</a>
+                            <a href="{{ route('supplier.create') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('supplier/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Tambah Supplier</a>
+                        </div>
+                    </div>
 
-            <div>
-                <button @click="activeDropdown = (activeDropdown === 'supplier' ? null : 'supplier')"
-                    class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                                                                              {{ request()->is('supplier*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
-                    <i data-feather="users" class="w-5 h-5"></i>
-                    <span class="ml-3 flex-1 text-left">Supplier</span>
-                    <svg :class="{ 'rotate-180': activeDropdown === 'supplier' }"
-                        class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div x-show="activeDropdown === 'supplier'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
-                    <a href="{{ route('supplier.index') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('supplier') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Daftar Supplier
-                    </a>
-                    <a href="{{ route('supplier.create') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('supplier/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Tambah Supplier
-                    </a>
-                </div>
-            </div>
-            <div>
-                <button @click="activeDropdown = activeDropdown === 'pelanggan' ? null : 'pelanggan'" 
-                    class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors 
-                    {{ request()->is('pelanggan*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                    <div>
+                        <button @click="activeDropdown = activeDropdown === 'pelanggan' ? null : 'pelanggan'" class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors {{ request()->is('pelanggan*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                            <i data-feather="users" class="w-5 h-5"></i>
+                            <span class="ml-3 flex-1 text-left">Pelanggan</span>
+                            <svg :class="{'rotate-180': activeDropdown === 'pelanggan'}" class="w-4 h-4 transition-transform duration-300 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="activeDropdown === 'pelanggan'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
+                            <a href="{{ route('pelanggan.index') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('pelanggan') && !request('create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Daftar Pelanggan</a>
+                            <a href="{{ route('pelanggan.create') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('pelanggan/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Tambah Pelanggan</a>
+                        </div>
+                    </div>
+
+                    <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">Transaksi</p>
                     
-                    <i data-feather="users" class="w-5 h-5"></i>
-                    <span class="ml-3 flex-1 text-left">Pelanggan</span>
+                    <div>
+                        <button @click="activeDropdown = (activeDropdown === 'pembelian' ? null : 'pembelian')" class="relative flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors {{ request()->is('pembelian*') || request()->is('surat_pesanan*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                            <i data-feather="shopping-cart" class="w-5 h-5"></i>
+                            <span class="ml-3 flex-1 text-left">Pembelian</span>
+                            @if($pendingSP > 0)
+                                <div class="relative mr-2">
+                                    <i data-feather="bell" class="w-5 h-5 text-yellow-300"></i>
+                                    <span class="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">{{ $pendingSP }}</span>
+                                </div>
+                            @endif
+                            <svg :class="{ 'rotate-180': activeDropdown === 'pembelian' }" class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="activeDropdown === 'pembelian'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
+                            <a href="{{ route('pembelian.index') }}" class="flex justify-between items-center px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('pembelian') && !request()->is('pembelian/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
+                                <span>Manajemen Pembelian</span>
+                                @if($pendingSP > 0)<span class="bg-green-500 text-xs px-2 py-0.5 rounded-full">{{ $pendingSP }}</span>@endif
+                            </a>
+                            <a href="{{ route('surat_pesanan.create') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('surat_pesanan/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Buat SP Baru</a>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button @click="activeDropdown = (activeDropdown === 'retur' ? null : 'retur')" class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors {{ request()->is('retur*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                            <i data-feather="corner-up-left" class="w-5 h-5"></i>
+                            <span class="ml-3 flex-1 text-left">Retur Barang</span>
+                            <svg :class="{ 'rotate-180': activeDropdown === 'retur' }" class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="activeDropdown === 'retur'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
+                            <a href="{{ route('retur.index') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('retur') && !request()->is('retur/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Riwayat Retur</a>
+                            <a href="{{ route('retur.create') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('retur/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Tambah Retur</a>
+                        </div>
+                    </div>
                     
-                    <svg :class="{'rotate-180': activeDropdown === 'pelanggan'}"
-                        class="w-4 h-4 transition-transform duration-300 ml-auto text-gray-300" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
+                    <div>
+                        <button @click="activeDropdown = (activeDropdown === 'biaya' ? null : 'biaya')" class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors {{ request()->is('biaya-operasional*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                            <i data-feather="dollar-sign" class="w-5 h-5"></i>
+                            <span class="ml-3 flex-1 text-left">Biaya Operasional</span>
+                            <svg :class="{ 'rotate-180': activeDropdown === 'biaya' }" class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="activeDropdown === 'biaya'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
+                            <a href="{{ route('biaya-operasional.index') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('biaya-operasional') && !request()->is('biaya-operasional/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Daftar Biaya</a>
+                            <a href="{{ route('biaya-operasional.create') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('biaya-operasional/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Tambah Biaya</a>
+                        </div>
+                    </div>
 
-                <div x-show="activeDropdown === 'pelanggan'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
-                    <a href="{{ route('pelanggan.index') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
-                        {{ request()->is('pelanggan') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Daftar Pelanggan
-                    </a>
-                    <a href="{{ route('pelanggan.create') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors 
-                        {{ request()->is('pelanggan/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Tambah Pelanggan (Member)
-                    </a>
-                </div>
-            </div>
+                    <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">Lainnya</p>
 
-            <div>
-                <button @click="activeDropdown = (activeDropdown === 'biaya' ? null : 'biaya')"
-                    class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                    {{ request()->is('biaya-operasional*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
-                    <i data-feather="dollar-sign" class="w-5 h-5"></i>
-                    <span class="ml-3 flex-1 text-left">Biaya Operasional</span>
-                    <svg :class="{ 'rotate-180': activeDropdown === 'biaya' }"
-                        class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div x-show="activeDropdown === 'biaya'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
-                    <a href="{{ route('biaya-operasional.index') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors
-                        {{ request()->is('biaya-operasional') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Daftar Biaya
+                    <a href="{{ route('laporan.index') }}" class="flex items-center px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors {{ request()->is('laporan*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                        <i data-feather="bar-chart-2" class="w-5 h-5"></i>
+                        <span class="ml-3 flex-1">Laporan</span>
                     </a>
-                    <a href="{{ route('biaya-operasional.create') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors
-                        {{ request()->is('biaya-operasional/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Tambah Biaya
-                    </a>
-                </div>
-            </div>
-            
-            <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">Transaksi</p>
-            
-            <div>
-                <button @click="activeDropdown = (activeDropdown === 'surat_pesanan' ? null : 'surat_pesanan')"
-                    class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                        {{ request()->is('surat_pesanan*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
-                    <i data-feather="file-text" class="w-5 h-5"></i>
-                    <span class="ml-3 flex-1 text-left">Surat Pesanan</span>
-                    <svg :class="{ 'rotate-180': activeDropdown === 'surat_pesanan' }"
-                        class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div x-show="activeDropdown === 'surat_pesanan'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
-                    <a href="{{ route('surat_pesanan.index') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('surat_pesanan') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Daftar SP
-                    </a>
-                    <a href="{{ route('surat_pesanan.create') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('surat_pesanan/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Buat SP Baru
-                    </a>
-                </div>
-            </div>
+                    
+                    <div>
+                        <button @click="activeDropdown = (activeDropdown === 'users' ? null : 'users')" class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors {{ request()->is('users*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
+                            <i data-feather="user-plus" class="w-5 h-5"></i>
+                            <span class="ml-3 flex-1 text-left">Manajemen Kasir</span>
+                            <svg :class="{ 'rotate-180': activeDropdown === 'users' }" class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="activeDropdown === 'users'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
+                            <a href="{{ route('users.index') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('users') && !request()->is('users/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Daftar Kasir</a>
+                            <a href="{{ route('users.create') }}" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('users/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">Tambah Kasir</a>
+                        </div>
+                    </div>
 
-            <div>
-                <button @click="activeDropdown = (activeDropdown === 'pembelian' ? null : 'pembelian')"
-                    class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                                                                              {{ request()->is('pembelian*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
-                    <i data-feather="shopping-cart" class="w-5 h-5"></i>
-                    <span class="ml-3 flex-1 text-left">Pembelian</span>
-                    <svg :class="{ 'rotate-180': activeDropdown === 'pembelian' }"
-                        class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div x-show="activeDropdown === 'pembelian'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
-                    <a href="{{ route('pembelian.index') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('pembelian') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Daftar Pembelian
-                    </a>
-                    <a href="{{ route('pembelian.create') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('pembelian/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Tambah Pembelian
-                    </a>
-                </div>
-            </div>
-
-            <div>
-                <button @click="activeDropdown = (activeDropdown === 'retur' ? null : 'retur')"
-                    class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                                                                              {{ request()->is('retur*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
-                    <i data-feather="corner-up-left" class="w-5 h-5"></i>
-                    <span class="ml-3 flex-1 text-left">Retur Barang</span>
-                    <svg :class="{ 'rotate-180': activeDropdown === 'retur' }"
-                        class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div x-show="activeDropdown === 'retur'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
-                    <a href="{{ route('retur.index') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('retur') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Riwayat Retur
-                    </a>
-                    <a href="{{ route('retur.create') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('retur/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Tambah Retur
-                    </a>
-                </div>
-            </div>
-            <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">Laporan</p>
-
-            <a href="{{ route('laporan.index') }}"
-                class="flex items-center px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors {{ request()->is('laporan*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
-                <i data-feather="bar-chart-2" class="w-5 h-5"></i>
-                <span class="ml-3 flex-1">Laporan</span>
-            </a>
-
-            <p class="px-6 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-blue-300">User</p>
-
-            <div>
-                <button @click="activeDropdown = (activeDropdown === 'users' ? null : 'users')"
-                    class="flex items-center w-full px-6 py-3 rounded-lg hover:bg-blue-700 hover:text-white transition-colors
-                                                                                              {{ request()->is('users*') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-200' }}">
-                    <i data-feather="user-plus" class="w-5 h-5"></i>
-                    <span class="ml-3 flex-1 text-left">Management Kasir</span>
-                    <svg :class="{ 'rotate-180': activeDropdown === 'users' }"
-                        class="w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div x-show="activeDropdown === 'users'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
-                    <a href="{{ route('users.index') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('users') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Daftar Kasir
-                    </a>
-                    <a href="{{ route('users.create') }}"
-                        class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition-colors {{ request()->is('users/create') ? 'bg-blue-700 text-white font-semibold' : 'text-gray-300' }}">
-                        Tambah Kasir
-                    </a>
-                </div>
-            </div>
-
-        @endif
-    @endauth
-</nav>
+                @endif
+            @endauth
+        </nav>
     </aside>
 
-    <script>
-        feather.replace();
-    </script>
-
-
     <div class="flex-1 flex flex-col ml-64">
-        <header
-            class="bg-white shadow-md p-4 flex justify-between items-center border-b border-gray-200 sticky top-0 z-20">
+        <header class="bg-white shadow-md p-4 flex justify-between items-center border-b border-gray-200 sticky top-0 z-10">
             <div class="flex items-center gap-4">
-                {{-- Tombol Kembali --}}
                 @if (!request()->routeIs('dashboard'))
                     <a href="{{ url()->previous() }}" title="Kembali" class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-full transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                     </a>
                 @endif
-                <h1 class="text-2xl font-bold text-gray-800 tracking-wide">
-                    @yield('title', 'Dashboard')
-                </h1>
+                <h1 class="text-2xl font-bold text-gray-800 tracking-wide">@yield('title', 'Dashboard')</h1>
             </div>
 
             <div class="flex items-center space-x-4">
-                <div id="clock" class="text-sm text-gray-500 font-medium"></div>
-
+                <div id="clock" class="text-sm text-gray-500 font-medium hidden md:block"></div>
                 @auth
-                    <span
-                        class="text-sm text-gray-600 px-3 py-1 bg-gray-100 rounded-full border border-gray-200 hidden md:inline-block">
-                        {{ ucfirst(Auth::user()->role) }}
-                    </span>
-
+                    <span class="text-sm text-gray-600 px-3 py-1 bg-gray-100 rounded-full border border-gray-200 hidden md:inline-block">{{ ucfirst(Auth::user()->role) }}</span>
                     <div class="flex items-center space-x-2 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
                         <span class="text-gray-700 font-medium">{{ Auth::user()->name }}</span>
-                        <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=0D8ABC&color=fff&size=32"
-                            alt="Avatar" class="w-8 h-8 rounded-full">
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=0D8ABC&color=fff&size=32" alt="Avatar" class="w-8 h-8 rounded-full">
                     </div>
-
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
-                        <button type="submit"
-                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow transition font-medium text-sm">
-                            Logout
-                        </button>
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow transition font-medium text-sm">Logout</button>
                     </form>
                 @endauth
             </div>
         </header>
-
-        <script>
-            function updateClock() {
-                const now = new Date();
-                document.getElementById('clock').innerText =
-                    now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-                    + ' ' + now.toLocaleTimeString('id-ID');
-            }
-            setInterval(updateClock, 1000);
-            updateClock();
-        </script>
 
         <main class="p-6 flex-1 overflow-auto">
             @yield('content')
@@ -398,35 +221,26 @@
     <script>
         feather.replace();
 
-        // Dropdown toggle
-        function toggleDropdown(id) {
-            const dropdown = document.getElementById(id);
-            const icon = document.getElementById('obatIcon');
-            dropdown.classList.toggle('hidden');
-            icon.classList.toggle('rotate-180');
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID');
         }
-    </script>
+        setInterval(updateClock, 1000);
+        updateClock();
 
-    <script>
-        // Tambah class "loaded" setelah halaman selesai dimuat
         document.addEventListener("DOMContentLoaded", function () {
             document.body.classList.add("loaded");
-
-            // Tambah animasi saat klik link internal
             document.querySelectorAll("a").forEach(link => {
                 link.addEventListener("click", function (e) {
                     const target = this.getAttribute("href");
-                    if (target && target.startsWith("http") === false && !this.hasAttribute("target")) {
+                    if (target && !target.startsWith("http") && !this.hasAttribute("target") && !this.closest('form')) {
                         e.preventDefault();
-                        document.body.classList.remove("loaded"); // fade out
-                        setTimeout(() => {
-                            window.location.href = target;
-                        }, 300); // sesuai durasi transition
+                        document.body.classList.remove("loaded");
+                        setTimeout(() => { window.location.href = target; }, 300);
                     }
                 });
             });
         });
     </script>
 </body>
-
 </html>

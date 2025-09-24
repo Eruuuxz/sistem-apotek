@@ -1,57 +1,65 @@
 @extends('layouts.admin')
 
-@section('title', 'Tambah User')
+@section('title', 'Tambah User Baru')
 
 @section('content')
 
-    <div class="max-w-lg mx-auto bg-white shadow-md rounded p-6">
+    <div class="bg-white p-8 shadow-xl rounded-xl max-w-2xl mx-auto mt-6">
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800">Formulir User Baru</h2>
+            <p class="text-sm text-gray-500">Isi detail di bawah untuk menambahkan user baru.</p>
+        </div>
 
-        <form action="{{ route('users.store') }}" method="POST" class="space-y-4">
+        <form action="{{ route('users.store') }}" method="POST" class="space-y-6">
             @csrf
 
-            <div>
-                <label class="block font-semibold mb-1">Nama</label>
-                <input type="text" name="name" class="w-full border rounded px-3 py-2" required>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block mb-2 text-sm font-semibold text-gray-700">Nama</label>
+                    <input type="text" name="name" class="w-full border rounded-lg px-3 py-2" required>
+                </div>
+
+                <div>
+                    <label class="block mb-2 text-sm font-semibold text-gray-700">Email</label>
+                    <input type="email" name="email" class="w-full border rounded-lg px-3 py-2" required>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block mb-2 text-sm font-semibold text-gray-700">Password</label>
+                    <input type="password" name="password" class="w-full border rounded-lg px-3 py-2" required>
+                </div>
+
+                <div>
+                    <label class="block mb-2 text-sm font-semibold text-gray-700">Konfirmasi Password</label>
+                    <input type="password" name="password_confirmation" class="w-full border rounded-lg px-3 py-2" required>
+                </div>
             </div>
 
-            <div>
-                <label class="block font-semibold mb-1">Email</label>
-                <input type="email" name="email" class="w-full border rounded px-3 py-2" required>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block mb-2 text-sm font-semibold text-gray-700">Role</label>
+                    <select name="role" class="w-full border rounded-lg px-3 py-2" required>
+                        <option value="kasir">Kasir</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block mb-2 text-sm font-semibold text-gray-700">Cabang</label>
+                    <select name="cabang_id" class="w-full border rounded-lg px-3 py-2">
+                        <option value="">Pilih Cabang (Opsional)</option>
+                        @foreach($cabangs as $cabang)
+                            <option value="{{ $cabang->id }}">{{ $cabang->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
-            <div>
-                <label class="block font-semibold mb-1">Password</label>
-                <input type="password" name="password" class="w-full border rounded px-3 py-2" required>
-            </div>
-
-            <div>
-                <label class="block font-semibold mb-1">Konfirmasi Password</label>
-                <input type="password" name="password_confirmation" class="w-full border rounded px-3 py-2" required>
-            </div>
-
-            <div>
-                <label class="block font-semibold mb-1">Role</label>
-                <select name="role" class="w-full border rounded px-3 py-2" required>
-                    <option value="kasir">Kasir</option>
-                    <option value="admin">Admin</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block font-semibold mb-1">Cabang</label>
-                <select name="cabang_id" class="w-full border rounded px-3 py-2">
-                    <option value="">Pilih Cabang (Opsional)</option>
-                    @foreach($cabangs as $cabang)
-                        <option value="{{ $cabang->id }}">{{ $cabang->nama }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="flex gap-2 mt-4">
-                <button type="submit"
-                    class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Simpan</button>
-                <a href="{{ route('users.index') }}"
-                    class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition">Batal</a>
+            <div class="flex items-center justify-end gap-4 pt-4">
+                <a href="{{ route('users.index') }}" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 font-semibold">Batal</a>
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-bold">Simpan User</button>
             </div>
         </form>
     </div>

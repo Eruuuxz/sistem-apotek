@@ -7,7 +7,6 @@ use App\Models\SuratPesananDetail;
 use App\Models\Supplier;
 use App\Models\Obat;
 use App\Models\Pembelian;
-use App\Models\PembelianDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,10 +15,12 @@ use PDF;
 
 class SuratPesananController extends Controller
 {
+    /**
+     * Redirect to the integrated purchase index view.
+     */
     public function index()
     {
-        $suratPesanans = SuratPesanan::with('supplier', 'user')->latest()->paginate(10);
-        return view('transaksi.surat_pesanan.index', compact('suratPesanans'));
+        return redirect()->route('pembelian.index');
     }
 
     public function create()
@@ -27,7 +28,8 @@ class SuratPesananController extends Controller
         $suppliers = Supplier::all();
         $obats = Obat::all();
         $noSp = $this->generateNoSp();
-        return view('transaksi.surat_pesanan.create', compact('suppliers', 'obats', 'noSp'));
+        // PATH FIXED: Menggunakan path yang benar sesuai struktur folder
+        return view('transaksi.pembelian.surat_pesanan.create', compact('suppliers', 'obats', 'noSp'));
     }
 
     public function store(Request $request)
@@ -59,10 +61,9 @@ class SuratPesananController extends Controller
                 'keterangan' => $request->keterangan,
                 'sp_mode' => $request->sp_mode,
                 'jenis_sp' => $request->jenis_sp,
-                'status' => 'pending', // Status awal SP
+                'status' => 'pending',
             ]);
 
-            // Simpan detail
             if ($request->sp_mode === 'dropdown') {
                 foreach ($request->obat_id as $key => $obatId) {
                     SuratPesananDetail::create([
@@ -70,7 +71,7 @@ class SuratPesananController extends Controller
                         'obat_id' => $obatId,
                         'qty_pesan' => $request->qty_pesan[$key],
                         'harga_satuan' => $request->harga_satuan[$key] ?? 0,
-                        'qty_terima' => 0, // Awalnya 0
+                        'qty_terima' => 0,
                     ]);
                 }
             } elseif ($request->sp_mode === 'manual') {
@@ -80,15 +81,14 @@ class SuratPesananController extends Controller
                         'nama_manual' => $namaManual,
                         'qty_pesan' => $request->qty_pesan[$key],
                         'harga_satuan' => $request->harga_satuan[$key] ?? 0,
-                        'qty_terima' => 0, // Awalnya 0
+                        'qty_terima' => 0,
                     ]);
                 }
             }
             DB::commit();
 
-            return redirect()->back()->with([
-                'success' => 'Surat Pesanan berhasil dibuat!',
-                'sp_id' => $suratPesanan->id
+            return redirect()->route('pembelian.index')->with([
+                'success' => 'Surat Pesanan berhasil dibuat dan menunggu untuk diproses.',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -99,7 +99,8 @@ class SuratPesananController extends Controller
     public function show(SuratPesanan $suratPesanan)
     {
         $suratPesanan->load('supplier', 'user', 'details.obat');
-        return view('transaksi.surat_pesanan.show', compact('suratPesanan'));
+        // This view is not actively used in the new flow, but path is corrected for completeness
+        return view('transaksi.pembelian.surat_pesanan.show', compact('suratPesanan'));
     }
 
     public function edit(SuratPesanan $suratPesanan)
@@ -107,17 +108,18 @@ class SuratPesananController extends Controller
         $suppliers = Supplier::all();
         $obats = Obat::all();
         $suratPesanan->load('details.obat');
-        return view('transaksi.surat_pesanan.edit', compact('suratPesanan', 'suppliers', 'obats'));
+        // PATH FIXED: Menggunakan path yang benar sesuai struktur folder
+        return view('transaksi.pembelian.surat_pesanan.edit', compact('suratPesanan', 'suppliers', 'obats'));
     }
 
     public function update(Request $request, SuratPesanan $suratPesanan)
     {
-        $validatedData = $request->validate([
+        $request->validate([
             'no_sp' => 'required|unique:surat_pesanan,no_sp,' . $suratPesanan->id,
             'tanggal_sp' => 'required|date_format:Y-m-d\TH:i',
             'supplier_id' => 'required|exists:supplier,id',
             'sp_mode' => 'required|in:dropdown,manual,blank',
-            'jenis_sp' => 'required|in:reguler,prekursor', // Tambahkan validasi jenis_sp
+            'jenis_sp' => 'required|in:reguler,prekursor',
             'obat_id' => 'required_if:sp_mode,dropdown|array',
             'obat_id.*' => 'exists:obat,id',
             'obat_manual' => 'required_if:sp_mode,manual|array',
@@ -132,17 +134,8 @@ class SuratPesananController extends Controller
 
         DB::beginTransaction();
         try {
-            $suratPesanan->update([
-                'no_sp' => $request->no_sp,
-                'tanggal_sp' => $request->tanggal_sp,
-                'supplier_id' => $request->supplier_id,
-                'keterangan' => $request->keterangan,
-                'sp_mode' => $request->sp_mode,
-                'jenis_sp' => $request->jenis_sp, // Update jenis_sp
-                'status' => $request->status,
-            ]);
+            $suratPesanan->update($request->only(['no_sp', 'tanggal_sp', 'supplier_id', 'keterangan', 'sp_mode', 'jenis_sp', 'status']));
 
-            // Hapus detail lama dan buat baru
             $suratPesanan->details()->delete();
             if ($request->sp_mode === 'dropdown') {
                 foreach ($request->obat_id as $key => $obatId) {
@@ -151,7 +144,7 @@ class SuratPesananController extends Controller
                         'obat_id' => $obatId,
                         'qty_pesan' => $request->qty_pesan[$key],
                         'harga_satuan' => $request->harga_satuan[$key] ?? 0,
-                        'qty_terima' => 0, // Reset qty_terima saat update
+                        'qty_terima' => 0,
                     ]);
                 }
             } elseif ($request->sp_mode === 'manual') {
@@ -161,13 +154,14 @@ class SuratPesananController extends Controller
                         'nama_manual' => $namaManual,
                         'qty_pesan' => $request->qty_pesan[$key],
                         'harga_satuan' => $request->harga_satuan[$key] ?? 0,
-                        'qty_terima' => 0, // Reset qty_terima saat update
+                        'qty_terima' => 0,
                     ]);
                 }
             }
+
             DB::commit();
 
-            return redirect()->route('surat_pesanan.index')->with('success', 'Surat Pesanan berhasil diperbarui.');
+            return redirect()->route('pembelian.index')->with('success', 'Surat Pesanan berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()->with('error', 'Gagal memperbarui Surat Pesanan: ' . $e->getMessage());
@@ -178,22 +172,15 @@ class SuratPesananController extends Controller
     {
         DB::beginTransaction();
         try {
-            // Cek apakah ada pembelian yang terkait dengan SP ini
-            $relatedPembelian = Pembelian::where('surat_pesanan_id', $suratPesanan->id)->first();
-            if ($relatedPembelian) {
-                // Jika ada, kita tidak bisa langsung menghapus SP
-                // Opsi:
-                // 1. Batalkan pembelian terkait (jika statusnya masih draft)
-                // 2. Hapus relasi SP dari pembelian (set surat_pesanan_id ke null)
-                // 3. Beri pesan error bahwa SP tidak bisa dihapus karena sudah ada pembelian terkait
+            if ($suratPesanan->pembelian()->exists()) {
                 DB::rollBack();
-                return back()->with('error', 'Surat Pesanan tidak dapat dihapus karena sudah ada pembelian terkait.');
+                return redirect()->route('pembelian.index')->with('error', 'Surat Pesanan tidak dapat dihapus karena sudah ada pembelian terkait.');
             }
 
             $suratPesanan->details()->delete();
             $suratPesanan->delete();
             DB::commit();
-            return redirect()->route('surat_pesanan.index')->with('success', 'Surat Pesanan berhasil dihapus.');
+            return redirect()->route('pembelian.index')->with('success', 'Surat Pesanan berhasil dihapus.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal menghapus Surat Pesanan: ' . $e->getMessage());
@@ -203,7 +190,6 @@ class SuratPesananController extends Controller
     public function generatePdf($id)
     {
         $suratPesanan = SuratPesanan::with('details.obat', 'supplier', 'user')->findOrFail($id);
-
         $clinicData = [
             'nama' => 'Klinik SINDANG SARI',
             'alamat' => 'JL. H. Abdul Halim No. 121, Cigugur, Tangah, Kota Cimahi',
@@ -211,32 +197,27 @@ class SuratPesananController extends Controller
             'email' => 'kliniksindangsari@gmail.com',
             'sio' => 'SIO: 03022300571070001',
         ];
-
         $apotekerData = [
             'nama' => 'apt. MIRA YULIANTI, S.Farm',
             'sipa' => 'SIPA: 440/0027/SIPA/DPMPTSP/X/2024',
             'jabatan' => 'Apoteker Penanggung Jawab',
         ];
-
-        $containsPrekursor = $suratPesanan->details->contains(function ($detail) {
-            return $detail->obat && $detail->obat->is_prekursor;
-        });
-
+        $containsPrekursor = $suratPesanan->details->contains(fn($detail) => $detail->obat && $detail->obat->is_prekursor);
+        
+        // PATH FIXED: Menggunakan path yang benar sesuai struktur folder
         $viewName = $containsPrekursor
-                    ? 'transaksi.surat_pesanan.pdf_prekursor'
-                    : 'transaksi.surat_pesanan.pdf_regular';
+                    ? 'transaksi.pembelian.surat_pesanan.pdf_prekursor'
+                    : 'transaksi.pembelian.surat_pesanan.pdf_regular';
 
         $pdf = PDF::loadView($viewName, compact('suratPesanan', 'clinicData', 'apotekerData'));
         $pdf->setPaper('A4', 'portrait');
-        $filename = 'SP_' . $suratPesanan->no_sp . '.pdf';
-
-        return $pdf->stream($filename);
+        return $pdf->stream('SP_' . $suratPesanan->no_sp . '.pdf');
     }
 
     private function generateNoSp()
     {
         $latestSp = SuratPesanan::latest()->first();
-        $lastNumber = $latestSp ? (int) Str::afterLast($latestSp->no_sp, '-') : 0; // Menggunakan Str::afterLast
+        $lastNumber = $latestSp ? (int) Str::afterLast($latestSp->no_sp, '-') : 0;
         return 'SP-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
     }
 

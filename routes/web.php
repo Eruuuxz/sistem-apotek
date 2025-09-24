@@ -66,13 +66,14 @@ Route::middleware('auth')->group(function () {
         Route::get('surat_pesanan/{id}/details', [SuratPesananController::class, 'getSpDetails'])->name('surat_pesanan.details');
         Route::get('/surat_pesanan/{id}/pdf', [SuratPesananController::class, 'generatePdf'])->name('surat_pesanan.pdf');
 
+        // --- Rute Pembelian ---
         Route::resource('pembelian', PembelianController::class);
+        Route::post('pembelian/from-sp/{suratPesanan}', [PembelianController::class, 'createFromSp'])->name('pembelian.createFromSp');
         Route::get('pembelian/{pembelian}/faktur', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
         Route::get('pembelian/{pembelian}/pdf', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
         Route::get('/pembelian/get-obat-by-supplier/{supplierId}', [PembelianController::class, 'getObatBySupplier'])->name('pembelian.getObatBySupplier');
 
         Route::resource('retur', ReturController::class);
-        Route::get('/retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');
 
         // --- Keuangan ---
         Route::resource('biaya-operasional', BiayaOperasionalController::class);
@@ -85,13 +86,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/pelanggan/{format}', [LaporanController::class, 'exportPelanggan'])->name('pelanggan.export');
             Route::get('/laba/{format}', [LaporanController::class, 'exportLaba'])->name('laba.export');
         });
-
-        // // --- Inventaris & Stok (INI PERBAIKANNYA) ---
-        // Route::prefix('stock-movement')->name('stock.movement.')->group(function () {
-        //     Route::get('/', [StockMovementController::class, 'index'])->name('index'); // Sekarang menjadi stock.movement.index
-        //     Route::get('/detail', [StockMovementController::class, 'detail'])->name('detail'); // Sekarang menjadi stock.movement.detail
-        // });
-
+        
         Route::resource('stock-opname', StockOpnameController::class);
         Route::post('stock-opname/{stock_opname}/approve', [StockOpnameController::class, 'approve'])->name('stock_opname.approve');
         Route::post('stock-opname/{stock_opname}/reject', [StockOpnameController::class, 'reject'])->name('stock_opname.reject');

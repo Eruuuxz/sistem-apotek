@@ -1,89 +1,117 @@
 @extends('layouts.admin')
 
-@section('title', 'Data Supplier')
+@section('title', 'Manajemen Supplier')
 
 @section('content')
 
     @if (session('success'))
-        <div class="bg-green-100 text-green-800 px-4 py-2 rounded mb-4">
-            {{ session('success') }}
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+            <p class="font-bold">Sukses</p>
+            <p>{{ session('success') }}</p>
         </div>
     @endif
-    <div class="overflow-x-auto bg-white shadow-md rounded">
-        <table class="w-full text-sm border-collapse">
-            <thead class="bg-gray-100">
-                <tr>
-                    <th class="px-4 py-2 border text-left">Kode</th>
-                    <th class="px-4 py-2 border text-left">Nama Supplier</th>
-                    <th class="px-4 py-2 border text-left">Alamat</th>
-                    <th class="px-4 py-2 border text-left">Kota</th>
-                    <th class="px-4 py-2 border text-left">Telepon</th>
-                    <th class="px-4 py-2 border text-center">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($suppliers as $supplier)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2 border">{{ $supplier->kode }}</td>
-                        <td class="px-4 py-2 border">{{ $supplier->nama }}</td>
-                        <td class="px-4 py-2 border">{{ $supplier->alamat }}</td>
-                        <td class="px-4 py-2 border">{{ $supplier->kota }}</td>
-                        <td class="px-4 py-2 border">{{ $supplier->telepon }}</td>
-                        <td class="px-4 py-2 border text-center" x-data="{ open: false }">
-                            <div class="flex justify-center gap-2">
-                                <a href="{{ route('supplier.edit', $supplier->id) }}"
-                                    class="text-yellow-500 hover:underline">Edit</a>
 
-                                <form action="{{ route('supplier.destroy', $supplier->id) }}" method="POST" class="inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:underline"
-                                        onclick="return confirm('Yakin ingin hapus?')">Hapus</button>
-                                </form>
+    <div class="bg-white p-6 shadow-lg rounded-xl">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Manajemen Supplier</h2>
+                <p class="text-sm text-gray-500">Kelola daftar PBF dan partner penyedia obat.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                 <a href="{{ route('supplier.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center transition duration-300">
+                    <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    Tambah Supplier
+                </a>
+            </div>
+        </div>
 
-                                <button @click="open = true" class="text-blue-500 hover:underline">Cek Obat</button>
-                            </div>
-
-                            <!-- Modal tabel obat -->
-                            <div x-show="open"
-                                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
-                                <div class="bg-white rounded shadow w-96 max-h-[80vh] overflow-auto p-4">
-                                    <h2 class="text-lg font-semibold mb-3">Obat Disuplai: {{ $supplier->nama }}</h2>
-
-                                    @php
-                                        $obats = $supplier->obat ?? collect();
-                                    @endphp
-
-                                    @if($obats->isEmpty())
-                                        <p class="text-gray-500">Tidak ada obat</p>
-                                    @else
-                                        <table class="w-full text-sm border-collapse">
-                                            <thead class="bg-gray-50">
-                                                <tr>
-                                                    <th class="px-3 py-2 border">No</th>
-                                                    <th class="px-3 py-2 border">Nama Obat</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach($obats as $index => $obat)
-                                                    <tr class="hover:bg-gray-50">
-                                                        <td class="px-3 py-2 border">{{ $index + 1 }}</td>
-                                                        <td class="px-3 py-2 border">{{ $obat->nama }}</td>
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    @endif
-
-                                    <button @click="open = false"
-                                        class="mt-4 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded w-full">Tutup</button>
-                                </div>
-                            </div>
-                        </td>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-600 uppercase">
+                    <tr>
+                        <th class="px-4 py-3 text-left">Kode</th>
+                        <th class="px-4 py-3 text-left">Nama Supplier</th>
+                        <th class="px-4 py-3 text-left">Alamat</th>
+                        <th class="px-4 py-3 text-left">Telepon</th>
+                        <th class="px-4 py-3 text-center">Aksi</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="text-gray-700">
+                    @forelse ($suppliers as $supplier)
+                        <tr class="border-b border-gray-200 hover:bg-blue-50/50">
+                            <td class="px-4 py-3 font-medium">{{ $supplier->kode }}</td>
+                            <td class="px-4 py-3 font-semibold">{{ $supplier->nama }}</td>
+                            <td class="px-4 py-3">{{ $supplier->alamat ?? '-' }}</td>
+                            <td class="px-4 py-3">{{ $supplier->telepon ?? '-' }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <div class="flex justify-center items-center space-x-2">
+                                    <a href="{{ route('supplier.show', $supplier->id) }}" class="text-gray-500 hover:text-blue-600 p-2 rounded-full bg-gray-100 hover:bg-blue-100 transition" title="Lihat Detail">
+                                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639l4.43-4.43a1.012 1.012 0 0 1 1.431 0l4.43 4.43a1.012 1.012 0 0 1 0 .639l-4.43 4.43a1.012 1.012 0 0 1-1.431 0l-4.43-4.43Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                    </a>
+                                    <a href="{{ route('supplier.edit', $supplier->id) }}" class="text-gray-500 hover:text-yellow-600 p-2 rounded-full bg-gray-100 hover:bg-yellow-100 transition" title="Edit Supplier">
+                                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+                                    </a>
+                                    <form action="{{ route('supplier.destroy', $supplier->id) }}" method="POST" class="inline delete-form">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" class="text-gray-500 hover:text-red-600 p-2 rounded-full bg-gray-100 hover:bg-red-100 transition delete-btn" title="Hapus Supplier">
+                                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.067-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="text-center py-10 text-gray-500">
+                                <div class="flex flex-col items-center">
+                                     <svg class="w-12 h-12 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h.008v.008h-.008v-.008Zm-3 0H12m0 0h-1.5m-12.75 0H3.375c.621 0 1.125-.504 1.125-1.125V14.25m17.25 4.5v-4.5A3.375 3.375 0 0 0 16.5 11.25V6.75a3.375 3.375 0 0 0-3.375-3.375H8.25a3.375 3.375 0 0 0-3.375 3.375v4.5A3.375 3.375 0 0 0 6.25 15.75v2.25m10.5-11.25h.008v.008h-.008V4.5Zm-3 0h.008v.008h-.008V4.5Z" /></svg>
+                                    <h4 class="mt-2 text-lg font-semibold text-gray-700">Belum Ada Data Supplier</h4>
+                                    <p class="mt-1 text-sm">Mulai dengan menambahkan data supplier baru.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
+    
+    {{-- Popup Konfirmasi Hapus --}}
+    <div id="confirm-popup" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm text-center">
+            <h2 class="text-xl font-bold mb-4">Konfirmasi Hapus</h2>
+            <p class="text-gray-600 mb-6">Apakah Anda yakin ingin menghapus data supplier ini? Tindakan ini tidak dapat dibatalkan.</p>
+            <div class="flex justify-center gap-4">
+                <button id="cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold">Batal</button>
+                <button id="confirm-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const popup = document.getElementById("confirm-popup");
+        const cancelBtn = document.getElementById("cancel-btn");
+        const confirmBtn = document.getElementById("confirm-btn");
+        let formToSubmit = null;
 
+        document.querySelectorAll(".delete-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                formToSubmit = this.closest("form");
+                popup.classList.remove("hidden");
+                popup.classList.add("flex");
+            });
+        });
+
+        cancelBtn.addEventListener("click", () => {
+            popup.classList.add("hidden");
+            popup.classList.remove("flex");
+            formToSubmit = null;
+        });
+
+        confirmBtn.addEventListener("click", () => {
+            if (formToSubmit) formToSubmit.submit();
+        });
+    });
+    </script>
 @endsection
