@@ -24,7 +24,7 @@ class StockMovementController extends Controller
         $summary = $this->stockMovementService->getSummaryCount($period);
 
         // Note: Pastikan view 'dashboard.stock_movement' ada jika fungsi ini digunakan
-        return view('dashboard.stock_movement', compact('summary', 'period'));
+        return view('admin.dashboard.stock_movement', compact('summary', 'period'));
     }
 
     /**
@@ -63,7 +63,7 @@ class StockMovementController extends Controller
         );
 
         // PERBAIKAN: Menggunakan path view yang konsisten dengan controller lain
-        return view('master.obat.stock_movement_detail', [
+        return view('admin.master.obat.stock_movement_detail', [
             'data' => $paginator,
             'period' => $period,
             'search' => $search,

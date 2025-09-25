@@ -71,7 +71,7 @@ class PelangganController extends Controller
 
         $pelanggans = $pelanggansQuery->paginate(10)->withQueryString();
 
-        return view('master.pelanggan.index', compact('pelanggans', 'statusMember'));
+        return view('admin.pelanggan.index', compact('pelanggans', 'statusMember'));
     }
 
     /**
@@ -79,7 +79,7 @@ class PelangganController extends Controller
      */
     public function create()
     {
-        return view('master.pelanggan.create');
+        return view('admin.pelanggan.create');
     }
 
     /**
@@ -108,7 +108,7 @@ class PelangganController extends Controller
      */
     public function show(Pelanggan $pelanggan)
     {
-        return view('master.pelanggan.show', compact('pelanggan'));
+        return view('admin.pelanggan.show', compact('pelanggan'));
     }
 
     /**
@@ -116,7 +116,7 @@ class PelangganController extends Controller
      */
     public function edit(Pelanggan $pelanggan)
     {
-        return view('master.pelanggan.edit', compact('pelanggan'));
+        return view('admin.pelanggan.edit', compact('pelanggan'));
     }
 
     /**

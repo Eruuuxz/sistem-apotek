@@ -71,7 +71,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/obat-search', [ObatController::class, 'search'])->name('obat.search');
         
         Route::resource('supplier', SupplierController::class);
-        Route::resource('pelanggan', PelangganController::class);
         Route::resource('users', UserController::class);
         
         // --- Transaksi ---
@@ -85,12 +84,12 @@ Route::middleware('auth')->group(function () {
         Route::get('pembelian/{pembelian}/faktur', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
         Route::get('pembelian/{pembelian}/pdf', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
         Route::get('/pembelian/get-obat-by-supplier/{supplierId}', [PembelianController::class, 'getObatBySupplier'])->name('pembelian.getObatBySupplier');
-
+        
         Route::resource('retur', ReturController::class);
-
+        
         // --- Keuangan ---
         Route::resource('biaya-operasional', BiayaOperasionalController::class);
-
+        
         // --- Laporan ---
         Route::prefix('laporan')->name('laporan.')->group(function () {
             Route::get('/', [LaporanController::class, 'index'])->name('index');
@@ -111,18 +110,21 @@ Route::middleware('auth')->group(function () {
         Route::resource('shifts', ShiftController::class)->except(['show', 'edit', 'update', 'destroy']);
         Route::get('shifts/summary', [ShiftController::class, 'summary'])->name('shifts.summary');
     });
-
+    Route::resource('pelanggan', PelangganController::class);
+    
     // ===================================================================
     // GRUP ROUTE KASIR
     // ===================================================================
     Route::middleware('role:kasir')->group(function () {
         Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
-
+        
         // Manajemen Shift Kasir
         Route::post('/shifts/start', [ShiftController::class, 'startShift'])->name('shifts.start');
         Route::post('/shifts/end', [ShiftController::class, 'endShift'])->name('shifts.end');
         Route::get('/shifts/my-summary', [ShiftController::class, 'summary'])->name('shifts.my.summary');
+        Route::get('/shifts/start-form', [ShiftController::class, 'showStartForm'])->name('shifts.start.form');
 
+        
         // Operasi POS yang memerlukan shift aktif
         Route::middleware('check.shift')->group(function () {
             Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
@@ -130,7 +132,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
             Route::post('/pos/set-diskon', [POSController::class, 'setDiskon'])->name('pos.setDiskon');
             Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
-
+            
             Route::get('/pos/print-options/{id}', [POSController::class, 'printOptions'])->name('pos.print.options');
             Route::get('/pos/print-faktur/{id}', [POSController::class, 'printFaktur'])->name('pos.print.faktur');
             Route::get('/pos/print-kwitansi/{id}', [POSController::class, 'printKwitansi'])->name('pos.print.kwitansi');
@@ -141,7 +143,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/pos/summary', [POSController::class, 'shiftSummary'])->name('kasir.summary');
             Route::get('/pos/riwayat/{id}', [POSController::class, 'show'])->name('penjualan.show');
             Route::get('/pos/success/{id}', [POSController::class, 'success'])->name('kasir.success');
-
+            
             Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
             Route::get('/pos/search-pelanggan', [POSController::class, 'searchPelanggan'])->name('pos.searchPelanggan');
             Route::post('/pos/add-pelanggan-cepat', [POSController::class, 'addPelangganCepat'])->name('pos.addPelangganCepat');

@@ -62,7 +62,7 @@ class DashboardController extends Controller
         $stockMovementSummary = $this->stockMovementService->getSummaryCount(3);
 
 
-        return view('dashboard', compact(
+        return view('admin.dashboard', compact(
             'totalObat',
             'totalSupplier',
             'penjualanHariIni',

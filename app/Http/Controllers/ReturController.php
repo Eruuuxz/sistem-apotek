@@ -25,7 +25,7 @@ class ReturController extends Controller
         }
 
         $data = $q->paginate(10)->withQueryString();
-        return view('transaksi.retur.index', compact('data'));
+        return view('admin.retur.index', compact('data'));
     }
 
     public function create()
@@ -34,7 +34,7 @@ class ReturController extends Controller
         $pembelian = Pembelian::latest()->take(20)->get();
         $penjualan = Penjualan::latest()->take(20)->get();
         $noRetur = 'RT-' . date('Y') . '-' . str_pad((Retur::count() + 1), 3, '0', STR_PAD_LEFT);
-        return view('transaksi.retur.create', compact('pembelian', 'penjualan', 'noRetur'));
+        return view('admin.retur.create', compact('pembelian', 'penjualan', 'noRetur'));
     }
 
     public function sumber($jenis, $id)
@@ -142,12 +142,12 @@ class ReturController extends Controller
             //     $retur->save();
             // }
         });
-        return redirect()->route('retur.index')->with('success', 'Retur tersimpan');
+        return redirect()->route('admin.retur.index')->with('success', 'Retur tersimpan');
     }
 
     public function show($id)
     {
     $retur = Retur::with('details.obat')->findOrFail($id);
-    return view('transaksi.retur.show', compact('retur'));
+    return view('admin.retur.show', compact('retur'));
     }
 }

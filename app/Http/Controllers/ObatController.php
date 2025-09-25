@@ -30,14 +30,14 @@ class ObatController extends Controller
         }
         $obats = $query->get(); // gunakan hasil query yang difilter
 
-        return view('master.obat.index', compact('obats'));
+        return view('admin.master.obat.index', compact('obats'));
     }
 
 
     public function create()
     {
         $suppliers = Supplier::all(); // Ambil semua supplier untuk dropdown
-        return view('master.obat.create', compact('suppliers'));
+        return view('admin.master.obat.create', compact('suppliers'));
     }
 
     public function store(Request $request)
@@ -69,7 +69,7 @@ class ObatController extends Controller
     public function edit(Obat $obat)
     {
         $suppliers = Supplier::all();
-        return view('master.obat.edit', compact('obat', 'suppliers'));
+        return view('admin.master.obat.edit', compact('obat', 'suppliers'));
     }
 
     public function update(Request $request, Obat $obat)

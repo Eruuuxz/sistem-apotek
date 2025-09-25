@@ -14,13 +14,13 @@ class UserController extends Controller
     {
         // Tampilkan user dengan role 'kasir' dan 'admin'
         $users = User::whereIn('role', ['kasir', 'admin'])->paginate(10);
-        return view('managementuser.index', compact('users'));
+        return view('admin.managementuser.index', compact('users'));
     }
 
     public function create()
     {
         $cabangs = Cabang::all(); // Ambil semua cabang
-        return view('managementuser.create', compact('cabangs'));
+        return view('admin.managementuser.create', compact('cabangs'));
     }
 
     public function store(Request $request)
@@ -47,7 +47,7 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $cabangs = Cabang::all();
-        return view('managementuser.edit', compact('user', 'cabangs'));
+        return view('admin.managementuser.edit', compact('user', 'cabangs'));
     }
 
     public function update(Request $request, User $user)

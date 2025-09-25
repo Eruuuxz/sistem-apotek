@@ -47,10 +47,10 @@
                 </nav>
             </div>
             <div class="py-6">
-                <div x-show="tab === 'penjualan'">@include('laporan.partials.penjualan')</div>
-                <div x-show="tab === 'profit'" x-cloak>@include('laporan.partials.profit')</div>
-                <div x-show="tab === 'stok'" x-cloak>@include('laporan.partials.stok')</div>
-                <div x-show="tab === 'customer'" x-cloak>@include('laporan.partials.customer_analytics')</div>
+                <div x-show="tab === 'penjualan'">@include('admin.laporan.partials.penjualan')</div>
+                <div x-show="tab === 'profit'" x-cloak>@include('admin.laporan.partials.profit')</div>
+                <div x-show="tab === 'stok'" x-cloak>@include('admin.laporan.partials.stok')</div>
+                <div x-show="tab === 'customer'" x-cloak>@include('admin.laporan.partials.customer_analytics')</div>
             </div>
         </div>
     </div>

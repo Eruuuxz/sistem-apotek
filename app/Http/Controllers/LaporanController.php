@@ -66,7 +66,7 @@ class LaporanController extends Controller
 setlocale(LC_TIME, 'id_ID.UTF-8');
 \Carbon\Carbon::setLocale('id');
 
-        return view('laporan.index', compact(
+        return view('admin.laporan.index', compact(
             'periode',
             'penjualanHarian',
             'totalPenjualan',
