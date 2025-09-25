@@ -1,64 +1,156 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <title>Surat Pesanan - {{ $suratPesanan->no_sp }}</title>
     <style>
-        body { font-family: 'Helvetica', Arial, sans-serif; font-size: 11pt; color: #333; }
-        .container { width: 100%; margin: 0 auto; }
-        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        .header-table td { vertical-align: top; padding: 5px; }
-        .clinic-info { text-align: right; }
-        .clinic-info h2 { margin: 0; font-size: 14pt; }
-        .clinic-info p { margin: 2px 0; font-size: 10pt; }
-        .order-meta p { margin: 2px 0; }
-        h3 { text-align: center; text-decoration: underline; margin-bottom: 25px; font-size: 14pt; }
-        .content-table { width: 100%; border-collapse: collapse; }
-        .content-table th, .content-table td { border: 1px solid #000; padding: 8px; text-align: left; }
-        .content-table th { background-color: #f2f2f2; font-size: 10pt; }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .footer { margin-top: 50px; width: 100%; }
-        .signature { float: right; width: 300px; text-align: center; }
-        .signature p { margin-bottom: 70px; }
-        .clear { clear: both; }
+        @page {
+            margin: 30px;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            color: #000;
+        }
+
+        .container {
+            width: 100%;
+        }
+
+        /* Header */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .header-table td {
+            vertical-align: top;
+            padding: 2px;
+        }
+
+        .clinic-info {
+            text-align: right;
+        }
+
+        .clinic-info h2 {
+            margin: 0;
+            font-size: 14pt;
+            font-weight: bold;
+        }
+
+        .clinic-info p {
+            margin: 1px 0;
+            font-size: 10pt;
+        }
+
+        .sp-details {
+            border: 1px solid #000;
+            padding: 5px;
+            width: 300px;
+        }
+
+        .sp-details td {
+            padding: 3px;
+        }
+
+        .title {
+            text-align: center;
+            font-weight: bold;
+            text-decoration: underline;
+            font-size: 14pt;
+            margin: 25px 0;
+        }
+
+        /* Tabel Item */
+        .content-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .content-table th,
+        .content-table td {
+            border: 1px solid #000;
+            padding: 7px;
+            text-align: left;
+        }
+
+        .content-table th {
+            font-weight: bold;
+            text-align: center;
+            background-color: #f2f2f2;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 20px;
+        }
+
+        .notes p {
+            margin: 0;
+        }
+
+        .signature-section {
+            margin-top: 30px;
+            text-align: right;
+        }
+
+        .signature-block {
+            display: inline-block;
+            text-align: center;
+        }
+
+        .signature-block p {
+            margin-bottom: 60px;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <table class="header-table">
             <tr>
-                <td style="width: 50%;">
-                    <div class="order-meta">
-                        <p>No. : {{ $suratPesanan->no_sp }}</p>
-                        <p>Tanggal : {{ $suratPesanan->tanggal_sp->format('d F Y') }}</p>
-                        <br>
-                        <p>Kepada Yth.</p>
-                        <p><strong>Distributor {{ $suratPesanan->supplier->nama ?? '' }}</strong></p>
-                        <p>{{ $suratPesanan->supplier->alamat ?? '' }}</p>
-                    </div>
+                <td>
+                    <table class="sp-details">
+                        <tr>
+                            <td>No</td>
+                            <td>: {{ $suratPesanan->no_sp }}</td>
+                        </tr>
+                        <tr>
+                            <td>Tanggal</td>
+                            <td>: {{ $suratPesanan->tanggal_sp->format('d / m / Y') }}</td>
+                        </tr>
+                        <tr>
+                            <td>Distributor</td>
+                            <td>: {{ $suratPesanan->supplier->nama ?? '' }}</td>
+                        </tr>
+                    </table>
                 </td>
-                <td style="width: 50%;">
-                    <div class="clinic-info">
-                        <h2>{{ $clinicData['nama'] }}</h2>
-                        <p>{{ $clinicData['alamat'] }}</p>
-                        <p>Telp: {{ $clinicData['telepon'] }} | Email: {{ $clinicData['email'] }}</p>
-                        <p>{{ $clinicData['sio'] }}</p>
-                    </div>
+                <td class="clinic-info">
+                    <h2>APOTEK LIZ FARMA 02</h2>
+                    <p>JL. RAYA BATUJAJAR NO. 321 RT.001 RW.005</p>
+                    <p>Telp: (022) 123456</p>
                 </td>
             </tr>
         </table>
 
-        <h3>SURAT PESANAN</h3>
+        <div class="title">SURAT PESANAN</div>
 
         <table class="content-table">
             <thead>
                 <tr>
-                    <th class="text-center" style="width: 5%;">No</th>
+                    <th style="width: 5%;">No</th>
                     <th>Nama Obat</th>
-                    <th style="width: 15%;">Sediaan</th>
-                    <th style="width: 15%;">Satuan</th>
-                    <th class="text-center" style="width: 15%;">Jumlah Pesanan</th>
+                    <th style="width: 12%;">Sediaan</th>
+                    <th style="width: 12%;">Kemasan</th>
+                    <th style="width: 12%;">Satuan</th>
+                    <th style="width: 15%;">Jumlah Pesanan</th>
                 </tr>
             </thead>
             <tbody>
@@ -67,16 +159,18 @@
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>{{ $detail->obat->nama ?? $detail->nama_manual ?? '' }}</td>
-                        <td>{{ $detail->obat->sediaan ?? '' }}</td>
-                        <td>{{ $detail->obat->satuan_terkecil ?? '' }}</td>
+                        <td class="text-center">{{ $detail->obat->sediaan ?? '' }}</td>
+                        <td class="text-center">{{ $detail->obat->kemasan ?? '' }}</td>
+                        <td class="text-center">{{ $detail->obat->satuan_terkecil ?? '' }}</td>
                         <td class="text-center">{{ $detail->qty_pesan }}</td>
                     </tr>
                     @php $rowCount++; @endphp
                 @endforeach
 
-                @for ($i = $rowCount; $i < 10; $i++)
+                @for ($i = $rowCount; $i < 15; $i++)
                     <tr>
                         <td class="text-center">{{ $i + 1 }}</td>
+                        <td>&nbsp;</td>
                         <td>&nbsp;</td>
                         <td>&nbsp;</td>
                         <td>&nbsp;</td>
@@ -87,14 +181,19 @@
         </table>
 
         <div class="footer">
-            <p><strong>Catatan:</strong> Jika barang yang dipesan kosong, harap menghubungi narahubung kami.</p>
-            <div class="signature">
-                <p>Pemesan,</p>
-                <strong><u>{{ $apotekerData['nama'] }}</u></strong><br>
-                <span>{{ $apotekerData['sipa'] }}</span>
+            <div class="notes">
+                <p><strong>Catatan:</strong></p>
+                <p>1. Jika barang yang dipesan kosong, harap menghubungi Narahubung kami.</p>
             </div>
-            <div class="clear"></div>
+            <div class="signature-section">
+                <div class="signature-block">
+                    <p>Pemesan,</p>
+                    <strong><u>{{ $apotekerData['nama'] }}</u></strong><br>
+                    <span>SIPA: {{ $apotekerData['sipa'] }}</span>
+                </div>
+            </div>
         </div>
     </div>
 </body>
+
 </html>

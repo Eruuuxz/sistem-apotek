@@ -1,177 +1,145 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Sistem Kasir Apotek')</title>
+    <title>@yield('title', 'POS Kasir') - Apotek Liz Farma 02</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-        <style>
-        /* Efek fade untuk halaman */
-        body {
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-        }
-        body.loaded {
-            opacity: 1;
-        }
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+        html { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
+        body { opacity: 0; transition: opacity 0.3s ease-in-out; }
+        body.loaded { opacity: 1; }
     </style>
 </head>
 
-<body class="bg-gray-100 flex min-h-screen font-sans">
+<body class="bg-slate-100 flex min-h-screen font-sans">
 
-<aside class="w-64 bg-green-900 text-white flex flex-col shadow-xl fixed inset-y-0 left-0 z-20">
-    <div class="p-6 text-2xl font-bold border-b border-green-800 flex items-center justify-center tracking-wide">
-        Apotek <span class="text-green-300 ml-1">LIZ Farma 02</span>
+<aside class="w-64 bg-green-900 text-white flex flex-col shadow-lg fixed inset-y-0 left-0 z-30">
+    <div class="p-6 h-20 flex items-center justify-center border-b border-green-800/50">
+        <h1 class="text-xl font-bold text-white tracking-wide">
+            Apotek <span class="text-green-300">Liz Farma 02</span>
+        </h1>
     </div>
 
-    <nav class="mt-6 flex-1 px-2 space-y-2" x-data="{ activeDropdown: '{{ request()->is('pelanggan*') ? 'pelanggan' : (request()->routeIs('shifts.my.summary') ? 'shift-summary' : null) }}' }">
-    @auth
-        @if(Auth::user()->role === 'kasir')
-            
-            {{-- POS --}}
-            <a href="{{ route('pos.index') }}"
-               class="flex items-center px-4 py-3 rounded-lg transition-colors
-               {{ request()->routeIs('pos.*') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-800 text-gray-200' }}">
-                <i data-feather="shopping-cart" class="w-5 h-5 mr-3"></i>
-                <span>POS Penjualan</span>
-            </a>
+    <nav class="flex-1 px-4 pt-6 space-y-1.5" x-data="{ activeDropdown: '{{ request()->is('pelanggan*') ? 'pelanggan' : '' }}' }">
+        @auth
+            @if(Auth::user()->role === 'kasir')
+                
+                <a href="{{ route('pos.index') }}"
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium {{ request()->routeIs('pos.*') ? 'bg-green-600 text-white' : 'text-green-200 hover:bg-white/10 hover:text-white' }}">
+                    <i data-feather="shopping-cart" class="w-5 h-5"></i>
+                    <span>POS Penjualan</span>
+                </a>
 
-            {{-- Riwayat Penjualan --}}
-            <a href="{{ route('kasir.riwayat') }}"
-               class="flex items-center px-4 py-3 rounded-lg transition-colors
-               {{ request()->routeIs('kasir.riwayat') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-800 text-gray-200' }}">
-                <i data-feather="clock" class="w-5 h-5 mr-3"></i>
-                <span>Riwayat Penjualan</span>
-            </a>
+                <a href="{{ route('kasir.riwayat') }}"
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium {{ request()->routeIs('kasir.riwayat') ? 'bg-green-600 text-white' : 'text-green-200 hover:bg-white/10 hover:text-white' }}">
+                    <i data-feather="clock" class="w-5 h-5"></i>
+                    <span>Riwayat Penjualan</span>
+                </a>
 
-            {{-- Ringkasan Shift --}}
-            <a href="{{ route('kasir.summary') }}"
-               class="flex items-center px-4 py-3 rounded-lg transition-colors
-               {{ request()->routeIs('kasir.summary') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-800 text-gray-200' }}">
-                <i data-feather="briefcase" class="w-5 h-5 mr-3"></i>
-                <span>Ringkasan Shift</span>
-            </a>
-            
-            {{-- Pelanggan (Dropdown) --}}
-            <div>
-                <button @click="activeDropdown = activeDropdown === 'pelanggan' ? null : 'pelanggan'"
-                    class="flex items-center w-full px-4 py-3 rounded-lg transition-colors
-                    {{ request()->is('pelanggan*') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-700 text-gray-200' }}">
-                    <i data-feather="users" class="w-5 h-5 mr-3"></i>
-                    <span class="flex-1 text-left">Pelanggan</span>
-                    <svg :class="{'rotate-180': activeDropdown === 'pelanggan'}"
-                        class="w-4 h-4 transition-transform duration-300 ml-auto text-gray-300"
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M19 9l-7 7-7-7"/>
+                <a href="{{ route('kasir.summary') }}"
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium {{ request()->routeIs('kasir.summary') ? 'bg-green-600 text-white' : 'text-green-200 hover:bg-white/10 hover:text-white' }}">
+                   <i data-feather="briefcase" class="w-5 h-5"></i>
+                    <span>Ringkasan Shift</span>
+                </a>
+                
+                <div>
+                    <button @click="activeDropdown = activeDropdown === 'pelanggan' ? null : 'pelanggan'"
+                            class="flex items-center w-full gap-3 px-4 py-3 rounded-lg transition-colors font-medium {{ request()->is('pelanggan*') ? 'bg-green-600 text-white' : 'text-green-200 hover:bg-white/10 hover:text-white' }}">
+                        <i data-feather="users" class="w-5 h-5"></i>
+                        <span class="flex-1 text-left">Pelanggan</span>
+                        <svg :class="{'rotate-180': activeDropdown === 'pelanggan'}" class="w-4 h-4 transition-transform duration-300 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="activeDropdown === 'pelanggan'" x-transition x-cloak class="mt-1 space-y-1 pl-10">
+                        <a href="{{ route('pelanggan.index') }}" class="block px-4 py-2 text-sm rounded-lg transition-colors {{ request()->is('pelanggan') && !request()->is('pelanggan/create') ? 'text-white font-semibold' : 'text-green-300 hover:text-white' }}">Daftar Pelanggan</a>
+                        <a href="{{ route('pelanggan.create') }}" class="block px-4 py-2 text-sm rounded-lg transition-colors {{ request()->is('pelanggan/create') ? 'text-white font-semibold' : 'text-green-300 hover:text-white' }}">Tambah Pelanggan</a>
+                    </div>
+                </div>
+            @endif
+        @endauth
+    </nav>
+</aside>
+
+<div class="flex-1 flex flex-col ml-64">
+    <header class="bg-white/80 backdrop-blur-sm p-4 h-20 flex justify-between items-center border-b border-slate-200 sticky top-0 z-20">
+        <div class="flex items-center gap-3">
+            @if (!request()->routeIs('pos.index'))
+                <a href="{{ url()->previous() }}" title="Kembali" class="p-2 rounded-full hover:bg-slate-200 transition-colors">
+                    <svg class="w-5 h-5 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                     </svg>
+                </a>
+            @endif
+            <h1 class="text-2xl font-bold text-slate-800 tracking-tight">@yield('title', 'POS Kasir')</h1>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+             <div class="text-sm text-slate-600 font-medium text-right">
+                <div id="date" class="font-semibold text-slate-800"></div>
+                <div id="clock" class="text-xs"></div>
+             </div>
+            @auth
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" class="flex items-center gap-2 p-1.5 rounded-full hover:bg-slate-200 transition-colors">
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=16a34a&color=fff&size=40" alt="Avatar" class="w-9 h-9 rounded-full">
+                    <div class="hidden md:block text-left">
+                         <p class="font-semibold text-sm text-slate-800">{{ Auth::user()->name }}</p>
+                         <p class="text-xs text-slate-500">{{ ucfirst(Auth::user()->role) }}</p>
+                    </div>
                 </button>
-
-                <div x-show="activeDropdown === 'pelanggan'" x-transition x-cloak class="ml-10 mt-1 space-y-1">
-                    <a href="{{ route('pelanggan.index') }}"
-                       class="block px-4 py-2 rounded transition-colors
-                       {{ request()->is('pelanggan') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-700 text-gray-300' }}">
-                        Daftar Pelanggan
-                    </a>
-                    <a href="{{ route('pelanggan.create') }}"
-                       class="block px-4 py-2 rounded transition-colors
-                       {{ request()->is('pelanggan/create') ? 'bg-green-700 text-white font-semibold' : 'hover:bg-green-700 text-gray-300' }}">
-                        Tambah Pelanggan (Member)
-                    </a>
+                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-1 border border-slate-200" x-cloak>
+                    <div class="px-4 py-2 border-b border-slate-200">
+                        <p class="font-semibold text-sm text-slate-800">{{ Auth::user()->name }}</p>
+                        <p class="text-xs text-slate-500 truncate">{{ Auth::user()->email }}</p>
+                    </div>
+                    <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Profil</a>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium">Logout</button>
+                    </form>
                 </div>
             </div>
+            @endauth
+        </div>
+    </header>
 
-        @endif
-    @endauth
-</nav>
+    <main class="p-6 flex-1 overflow-y-auto">
+        @yield('content')
+    </main>
+</div>
 
+@stack('scripts')
+<script>
+    feather.replace();
+    
+    function updateClock() {
+        const now = new Date();
+        const dateEl = document.getElementById('date');
+        const clockEl = document.getElementById('clock');
+        if (dateEl && clockEl) {
+            dateEl.innerText = now.toLocaleDateString('id-ID', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
+            clockEl.innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
 
-    </aside>
-
-    <div class="flex-1 flex flex-col ml-64">
-        <header
-            class="bg-white shadow-md p-4 flex justify-between items-center border-b border-gray-200 sticky top-0 z-20">
-            <div class="flex items-center gap-4">
-                {{-- Tombol Kembali --}}
-                @if (!request()->routeIs('pos.index'))
-                    <a href="{{ url()->previous() }}" title="Kembali" class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-full transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </a>
-                @endif
-                <h1 class="text-2xl font-bold text-gray-800 tracking-wide">
-                    @yield('title', 'Dashboard')
-                </h1>
-            </div>
-
-            <div class="flex items-center space-x-4">
-                <div id="clock" class="text-sm text-gray-500 font-medium"></div>
-
-                @auth
-                    <span
-                        class="text-sm text-gray-600 px-3 py-1 bg-gray-100 rounded-full border border-gray-200 hidden md:inline-block">
-                        {{ ucfirst(Auth::user()->role) }}
-                    </span>
-
-                    <div class="flex items-center space-x-2 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
-                        <span class="text-gray-700 font-medium">{{ Auth::user()->name }}</span>
-                        <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=0D8ABC&color=fff&size=32"
-                            alt="Avatar" class="w-8 h-8 rounded-full">
-                    </div>
-
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit"
-                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow transition font-medium text-sm">
-                            Logout
-                        </button>
-                    </form>
-                @endauth
-            </div>
-        </header>
-
-        <script>
-            function updateClock() {
-                const now = new Date();
-                document.getElementById('clock').innerText =
-                    now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-                    + ' ' + now.toLocaleTimeString('id-ID');
-            }
-            setInterval(updateClock, 1000);
-            updateClock();
-        </script>
-
-
-        <main class="p-6 flex-1 overflow-y-auto">
-            @yield('content')
-        </main>
-    </div>
-
-    @stack('scripts')
-
-    <script>
-        // Tambah class "loaded" setelah halaman selesai dimuat
-        document.addEventListener("DOMContentLoaded", function() {
-            document.body.classList.add("loaded");
-
-            // Tambah animasi saat klik link internal
-            document.querySelectorAll("a").forEach(link => {
-                link.addEventListener("click", function(e) {
-                    const target = this.getAttribute("href");
-                    if (target && target.startsWith("http") === false && !this.hasAttribute("target")) {
-                        e.preventDefault();
-                        document.body.classList.remove("loaded"); // fade out
-                        setTimeout(() => {
-                            window.location.href = target;
-                        }, 300); // sesuai durasi transition
-                    }
-                });
+    document.addEventListener("DOMContentLoaded", function () {
+        document.body.classList.add("loaded");
+        document.querySelectorAll("a[href]:not([target='_blank']):not([href^='#'])").forEach(link => {
+            link.addEventListener("click", function (e) {
+                if(!this.closest('[x-data]')) {
+                    e.preventDefault();
+                    document.body.classList.remove("loaded");
+                    setTimeout(() => { window.location.href = this.href; }, 300);
+                }
             });
         });
-    </script>
+    });
+</script>
 </body>
-
 </html>

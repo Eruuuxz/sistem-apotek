@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Faktur Pembelian - {{ $p->no_faktur }}</title>
+    <title>Faktur Pembelian - {{ $p->no_faktur_pbf ?? $p->no_faktur }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -92,7 +92,7 @@
         <div class="header">
             <div class="left">
                 <h1>FAKTUR PEMBELIAN</h1>
-                <p>Nomor: <strong>{{ $p->no_faktur }}</strong></p>
+                <p>Nomor: <strong>{{ $p->no_faktur_pbf ?? $p->no_faktur }}</strong></p>
                 <p>Tanggal: <strong>{{ \Carbon\Carbon::parse($p->tanggal)->format('d F Y H:i:s') }}</strong></p>
             </div>
             <div class="right">

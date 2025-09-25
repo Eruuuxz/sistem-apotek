@@ -3,61 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice {{ $penjualan->no_nota }}</title>
+    <title>Struk {{ $penjualan->no_nota }}</title>
     <style>
-        @page {
-            size: 58mm; /* Ukuran kertas printer termal */
-            margin: 0;
-        }
-        body {
-            font-family: 'monospace', sans-serif;
-            font-size: 10px;
-            color: #000;
-            margin: 5mm; /* Margin di sekitar konten */
-            padding: 0;
-            width: 48mm; /* Lebar konten agar tidak terpotong */
-        }
-        .container {
-            width: 100%;
-        }
-        .header, .footer {
-            text-align: center;
-        }
-        .header h3 {
-            margin: 0;
-            font-size: 12px;
-        }
-        .header p {
-            margin: 2px 0;
-        }
-        .separator {
-            border-top: 1px dashed #000;
-            margin: 5px 0;
-        }
-        .info-table, .items-table, .totals-table {
-            width: 100%;
-            font-size: 10px;
-        }
-        .info-table td {
-            padding: 1px 0;
-        }
-        .items-table .item-name {
-            display: block;
-        }
-        .items-table .item-details {
-            display: flex;
-            justify-content: space-between;
-        }
-        .totals-table td {
-            padding: 1px 0;
-            text-align: right;
-        }
-        .totals-table td:first-child {
-            text-align: left;
-        }
-        .text-right {
-            text-align: right;
-        }
+        @page { size: 58mm; margin: 0; }
+        body { font-family: 'monospace', sans-serif; font-size: 10px; color: #000; margin: 5mm; padding: 0; width: 48mm; }
+        .container { width: 100%; }
+        .header, .footer { text-align: center; }
+        .header h3 { margin: 0; font-size: 12px; }
+        .header p { margin: 2px 0; }
+        .separator { border-top: 1px dashed #000; margin: 5px 0; }
+        .info-table, .items-table, .totals-table { width: 100%; font-size: 10px; }
+        .info-table td { padding: 1px 0; }
+        .items-table .item-name { display: block; }
+        .items-table .item-details { display: flex; justify-content: space-between; }
+        .totals-table td { padding: 1px 0; text-align: right; }
+        .totals-table td:first-child { text-align: left; }
+        .text-right { text-align: right; }
     </style>
 </head>
 <body onload="window.print()">
@@ -67,9 +28,7 @@
             <p>JL. RAYA BATUJAJAR NO. 321</p>
             <p>Telp. 08125457845</p>
         </div>
-
         <div class="separator"></div>
-
         <table class="info-table">
             <tr>
                 <td>No Nota</td>
@@ -85,7 +44,7 @@
             </tr>
              <tr>
                 <td>Pelanggan</td>
-                <td class="text-right">{{ $penjualan->nama_pelanggan ?? '-' }}</td>
+                <td class="text-right">{{ $penjualan->nama_pelanggan ?? 'Umum' }}</td>
             </tr>
         </table>
 
@@ -135,9 +94,7 @@
                 <td>{{ number_format($penjualan->kembalian, 0, ',', '.') }}</td>
             </tr>
         </table>
-
         <div class="separator"></div>
-
         <div class="footer">
             <p>Terima Kasih</p>
             <p>Semoga Sehat Selalu</p>
@@ -145,3 +102,4 @@
     </div>
 </body>
 </html>
+

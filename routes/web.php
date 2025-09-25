@@ -1,7 +1,9 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\CustomAuthenticatedSessionController;
 use App\Http\Controllers\Auth\RoleLoginController;
 use App\Http\Controllers\DashboardController;
@@ -31,7 +33,8 @@ use App\Models\CashierShift;
 // Route Publik
 Route::get('/', function () {
     return view('auth.pilih-login');
-});
+})->name('pilih-login');
+
 
 Route::get('/login/admin', [RoleLoginController::class, 'showAdminLoginForm'])->name('login.admin');
 Route::get('/login/kasir', [RoleLoginController::class, 'showKasirLoginForm'])->name('login.kasir');
@@ -40,7 +43,17 @@ Route::post('/login', [CustomAuthenticatedSessionController::class, 'store'])->n
 
 // Route yang Memerlukan Autentikasi
 Route::middleware('auth')->group(function () {
-    Route::post('/logout', [CustomAuthenticatedSessionController::class, 'destroy'])->name('logout');
+    // Rute Logout dimodifikasi untuk redirect ke halaman pilih-login
+    Route::post('/logout', function (Request $request) {
+        Auth::guard('web')->logout();
+
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        return redirect()->route('pilih-login');
+    })->name('logout');
+
 
     // Profil Pengguna
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

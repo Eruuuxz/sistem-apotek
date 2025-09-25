@@ -1,150 +1,103 @@
-{{-- File: /views/kasir/kwitansi.blade.php --}}
 <!DOCTYPE html>
-<html>
-
+<html lang="id">
 <head>
-    <meta charset="utf-8">
-    <title>Kwitansi Pembayaran</title>
+    <meta charset="UTF-8">
+    <title>Faktur Penjualan - {{ $penjualan->no_nota }}</title>
     <style>
-        @page {
-            size: A5 landscape;
-            margin: 10mm;
-        }
-
-        body {
-            font-family: "Times New Roman", serif;
-            font-size: 13px;
-            margin: 0;
-            padding: 0;
-        }
-
-        .kwitansi-container {
-            border: 2px solid #000;
-            display: flex;
-            width: 100%;
-            height: 100%;
-            box-sizing: border-box;
-        }
-
-       .left-section {
-    width: 20%;
-    border-right: 2px solid #000;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    box-sizing: border-box;
-}
-
-.left-box {
-    border: 2px solid #000;
-    border-radius: 15px;
-    padding: 5px;
-    flex: 1;                /* biar panjang ke atas-bawah */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.vertical-text {
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    font-size: 12px;
-    font-weight: bold;
-    text-align: center;
-    line-height: 1.5;
-}
-
-.logo img {
-    max-width: 70px;
-    margin-top: 10px;
-}
-
-
-        /* Bagian kanan */
-        .right-section {
-            width: 80%;
-            padding: 15px 20px;
-            box-sizing: border-box;
-            border: 2px solid #000;
-            border-radius: 20px;
-            margin: 10px;
-        }
-
-        .field {
-            margin: 8px 0;
-            font-size: 13px;
-        }
-
-        .field span {
-            display: inline-block;
-            min-width: 150px;
-            font-weight: bold;
-        }
-
-        .amount-box {
-            border: 2px solid #000;
-            padding: 12px 20px;
-            display: inline-block;
-            min-width: 200px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 16px;
-            margin-top: 25px;
-            border-radius: 12px;
-        }
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        .container { width: 100%; max-width: 800px; margin: auto; padding: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .header p { margin: 2px 0; }
+        .info-table { width: 100%; margin-bottom: 20px; }
+        .info-table td { padding: 3px 0; }
+        .items-table { width: 100%; border-collapse: collapse; }
+        .items-table th, .items-table td { border: 1px solid #ccc; padding: 8px; }
+        .items-table thead { background-color: #f2f2f2; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .totals { float: right; width: 40%; margin-top: 20px; }
+        .totals table { width: 100%; }
+        .totals td { padding: 5px; }
+        .footer { text-align: center; margin-top: 50px; font-size: 10px; color: #555; }
     </style>
 </head>
-
 <body onload="window.print()">
-    <div class="kwitansi-container">
-        <!-- Bagian kiri -->
-        <div class="left-section">
-            <div class="left-box">
-                <div class="vertical-text">
-                    APOTEK LIZ FARMA 02<br>
-                    JL. RAYA BATUJAJAR NO. 321<br>
-                    RT.001 RW.005<br>
-                    KEL. BATUJAJAR BARAT, KEC. BATUJAJAR
-                </div>
-            </div>
-            <div class="logo">
-                <img src="{{ asset('images/ilus.jpg') }}" alt="Logo Apotek">
-            </div>
+    <div class="container">
+        <div class="header">
+            <h1>FAKTUR PENJUALAN</h1>
+            <p><strong>Apotek LIZ Farma 02</strong></p>
+            <p>JL. RAYA BATUJAJAR NO. 321, BATUJAJAR BARAT</p>
+            <p>Telp: 08125457845</p>
         </div>
-
-
-        <!-- Bagian kanan -->
-        <div class="right-section">
-            <div class="field">
-                <span>No:</span> {{ $penjualan->no_nota }}
-            </div>
-            <div class="field">
-                <span>Telah terima dari:</span>
-                @if($penjualan->pelanggan)
-                    {{ $penjualan->pelanggan->nama }} ({{ ucfirst($penjualan->pelanggan->status_member) }})
-                @else
-                    {{ $penjualan->nama_pelanggan ?? '....................................' }}
+        <table class="info-table">
+            <tr>
+                <td width="50%"><strong>Kepada:</strong> {{ $penjualan->nama_pelanggan ?? '-' }}</td>
+                <td width="50%" class="text-right"><strong>No. Faktur:</strong> {{ $penjualan->no_nota }}</td>
+            </tr>
+            <tr>
+                <td><strong>Alamat:</strong> {{ $penjualan->alamat_pelanggan ?? '-' }}</td>
+                <td class="text-right"><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($penjualan->tanggal)->format('d F Y') }}</td>
+            </tr>
+             <tr>
+                <td><strong>Telepon:</strong> {{ $penjualan->telepon_pelanggan ?? '-' }}</td>
+                <td class="text-right"><strong>Kasir:</strong> {{ $penjualan->kasir->name ?? '-' }}</td>
+            </tr>
+        </table>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Nama Barang</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-right">Harga Satuan</th>
+                    <th class="text-right">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($penjualan->details as $i => $item)
+                    <tr>
+                        <td class="text-center">{{ $i + 1 }}</td>
+                        <td>{{ $item->obat->nama ?? 'Obat Dihapus' }}</td>
+                        <td class="text-center">{{ $item->qty }}</td>
+                        <td class="text-right">Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                        <td class="text-right">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        <div class="totals">
+            <table>
+                 <tr>
+                    <td>Subtotal</td>
+                    <td class="text-right">Rp {{ number_format($penjualan->subtotal_attribute, 0, ',', '.') }}</td>
+                </tr>
+                 @if($penjualan->diskon_amount > 0)
+                 <tr>
+                    <td>Diskon</td>
+                    <td class="text-right">- Rp {{ number_format($penjualan->diskon_amount, 0, ',', '.') }}</td>
+                </tr>
                 @endif
-            </div>
-            @if($penjualan->pelanggan)
-            <div class="field">
-                <span>Poin Member:</span> {{ number_format($penjualan->pelanggan->point, 0, ',', '.') }}
-            </div>
-            @endif
-            <div class="field">
-                <span>Uang sejumlah:</span> Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}
-            </div>
-            <div class="field">
-                <span>Untuk pembayaran:</span> Pembelian obat di Apotek LIZ Farma 02
-            </div>
-
-            <div class="amount-box">
-                Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}
-            </div>
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td class="text-right"><strong>Rp {{ number_format($penjualan->total, 0, ',', '.') }}</strong></td>
+                </tr>
+                 <tr>
+                    <td>Bayar</td>
+                    <td class="text-right">Rp {{ number_format($penjualan->bayar, 0, ',', '.') }}</td>
+                </tr>
+                 <tr>
+                    <td>Kembalian</td>
+                    <td class="text-right">Rp {{ number_format($penjualan->kembalian, 0, ',', '.') }}</td>
+                </tr>
+            </table>
+        </div>
+        <div style="clear: both;"></div>
+        <div class="footer">
+            <p>Terima kasih telah berbelanja di Apotek LIZ Farma 02.</p>
+            <p>Barang yang sudah dibeli tidak dapat dikembalikan.</p>
         </div>
     </div>
 </body>
-
 </html>
+
