@@ -72,10 +72,12 @@ Route::middleware('auth')->group(function () {
         
         Route::resource('supplier', SupplierController::class);
         Route::resource('users', UserController::class);
+        Route::resource('pelanggan', PelangganController::class); // <-- DIPINDAHKAN KESINI
         
         // --- Transaksi ---
         Route::resource('surat_pesanan', SuratPesananController::class);
         Route::get('surat_pesanan/{id}/details', [SuratPesananController::class, 'getSpDetails'])->name('surat_pesanan.details');
+        Route::get('/surat-pesanan/get-obat-by-supplier/{supplier}', [SuratPesananController::class, 'getObatBySupplier'])->name('surat_pesanan.getObatBySupplier');
         Route::get('/surat_pesanan/{id}/pdf', [SuratPesananController::class, 'generatePdf'])->name('surat_pesanan.pdf');
 
         // --- Rute Pembelian ---
@@ -85,7 +87,9 @@ Route::middleware('auth')->group(function () {
         Route::get('pembelian/{pembelian}/pdf', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
         Route::get('/pembelian/get-obat-by-supplier/{supplierId}', [PembelianController::class, 'getObatBySupplier'])->name('pembelian.getObatBySupplier');
         
+        Route::get('/retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');
         Route::resource('retur', ReturController::class);
+
         
         // --- Keuangan ---
         Route::resource('biaya-operasional', BiayaOperasionalController::class);
@@ -110,7 +114,6 @@ Route::middleware('auth')->group(function () {
         Route::resource('shifts', ShiftController::class)->except(['show', 'edit', 'update', 'destroy']);
         Route::get('shifts/summary', [ShiftController::class, 'summary'])->name('shifts.summary');
     });
-    Route::resource('pelanggan', PelangganController::class);
     
     // ===================================================================
     // GRUP ROUTE KASIR

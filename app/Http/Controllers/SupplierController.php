@@ -17,7 +17,7 @@ class SupplierController extends Controller
     public function index()
     {
         $suppliers = Supplier::latest()->paginate(10);
-        return view('admin.supplier.index', compact('suppliers'));
+        return view('admin.master.supplier.index', compact('suppliers'));
     }
 
     /**
@@ -25,7 +25,7 @@ class SupplierController extends Controller
      */
     public function create()
     {
-        return view('admin.supplier.create');
+        return view('admin.master.supplier.create');
     }
 
     /**
@@ -75,7 +75,7 @@ class SupplierController extends Controller
                                             ->latest()
                                             ->paginate(5, ['*'], 'sp_page');
 
-        return view('admin.supplier.show', compact('supplier', 'riwayatPembelian', 'riwayatRetur', 'riwayatSuratPesanan'));
+        return view('admin.master.supplier.show', compact('supplier', 'riwayatPembelian', 'riwayatRetur', 'riwayatSuratPesanan'));
     }
 
     /**
@@ -83,7 +83,7 @@ class SupplierController extends Controller
      */
     public function edit(Supplier $supplier)
     {
-        return view('admin.supplier.edit', compact('supplier'));
+        return view('admin.master.supplier.edit', compact('supplier'));
     }
 
     /**

@@ -16,22 +16,27 @@ use PDF;
 class SuratPesananController extends Controller
 {
     /**
-     * Redirect to the integrated purchase index view.
+     * Mengalihkan ke halaman indeks pembelian yang terintegrasi.
      */
     public function index()
     {
         return redirect()->route('pembelian.index');
     }
 
+    /**
+     * Menampilkan form untuk membuat Surat Pesanan baru.
+     */
     public function create()
     {
         $suppliers = Supplier::all();
-        $obats = Obat::all();
+        $obats = Obat::all(); // Dipertahankan untuk fallback jika diperlukan
         $noSp = $this->generateNoSp();
-        // PATH FIXED: Menggunakan path yang benar sesuai struktur folder
-        return view('transaksi.pembelian.surat_pesanan.create', compact('suppliers', 'obats', 'noSp'));
+        return view('admin.Transaksi.surat_pesanan.create', compact('suppliers', 'obats', 'noSp'));
     }
 
+    /**
+     * Menyimpan Surat Pesanan yang baru dibuat ke database.
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -46,8 +51,6 @@ class SuratPesananController extends Controller
             'obat_manual.*' => 'required_if:sp_mode,manual|string',
             'qty_pesan' => 'required_if:sp_mode,dropdown,manual|array',
             'qty_pesan.*' => 'required_if:sp_mode,dropdown,manual|integer|min:1',
-            'harga_satuan' => 'required_if:sp_mode,dropdown,manual|array',
-            'harga_satuan.*' => 'nullable|numeric|min:0',
             'keterangan' => 'nullable|string',
         ]);
 
@@ -70,7 +73,6 @@ class SuratPesananController extends Controller
                         'surat_pesanan_id' => $suratPesanan->id,
                         'obat_id' => $obatId,
                         'qty_pesan' => $request->qty_pesan[$key],
-                        'harga_satuan' => $request->harga_satuan[$key] ?? 0,
                         'qty_terima' => 0,
                     ]);
                 }
@@ -80,7 +82,6 @@ class SuratPesananController extends Controller
                         'surat_pesanan_id' => $suratPesanan->id,
                         'nama_manual' => $namaManual,
                         'qty_pesan' => $request->qty_pesan[$key],
-                        'harga_satuan' => $request->harga_satuan[$key] ?? 0,
                         'qty_terima' => 0,
                     ]);
                 }
@@ -96,22 +97,29 @@ class SuratPesananController extends Controller
         }
     }
 
+    /**
+     * Menampilkan detail dari Surat Pesanan.
+     */
     public function show(SuratPesanan $suratPesanan)
     {
         $suratPesanan->load('supplier', 'user', 'details.obat');
-        // This view is not actively used in the new flow, but path is corrected for completeness
-        return view('transaksi.pembelian.surat_pesanan.show', compact('suratPesanan'));
+        return view('admin.Transaksi.pembelian.surat_pesanan.show', compact('suratPesanan'));
     }
 
+    /**
+     * Menampilkan form untuk mengedit Surat Pesanan.
+     */
     public function edit(SuratPesanan $suratPesanan)
     {
         $suppliers = Supplier::all();
         $obats = Obat::all();
         $suratPesanan->load('details.obat');
-        // PATH FIXED: Menggunakan path yang benar sesuai struktur folder
-        return view('transaksi.pembelian.surat_pesanan.edit', compact('suratPesanan', 'suppliers', 'obats'));
+        return view('admin.Transaksi.surat_pesanan.edit', compact('suratPesanan', 'suppliers', 'obats'));
     }
 
+    /**
+     * Memperbarui Surat Pesanan di database.
+     */
     public function update(Request $request, SuratPesanan $suratPesanan)
     {
         $request->validate([
@@ -126,8 +134,6 @@ class SuratPesananController extends Controller
             'obat_manual.*' => 'required_if:sp_mode,manual|string',
             'qty_pesan' => 'required_if:sp_mode,dropdown,manual|array',
             'qty_pesan.*' => 'required_if:sp_mode,dropdown,manual|integer|min:1',
-            'harga_satuan' => 'required_if:sp_mode,dropdown,manual|array',
-            'harga_satuan.*' => 'nullable|numeric|min:0',
             'keterangan' => 'nullable|string',
             'status' => 'required|in:pending,parsial,selesai,dibatalkan',
         ]);
@@ -143,7 +149,6 @@ class SuratPesananController extends Controller
                         'surat_pesanan_id' => $suratPesanan->id,
                         'obat_id' => $obatId,
                         'qty_pesan' => $request->qty_pesan[$key],
-                        'harga_satuan' => $request->harga_satuan[$key] ?? 0,
                         'qty_terima' => 0,
                     ]);
                 }
@@ -153,7 +158,6 @@ class SuratPesananController extends Controller
                         'surat_pesanan_id' => $suratPesanan->id,
                         'nama_manual' => $namaManual,
                         'qty_pesan' => $request->qty_pesan[$key],
-                        'harga_satuan' => $request->harga_satuan[$key] ?? 0,
                         'qty_terima' => 0,
                     ]);
                 }
@@ -168,6 +172,9 @@ class SuratPesananController extends Controller
         }
     }
 
+    /**
+     * Menghapus Surat Pesanan dari database.
+     */
     public function destroy(SuratPesanan $suratPesanan)
     {
         DB::beginTransaction();
@@ -187,33 +194,38 @@ class SuratPesananController extends Controller
         }
     }
 
+    /**
+     * Membuat file PDF dari Surat Pesanan.
+     */
     public function generatePdf($id)
     {
         $suratPesanan = SuratPesanan::with('details.obat', 'supplier', 'user')->findOrFail($id);
         $clinicData = [
-            'nama' => 'Klinik SINDANG SARI',
-            'alamat' => 'JL. H. Abdul Halim No. 121, Cigugur, Tangah, Kota Cimahi',
-            'telepon' => '+62 811 2044 6611',
+            'nama' => 'Apotek Liz Farma 02',
+            'alamat' => 'Jl. Raya Batujajar No.321, Batujajar Bar., Kec. Batujajar, Kabupaten Bandung, Jawa Barat 40561',
+            'telepon' => '+62 22 86674232',
             'email' => 'kliniksindangsari@gmail.com',
             'sio' => 'SIO: 03022300571070001',
         ];
         $apotekerData = [
-            'nama' => 'apt. MIRA YULIANTI, S.Farm',
+            'nama' => 'apt. MINA YULIANTI, S.Farm',
             'sipa' => 'SIPA: 440/0027/SIPA/DPMPTSP/X/2024',
             'jabatan' => 'Apoteker Penanggung Jawab',
         ];
         $containsPrekursor = $suratPesanan->details->contains(fn($detail) => $detail->obat && $detail->obat->is_prekursor);
         
-        // PATH FIXED: Menggunakan path yang benar sesuai struktur folder
         $viewName = $containsPrekursor
-                    ? 'transaksi.pembelian.surat_pesanan.pdf_prekursor'
-                    : 'transaksi.pembelian.surat_pesanan.pdf_regular';
+                    ? 'admin.Transaksi.surat_pesanan.pdf_prekursor'
+                    : 'admin.Transaksi.surat_pesanan.pdf_regular';
 
         $pdf = PDF::loadView($viewName, compact('suratPesanan', 'clinicData', 'apotekerData'));
         $pdf->setPaper('A4', 'portrait');
         return $pdf->stream('SP_' . $suratPesanan->no_sp . '.pdf');
     }
 
+    /**
+     * Membuat nomor Surat Pesanan baru secara otomatis.
+     */
     private function generateNoSp()
     {
         $latestSp = SuratPesanan::latest()->first();
@@ -221,10 +233,24 @@ class SuratPesananController extends Controller
         return 'SP-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * Mengambil detail SP untuk keperluan internal (misalnya AJAX).
+     */
     public function getSpDetails($id)
     {
         $suratPesanan = SuratPesanan::with('details.obat')->find($id);
         if (!$suratPesanan) return response()->json(['error' => 'Surat Pesanan tidak ditemukan'], 404);
         return response()->json($suratPesanan);
+    }
+
+    /**
+     * Mengambil daftar obat berdasarkan supplier yang dipilih.
+     */
+    public function getObatBySupplier(Supplier $supplier)
+    {
+        $obats = Obat::where('supplier_id', $supplier->id)
+            ->select('id', 'nama', 'stok')
+            ->get();
+        return response()->json($obats);
     }
 }

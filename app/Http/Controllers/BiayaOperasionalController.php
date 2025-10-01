@@ -18,7 +18,7 @@ class BiayaOperasionalController extends Controller
                                 ->orderBy('tanggal', 'desc')
                                 ->paginate(10);
 
-        return view('admin.biaya-operasional.index', compact('data', 'bulan'));
+        return view('admin.Transaksi.biaya-operasional.index', compact('data', 'bulan'));
     }
 
     /**
@@ -26,7 +26,7 @@ class BiayaOperasionalController extends Controller
      */
     public function create()
     {
-        return view('admin.biaya-operasional.create');
+        return view('admin.Transaksi.biaya-operasional.create');
     }
 
     /**
@@ -62,7 +62,7 @@ class BiayaOperasionalController extends Controller
      */
     public function edit(BiayaOperasional $biayaOperasional)
     {
-        return view('admin.biaya-operasional.edit', compact('biayaOperasional'));
+        return view('admin.Transaksi.biaya-operasional.edit', compact('biayaOperasional'));
     }
 
     /**

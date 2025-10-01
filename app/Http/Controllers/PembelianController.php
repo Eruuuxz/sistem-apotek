@@ -39,7 +39,7 @@ class PembelianController extends Controller
             ->paginate(10);
         
         // PATH FIXED: Memastikan path view sesuai dengan struktur file
-        return view('admin.pembelian.index', compact('pembelians', 'suratPesanans'));
+        return view('admin.Transaksi.pembelian.index', compact('pembelians', 'suratPesanans'));
     }
 
     /**
@@ -218,7 +218,7 @@ class PembelianController extends Controller
     {
         $p = Pembelian::with(['supplier', 'detail.obat', 'cabang'])->findOrFail($id);
         // PATH FIXED: Memastikan path view sesuai dengan struktur file
-        return view('admin.pembelian.faktur', compact('p'));
+        return view('admin.Transaksi.pembelian.faktur', compact('p'));
     }
 
     public function pdf($id)
@@ -235,7 +235,7 @@ class PembelianController extends Controller
         $suppliers = Supplier::orderBy('nama')->get();
         $obats = Obat::orderBy('nama')->get();
         // PATH FIXED: Memastikan path view sesuai dengan struktur file
-        return view('admin.pembelian.edit', compact('pembelian', 'suppliers', 'obats'));
+        return view('admin.Transaksi.pembelian.edit', compact('pembelian', 'suppliers', 'obats'));
     }
 
     public function update(Request $request, Pembelian $pembelian)

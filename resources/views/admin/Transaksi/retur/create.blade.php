@@ -80,6 +80,7 @@
                                     <tr class="hover:bg-gray-50 border-b">
                                         <td class="px-2 py-2">
                                             <input type="hidden" :name="'items[' + index + '][id]'" :value="item.id">
+                                            <input type="hidden" :name="'items[' + index + '][harga]'" :value="item.harga">
                                             <span x-text="item.nama"></span>
                                         </td>
                                         <td class="px-2 py-2 text-right" x-text="formatRupiah(item.harga)"></td>
