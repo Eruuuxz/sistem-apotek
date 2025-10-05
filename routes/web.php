@@ -72,7 +72,8 @@ Route::middleware('auth')->group(function () {
         
         Route::resource('supplier', SupplierController::class);
         Route::resource('users', UserController::class);
-        Route::resource('pelanggan', PelangganController::class); // <-- DIPINDAHKAN KESINI
+        Route::resource('pelanggan', PelangganController::class);
+        Route::get('/pelanggan/{pelanggan}/riwayat-json', [\App\Http\Controllers\PelangganController::class, 'riwayatPembelianJson'])->name('pelanggan.riwayatJson');
         
         // --- Transaksi ---
         Route::resource('surat_pesanan', SuratPesananController::class);
@@ -109,49 +110,37 @@ Route::middleware('auth')->group(function () {
         Route::get('stock-opname/{stock_opname}/pdf', [StockOpnameController::class, 'generatePdf'])->name('stock_opname.pdf');
         
         Route::get('/stock-movement/detail', [StockMovementController::class, 'detail'])->name('stock_movement.detail');
-        
-        // --- Manajemen Shift ---
-        Route::resource('shifts', ShiftController::class)->except(['show', 'edit', 'update', 'destroy']);
-        Route::get('shifts/summary', [ShiftController::class, 'summary'])->name('shifts.summary');
+
     });
     
-    // ===================================================================
-    // GRUP ROUTE KASIR
-    // ===================================================================
-    Route::middleware('role:kasir')->group(function () {
+        Route::middleware(['auth', 'role:kasir'])->group(function () {
         Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
         
-        // Manajemen Shift Kasir
-        Route::post('/shifts/start', [ShiftController::class, 'startShift'])->name('shifts.start');
-        Route::post('/shifts/end', [ShiftController::class, 'endShift'])->name('shifts.end');
-        Route::get('/shifts/my-summary', [ShiftController::class, 'summary'])->name('shifts.my.summary');
-        Route::get('/shifts/start-form', [ShiftController::class, 'showStartForm'])->name('shifts.start.form');
-
+        // Rute Baru: Untuk mengatur modal awal saat memulai sesi
+        Route::post('/pos/set-initial-cash', [POSController::class, 'setInitialCash'])->name('pos.setInitialCash');
         
-        // Operasi POS yang memerlukan shift aktif
-        Route::middleware('check.shift')->group(function () {
-            Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
-            Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
-            Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
-            Route::post('/pos/set-diskon', [POSController::class, 'setDiskon'])->name('pos.setDiskon');
-            Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
-            
-            Route::get('/pos/print-options/{id}', [POSController::class, 'printOptions'])->name('pos.print.options');
-            Route::get('/pos/print-faktur/{id}', [POSController::class, 'printFaktur'])->name('pos.print.faktur');
-            Route::get('/pos/print-kwitansi/{id}', [POSController::class, 'printKwitansi'])->name('pos.print.kwitansi');
-            Route::get('/pos/struk-pdf/{id}', [POSController::class, 'strukPdf'])->name('pos.struk.pdf');
-            Route::get('/pos/print/invoice/{id}', [POSController::class, 'printInvoice'])->name('pos.print.invoice');
-            
-            Route::get('/pos/riwayat', [POSController::class, 'riwayatKasir'])->name('kasir.riwayat');
-            Route::get('/pos/summary', [POSController::class, 'shiftSummary'])->name('kasir.summary');
-            Route::get('/pos/riwayat/{id}', [POSController::class, 'show'])->name('penjualan.show');
-            Route::get('/pos/success/{id}', [POSController::class, 'success'])->name('kasir.success');
-            
-            Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
-            Route::get('/pos/search-pelanggan', [POSController::class, 'searchPelanggan'])->name('pos.searchPelanggan');
-            Route::post('/pos/add-pelanggan-cepat', [POSController::class, 'addPelangganCepat'])->name('pos.addPelangganCepat');
-        });
+        // Rute Baru: Untuk logout / mengakhiri sesi kasir
+        Route::post('/pos/clear-initial-cash', [POSController::class, 'clearInitialCash'])->name('pos.clearInitialCash');
+        
+        // Operasi POS tidak lagi memerlukan middleware shift
+        Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
+        Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
+        Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
+        Route::post('/pos/set-diskon', [POSController::class, 'setDiskon'])->name('pos.setDiskon');
+        Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
+        
+        Route::get('/pos/print-options/{id}', [POSController::class, 'printOptions'])->name('pos.print.options');
+        Route::get('/pos/print-faktur/{id}', [POSController::class, 'printFaktur'])->name('pos.print.faktur');
+        Route::get('/pos/print-invoice/{id}', [POSController::class, 'printInvoice'])->name('pos.print.invoice');
+        
+        Route::get('/pos/riwayat', [POSController::class, 'riwayatKasir'])->name('kasir.riwayat');
+        Route::get('/pos/riwayat/{id}', [POSController::class, 'show'])->name('penjualan.show');
+        
+        Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
+        Route::get('/pos/search-pelanggan', [POSController::class, 'searchPelanggan'])->name('pos.searchPelanggan');
+        Route::post('/pos/add-pelanggan-cepat', [POSController::class, 'addPelangganCepat'])->name('pos.addPelangganCepat');
     });
+
 });
 
 require __DIR__.'/auth.php';

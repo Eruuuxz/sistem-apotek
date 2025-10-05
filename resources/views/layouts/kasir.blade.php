@@ -39,13 +39,7 @@
                    class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium {{ request()->routeIs('kasir.riwayat') ? 'bg-green-600 text-white' : 'text-green-200 hover:bg-white/10 hover:text-white' }}">
                     <i data-feather="clock" class="w-5 h-5"></i>
                     <span>Riwayat Penjualan</span>
-                </a>
-
-                <a href="{{ route('kasir.summary') }}"
-                   class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium {{ request()->routeIs('kasir.summary') ? 'bg-green-600 text-white' : 'text-green-200 hover:bg-white/10 hover:text-white' }}">
-                   <i data-feather="briefcase" class="w-5 h-5"></i>
-                    <span>Ringkasan Shift</span>
-                </a>
+</a>
                 
                 <div>
                     <button @click="activeDropdown = activeDropdown === 'pelanggan' ? null : 'pelanggan'"

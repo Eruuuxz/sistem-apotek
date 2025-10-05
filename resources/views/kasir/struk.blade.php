@@ -106,7 +106,7 @@
         {{-- HEADER --}}
         <div class="header">
             <div class="header-left">
-                <img src="{{ asset('images/logo-apotek.png') }}" alt="Logo">
+                <img src="{{ asset('images/logoAdmin.png') }}" alt="Logo">
                 <div class="info">
                     <strong>Apotek LIZ Farma 02</strong><br>
                     JL. RAYA BATUJAJAR NO. 321 RT.001 RW.005<br>

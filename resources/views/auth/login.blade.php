@@ -24,7 +24,7 @@
                     {{ $is_kasir ? 'bg-gradient-to-br from-green-600 to-green-800' : 'bg-gradient-to-br from-blue-600 to-blue-800' }}">
             <div class="w-full max-w-md text-center">
                 <a href="{{ route('pilih-login') }}">
-                    <img src="{{ asset('images/logo-apotek.png') }}" alt="Logo Apotek" 
+                    <img src="{{ asset('images/logoAdmin.png') }}" alt="Logo Apotek" 
                          class="h-24 w-24 mx-auto mb-6 rounded-full ring-4 ring-white/20">
                 </a>
                 <h1 class="text-4xl font-bold mb-3">

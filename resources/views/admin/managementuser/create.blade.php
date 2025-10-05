@@ -37,24 +37,12 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block mb-2 text-sm font-semibold text-gray-700">Role</label>
-                    <select name="role" class="w-full border rounded-lg px-3 py-2" required>
-                        <option value="kasir">Kasir</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block mb-2 text-sm font-semibold text-gray-700">Cabang</label>
-                    <select name="cabang_id" class="w-full border rounded-lg px-3 py-2">
-                        <option value="">Pilih Cabang (Opsional)</option>
-                        @foreach($cabangs as $cabang)
-                            <option value="{{ $cabang->id }}">{{ $cabang->nama }}</option>
-                        @endforeach
-                    </select>
-                </div>
+            <div>
+                <label class="block mb-2 text-sm font-semibold text-gray-700">Role</label>
+                <select name="role" class="w-full border rounded-lg px-3 py-2" required>
+                    <option value="kasir">Kasir</option>
+                    <option value="admin">Admin</option>
+                </select>
             </div>
 
             <div class="flex items-center justify-end gap-4 pt-4">

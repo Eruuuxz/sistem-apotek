@@ -3,24 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Cabang; // Import model Cabang
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule; // Import Rule
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
     public function index()
     {
-        // Tampilkan user dengan role 'kasir' dan 'admin'
         $users = User::whereIn('role', ['kasir', 'admin'])->paginate(10);
         return view('admin.managementuser.index', compact('users'));
     }
 
     public function create()
     {
-        $cabangs = Cabang::all(); // Ambil semua cabang
-        return view('admin.managementuser.create', compact('cabangs'));
+        return view('admin.managementuser.create');
     }
 
     public function store(Request $request)
@@ -29,16 +26,14 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
-            'role' => 'required|in:kasir,admin', // Validasi role
-            'cabang_id' => 'nullable|exists:cabang,id', // Validasi cabang_id
+            'role' => 'required|in:kasir,admin',
         ]);
 
         User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role, // Ambil role dari request
-            'cabang_id' => $request->cabang_id,
+            'role' => $request->role,
         ]);
 
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan.');
@@ -46,8 +41,7 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        $cabangs = Cabang::all();
-        return view('admin.managementuser.edit', compact('user', 'cabangs'));
+        return view('admin.managementuser.edit', compact('user'));
     }
 
     public function update(Request $request, User $user)
@@ -55,9 +49,13 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'password' => 'nullable|min:6|confirmed', // Password opsional saat update
+            'current_password' => ['nullable', 'required_with:password', function ($attribute, $value, $fail) use ($user) {
+                if (!Hash::check($value, $user->password)) {
+                    $fail('Password saat ini tidak cocok.');
+                }
+            }],
+            'password' => 'nullable|min:6|confirmed',
             'role' => 'required|in:kasir,admin',
-            'cabang_id' => 'nullable|exists:cabang,id',
         ]);
 
         $user->name = $request->name;
@@ -66,7 +64,6 @@ class UserController extends Controller
             $user->password = Hash::make($request->password);
         }
         $user->role = $request->role;
-        $user->cabang_id = $request->cabang_id;
         $user->save();
 
         return redirect()->route('users.index')->with('success', 'User berhasil diperbarui.');

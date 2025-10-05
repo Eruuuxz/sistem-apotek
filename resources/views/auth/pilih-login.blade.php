@@ -18,7 +18,7 @@
             
             <div class="text-center mb-8">
                 <a href="#">
-                    <img src="{{ asset('images/logo-apotek.png') }}" alt="Logo Apotek" 
+                    <img src="{{ asset('images/logoAdmin.png') }}" alt="Logo Apotek" 
                          class="h-20 w-20 mx-auto rounded-full object-cover shadow-md">
                 </a>
             </div>

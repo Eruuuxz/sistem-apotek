@@ -9,12 +9,15 @@
                 value="{{ Auth::user()->name }}" readonly>
         </div>
 
-        {{-- Pilihan Member --}}
+        {{-- ====================================================== --}}
+        {{-- PERUBAHAN DI SINI: Label diubah --}}
+        {{-- ====================================================== --}}
         <div class="grid grid-cols-3 items-start gap-2">
-            <label for="member_search_select2" class="text-sm font-medium text-gray-700 mt-2">Pilih Member</label>
+            <label for="member_search_select2" class="text-sm font-medium text-gray-700 mt-2">Pilih Pelanggan Tetap</label>
             <div class="col-span-2 flex gap-2">
                 <select id="member_search_select2" name="pelanggan_id" class="w-full">
-                    <option value="">-- Bukan Member --</option>
+                    {{-- Opsi "Bukan Member" diubah menjadi "Pelanggan Umum" --}}
+                    <option value="">-- Pelanggan Umum --</option>
                     {{-- Options will be loaded via AJAX --}}
                 </select>
                 <button type="button" onclick="openAddPelangganModal()"
@@ -23,6 +26,7 @@
                 </button>
             </div>
         </div>
+        {{-- ====================================================== --}}
 
         {{-- Input data pelanggan --}}
         <div class="grid grid-cols-3 items-start gap-2">
@@ -37,6 +41,7 @@
                 @enderror
             </div>
         </div>
+        {{-- (Sisa kode form tetap sama) --}}
         <div class="grid grid-cols-3 items-start gap-2">
             <label for="alamat_pelanggan" class="text-sm font-medium text-gray-700 mt-2">Alamat</label>
             <div class="col-span-2">
