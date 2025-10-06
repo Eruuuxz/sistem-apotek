@@ -99,9 +99,6 @@ Route::middleware('auth')->group(function () {
         Route::prefix('laporan')->name('laporan.')->group(function () {
             Route::get('/', [LaporanController::class, 'index'])->name('index');
             Route::get('/penjualan/{format}', [LaporanController::class, 'exportPenjualan'])->name('penjualan.export');
-            Route::get('/stok/{format}', [LaporanController::class, 'exportStok'])->name('stok.export');
-            Route::get('/pelanggan/{format}', [LaporanController::class, 'exportPelanggan'])->name('pelanggan.export');
-            Route::get('/laba/{format}', [LaporanController::class, 'exportLaba'])->name('laba.export');
         });
         
         Route::resource('stock-opname', StockOpnameController::class);

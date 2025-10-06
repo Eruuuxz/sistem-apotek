@@ -54,33 +54,5 @@
             </div>
         </div>
     </div>
-
-    <!-- Export Section -->
-    <div class="bg-white shadow-lg rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-4 text-gray-800">Export Laporan</h2>
-        <p class="text-sm text-gray-500 mb-6">Unduh laporan dalam format PDF atau Excel untuk periode <span class="font-semibold">{{ \Carbon\Carbon::createFromFormat('Y-m', $periode)->translatedFormat('F Y') }}</span>.</p>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="space-y-2">
-                 <h4 class="font-semibold">Penjualan</h4>
-                <a href="{{ route('laporan.penjualan.export',['pdf','periode'=>$periode]) }}" class="w-full text-center bg-red-100 hover:bg-red-200 text-red-800 font-semibold px-4 py-2 rounded-lg block transition">PDF</a>
-                <a href="{{ route('laporan.penjualan.export',['excel','periode'=>$periode]) }}" class="w-full text-center bg-green-100 hover:bg-green-200 text-green-800 font-semibold px-4 py-2 rounded-lg block transition">Excel</a>
-            </div>
-             <div class="space-y-2">
-                 <h4 class="font-semibold">Stok</h4>
-                <a href="{{ route('laporan.stok.export',['pdf','periode'=>$periode]) }}" class="w-full text-center bg-red-100 hover:bg-red-200 text-red-800 font-semibold px-4 py-2 rounded-lg block transition">PDF</a>
-                <a href="{{ route('laporan.stok.export',['excel','periode'=>$periode]) }}" class="w-full text-center bg-green-100 hover:bg-green-200 text-green-800 font-semibold px-4 py-2 rounded-lg block transition">Excel</a>
-            </div>
-             <div class="space-y-2">
-                 <h4 class="font-semibold">Pelanggan</h4>
-                <a href="{{ route('laporan.pelanggan.export',['pdf','periode'=>$periode]) }}" class="w-full text-center bg-red-100 hover:bg-red-200 text-red-800 font-semibold px-4 py-2 rounded-lg block transition">PDF</a>
-                <a href="{{ route('laporan.pelanggan.export',['excel','periode'=>$periode]) }}" class="w-full text-center bg-green-100 hover:bg-green-200 text-green-800 font-semibold px-4 py-2 rounded-lg block transition">Excel</a>
-            </div>
-             <div class="space-y-2">
-                 <h4 class="font-semibold">Laba</h4>
-                <a href="{{ route('laporan.laba.export',['pdf','periode'=>$periode]) }}" class="w-full text-center bg-red-100 hover:bg-red-200 text-red-800 font-semibold px-4 py-2 rounded-lg block transition">PDF</a>
-                <a href="{{ route('laporan.laba.export',['excel','periode'=>$periode]) }}" class="w-full text-center bg-green-100 hover:bg-green-200 text-green-800 font-semibold px-4 py-2 rounded-lg block transition">Excel</a>
-            </div>
-        </div>
-    </div>
 </div>
 @endsection

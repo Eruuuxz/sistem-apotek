@@ -43,7 +43,7 @@ class ObatController extends Controller
     public function store(Request $request)
         {
             $request->validate([
-                'kode' => 'required|unique:obats,kode',
+                'kode' => 'required|unique:obat,kode',
                 'nama' => 'required',
                 'kategori' => 'required',
                 'sediaan' => 'nullable|string', 
@@ -55,7 +55,7 @@ class ObatController extends Controller
                 'harga_dasar' => 'required|numeric|min:0',
                 'persen_untung' => 'nullable|numeric|min:0',
                 'harga_jual' => 'required|numeric|min:0',
-                'supplier_id' => 'required|exists:suppliers,id',
+                'supplier_id' => 'required|exists:supplier,id',
                 'expired_date' => 'nullable|date|after_or_equal:today',
             ], [
                 'rasio_konversi.required_if' => 'Rasio konversi wajib diisi jika kemasan besar dipilih.',
@@ -75,7 +75,7 @@ class ObatController extends Controller
     public function update(Request $request, Obat $obat)
         {
             $request->validate([
-                'kode' => 'required|unique:obats,kode,' . $obat->id,
+                'kode' => 'required|unique:obat,kode,' . $obat->id,
                 'nama' => 'required',
                 'kategori' => 'required',
                 'sediaan' => 'nullable|string', 
@@ -87,7 +87,7 @@ class ObatController extends Controller
                 'harga_dasar' => 'required|numeric|min:0',
                 'persen_untung' => 'nullable|numeric|min:0',
                 'harga_jual' => 'required|numeric|min:0',
-                'supplier_id' => 'required|exists:suppliers,id',
+                'supplier_id' => 'required|exists:supplier,id',
                 'expired_date' => 'nullable|date|after_or_equal:today',
             ], [
                 'rasio_konversi.required_if' => 'Rasio konversi wajib diisi jika kemasan besar dipilih.',

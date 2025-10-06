@@ -39,11 +39,11 @@
                     <tr>
                         <th class="px-4 py-3 text-left cursor-pointer" onclick="sortTable(0)">Kode</th>
                         <th class="px-4 py-3 text-left cursor-pointer" onclick="sortTable(1)">Nama</th>
-                        <th class="px-4 py-3 text-left cursor-pointer" onclick="sortTable(2)">Sediaan</th>
-                        <th class="px-4 py-3 text-left cursor-pointer" onclick="sortTable(3)">Kemasan</th>
-                        <th class="px-4 py-3 text-left cursor-pointer" onclick="sortTable(4)">Satuan</th>
-                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(5)">Stok</th>
-                        <th class="px-4 py-3 text-left">Batch / ED / Stok</th>
+                        <th class="px-4 py-3 text-left cursor-pointer" onclick="sortTable(2)">Kemasan</th>
+                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(3)">Stok</th>
+                        <th class="px-4 py-3 text-left">Batch / ED</th>
+                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(4)">Harga Dasar (HPP)</th>
+                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(5)">Margin (%)</th>
                         <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(6)">Harga Jual</th>
                         <th class="px-4 py-3 text-left cursor-pointer" onclick="sortTable(7)">Supplier</th>
                         <th class="px-4 py-3 text-center">Aksi</th>
@@ -60,15 +60,16 @@
                                 <span class="font-semibold">{{ $obat->nama }}</span>
                                 <span class="block text-xs text-gray-500">{{ $obat->kategori }}</span>
                             </td>
-                            <td class="px-4 py-3">{{ $obat->sediaan ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $obat->kemasan_besar ?? '-' }}</td>
-                            <td class="px-4 py-3">{{ $obat->satuan_terkecil ?? '-' }}</td>
+                            
+                            {{-- Stok (Tampilan Baru) --}}
                             <td class="px-4 py-3 text-right">
-                                <span class="font-bold text-blue-600">{{ $obat->stok_formatted }}</span>
+                                <span class="font-bold text-lg text-blue-600">{{ $obat->stok }}</span>
+                                <span class="block text-xs text-gray-500">{{ $obat->satuan_terkecil }}</span>
                                  @if($obat->stok == 0)
-                                    <span class="block text-xs text-red-600 font-semibold">Habis</span>
+                                    <span class="block text-xs text-red-600 font-semibold mt-1">Habis</span>
                                 @elseif($obat->stok > 0 && $obat->stok <= $obat->min_stok)
-                                     <span class="block text-xs text-yellow-600 font-semibold">Stok Menipis</span>
+                                     <span class="block text-xs text-yellow-600 font-semibold mt-1">Stok Menipis</span>
                                 @endif
                             </td>
 
@@ -78,16 +79,18 @@
                                     @foreach($obat->batches as $batch)
                                         <div class="whitespace-nowrap">
                                             <span class="font-semibold">{{ $batch->no_batch }}</span> | 
-                                            <span class="text-gray-600">{{ $batch->expired_date ? $batch->expired_date->format('d/m/Y') : '-' }}</span> |
-                                            <span class="font-bold text-green-600">Stok: {{ $batch->stok_saat_ini }}</span>
+                                            <span class="text-gray-600">{{ $batch->expired_date ? $batch->expired_date->format('d/m/y') : '-' }}</span>
                                         </div>
                                     @endforeach
                                 @else
                                     <span class="text-gray-400">-</span>
                                 @endif
                             </td>
-
-                            <td class="px-4 py-3 text-right font-semibold">Rp {{ number_format($obat->harga_jual, 0, ',', '.') }}</td>
+                            
+                            {{-- Kolom Harga Baru --}}
+                            <td class="px-4 py-3 text-right font-semibold">Rp {{ number_format($obat->harga_dasar, 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right font-semibold">{{ $obat->persen_untung ?? 0 }}%</td>
+                            <td class="px-4 py-3 text-right font-bold text-green-600">Rp {{ number_format($obat->harga_jual, 0, ',', '.') }}</td>
                             <td class="px-4 py-3">{{ $obat->supplier->nama ?? '-' }}</td>
 
                             {{-- Aksi --}}
@@ -154,8 +157,8 @@
                 let valA = a.cells[colIndex].innerText.trim();
                 let valB = b.cells[colIndex].innerText.trim();
 
-                // Numeric sort for Stok and Harga Jual (new indexes: 5 and 7)
-                if ([5, 7].includes(colIndex)) {
+                // Numeric sort untuk Stok, HPP, Margin, Harga Jual
+                if ([3, 4, 5, 6].includes(colIndex)) {
                     let numA = parseFloat(valA.replace(/[^\d.-]/g, '')) || 0;
                     let numB = parseFloat(valB.replace(/[^\d.-]/g, '')) || 0;
                     return (numA - numB) * (isAsc ? 1 : -1);
@@ -203,4 +206,3 @@
         });
     </script>
 @endsection
-

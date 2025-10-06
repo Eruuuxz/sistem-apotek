@@ -1,39 +1,45 @@
 <div class="bg-white p-6 rounded-lg shadow-md border">
-    <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-semibold text-gray-800">Stok Menipis</h2>
-        <span class="text-red-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-        </span>
-    </div>
-
-    <div class="space-y-4">
-        @forelse($stok as $s)
-            <div class="p-3 rounded-lg border hover:bg-gray-50">
-                <div class="flex justify-between items-center">
-                    <span class="font-semibold text-gray-700">{{ $s->nama }}</span>
-                    <span class="text-sm font-bold {{ $s->stok > $s->min_stok ? 'text-yellow-600' : 'text-red-600' }}">
-                        Stok: {{ $s->stok }} / Min: {{ $s->min_stok }}
-                    </span>
-                </div>
-                {{-- Progress Bar Sederhana --}}
-                @php
-                    $percentage = ($s->stok / ($s->min_stok * 2)) * 100; // Asumsi batas atas adalah 2x min_stok
-                    if ($percentage > 100) $percentage = 100;
-                    $bgColor = $percentage < 50 ? 'bg-red-500' : 'bg-yellow-500';
-                @endphp
-                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                    <div class="{{ $bgColor }} h-2.5 rounded-full" style="width: {{ $percentage }}%"></div>
-                </div>
-            </div>
-        @empty
-            <div class="text-center py-6 text-gray-500">
-                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <p class="mt-2">Tidak ada data stok menipis. Semua aman!</p>
-            </div>
-        @endforelse
+    <h3 class="text-xl font-semibold mb-4">
+        Pergerakan Stok Bulan {{ \Carbon\Carbon::createFromFormat('Y-m', $periode)->translatedFormat('F Y') }}
+    </h3>
+    <div class="overflow-x-auto" style="max-height: 500px;">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50 sticky top-0">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Obat</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Kuantitas</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No. Referensi</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                @forelse($pergerakanStok as $pergerakan)
+                    <tr class="{{ $pergerakan['jenis'] === 'Penjualan' ? 'bg-red-50' : 'bg-green-50' }}">
+                        <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($pergerakan['tanggal'])->translatedFormat('d M Y H:i') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap font-semibold">{{ $pergerakan['obat_nama'] }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @if($pergerakan['jenis'] === 'Penjualan')
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                    {{ $pergerakan['jenis'] }}
+                                </span>
+                            @else
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    {{ $pergerakan['jenis'] }}
+                                </span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center font-bold {{ $pergerakan['qty'] < 0 ? 'text-red-600' : 'text-green-600' }}">
+                            {{ $pergerakan['qty'] }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-600">{{ $pergerakan['no_referensi'] }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">Tidak ada pergerakan stok di bulan ini.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>

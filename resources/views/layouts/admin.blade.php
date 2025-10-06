@@ -84,7 +84,7 @@
             <a href="{{ route('biaya-operasional.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors font-medium {{ request()->is('biaya-operasional*') ? 'bg-white/10 text-white' : 'text-blue-200 hover:bg-white/10 hover:text-white' }}"><i data-feather="dollar-sign" class="w-5 h-5"></i><span>Biaya Operasional</span></a>
             <p class="px-4 pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-blue-400">Lainnya</p>
             <a href="{{ route('laporan.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors font-medium {{ request()->is('laporan*') ? 'bg-white/10 text-white' : 'text-blue-200 hover:bg-white/10 hover:text-white' }}"><i data-feather="bar-chart-2" class="w-5 h-5"></i><span>Laporan</span></a>
-            <a href="{{ route('users.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors font-medium {{ request()->is('users*') ? 'bg-white/10 text-white' : 'text-blue-200 hover:bg-white/10 hover:text-white' }}"><i data-feather="user-plus" class="w-5 h-5"></i><span>Manajemen Kasir</span></a>
+            <a href="{{ route('users.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors font-medium {{ request()->is('users*') ? 'bg-white/10 text-white' : 'text-blue-200 hover:bg-white/10 hover:text-white' }}"><i data-feather="user-plus" class="w-5 h-5"></i><span>Manajemen User</span></a>
         @endif
         @endauth
     </nav>
