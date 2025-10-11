@@ -73,7 +73,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('supplier', SupplierController::class);
         Route::resource('users', UserController::class);
         Route::resource('pelanggan', PelangganController::class);
-        Route::get('/pelanggan/{pelanggan}/riwayat-json', [\App\Http\Controllers\PelangganController::class, 'riwayatPembelianJson'])->name('pelanggan.riwayatJson');
+        Route::get('/pelanggan/{pelanggan}/riwayat', [PelangganController::class, 'riwayatPembelianJson'])->name('pelanggan.riwayat');
         
         // --- Transaksi ---
         Route::resource('surat_pesanan', SuratPesananController::class);

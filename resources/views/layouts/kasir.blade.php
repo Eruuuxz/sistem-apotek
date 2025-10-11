@@ -40,19 +40,6 @@
                     <i data-feather="clock" class="w-5 h-5"></i>
                     <span>Riwayat Penjualan</span>
 </a>
-                
-                <div>
-                    <button @click="activeDropdown = activeDropdown === 'pelanggan' ? null : 'pelanggan'"
-                            class="flex items-center w-full gap-3 px-4 py-3 rounded-lg transition-colors font-medium {{ request()->is('pelanggan*') ? 'bg-green-600 text-white' : 'text-green-200 hover:bg-white/10 hover:text-white' }}">
-                        <i data-feather="users" class="w-5 h-5"></i>
-                        <span class="flex-1 text-left">Pelanggan</span>
-                        <svg :class="{'rotate-180': activeDropdown === 'pelanggan'}" class="w-4 h-4 transition-transform duration-300 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                    <div x-show="activeDropdown === 'pelanggan'" x-transition x-cloak class="mt-1 space-y-1 pl-10">
-                        <a href="{{ route('pelanggan.index') }}" class="block px-4 py-2 text-sm rounded-lg transition-colors {{ request()->is('pelanggan') && !request()->is('pelanggan/create') ? 'text-white font-semibold' : 'text-green-300 hover:text-white' }}">Daftar Pelanggan</a>
-                        <a href="{{ route('pelanggan.create') }}" class="block px-4 py-2 text-sm rounded-lg transition-colors {{ request()->is('pelanggan/create') ? 'text-white font-semibold' : 'text-green-300 hover:text-white' }}">Tambah Pelanggan</a>
-                    </div>
-                </div>
             @endif
         @endauth
     </nav>

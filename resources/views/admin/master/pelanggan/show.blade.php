@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="space-y-8" x-data="pelangganDetail()">
+    {{-- Customer Info Card --}}
     <div class="bg-white p-6 shadow-lg rounded-xl">
         <div class="flex flex-col md:flex-row items-start gap-6">
             <div class="flex-shrink-0 bg-blue-100 text-blue-600 rounded-lg h-16 w-16 flex items-center justify-center">
@@ -12,7 +13,6 @@
             <div class="flex-1">
                 <div class="flex items-center gap-4">
                     <h2 class="text-2xl font-bold text-gray-800">{{ $pelanggan->nama }}</h2>
-                    {{-- PERBAIKAN: Menampilkan tipe pelanggan --}}
                     <span class="px-2 py-1 text-xs rounded-full font-semibold {{ $pelanggan->tipe == 'tetap' ? 'bg-sky-100 text-sky-800' : 'bg-gray-200 text-gray-800' }}">
                         {{ $pelanggan->tipe == 'tetap' ? 'Pelanggan Tetap' : 'Umum' }}
                     </span>
@@ -33,17 +33,53 @@
                     <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" /></svg>
                     Edit
                 </a>
-                <button @click="fetchHistory({{ $pelanggan->id }})" class="bg-blue-100 text-blue-800 font-bold py-2 px-4 rounded-lg inline-flex items-center w-full justify-center hover:bg-blue-200">
-                     <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
-                    Riwayat
+                {{-- UPDATE BUTTON TO SHOW LOADING STATE --}}
+                <button @click="fetchHistory({{ $pelanggan->id }})" 
+                        class="bg-blue-100 text-blue-800 font-bold py-2 px-4 rounded-lg inline-flex items-center w-full justify-center hover:bg-blue-200"
+                        :disabled="isLoading">
+                    <svg x-show="!isLoading" class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                    <svg x-show="isLoading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-blue-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span x-text="isLoading ? 'Memuat...' : 'Riwayat'"></span>
                 </button>
             </div>
         </div>
     </div>
 
-    {{-- Modal Riwayat (tidak ada perubahan) --}}
+    {{-- MODAL FOR TRANSACTION HISTORY --}}
     <div x-show="openModal" @keydown.escape.window="openModal = false" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" x-cloak>
-        {{-- ... isi modal ... --}}
+        <div @click.outside="openModal = false" class="bg-gray-100 w-full max-w-2xl max-h-[90vh] rounded-xl shadow-lg flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">Riwayat Transaksi Terakhir</h3>
+                <button @click="openModal = false" class="text-gray-400 hover:text-gray-800">&times;</button>
+            </div>
+            <div class="p-4 space-y-4 overflow-y-auto">
+                <template x-if="history.length === 0">
+                    <p class="text-center text-gray-500 py-8">Tidak ada riwayat transaksi dalam 30 hari terakhir.</p>
+                </template>
+                <template x-for="transaksi in history" :key="transaksi.id">
+                    <div class="bg-white p-4 rounded-lg border">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-bold text-gray-800" x-text="transaksi.no_nota"></p>
+                                <p class="text-xs text-gray-500" x-text="formatTanggal(transaksi.tanggal)"></p>
+                            </div>
+                            <p class="font-bold text-lg text-blue-600" x-text="formatRupiah(transaksi.total)"></p>
+                        </div>
+                        <div class="mt-3 border-t pt-3">
+                            <p class="text-xs font-semibold text-gray-600 mb-1">Detail Item:</p>
+                            <ul class="text-sm text-gray-700 space-y-1">
+                                <template x-for="detail in transaksi.details" :key="detail.id">
+                                    <li class="flex justify-between">
+                                        <span>- <span x-text="detail.obat.nama"></span></span>
+                                        <span class="text-xs"><span x-text="detail.qty"></span> x <span x-text="formatRupiah(detail.harga)"></span></span>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
     </div>
 
     <div class="flex justify-end mt-8">
@@ -53,7 +89,7 @@
 @endsection
 
 @push('scripts')
-{{-- Skrip Alpine.js (tidak ada perubahan) --}}
+{{-- FULLY IMPLEMENTED ALPINE.JS SCRIPT --}}
 <script>
     function pelangganDetail() {
         return {
@@ -61,13 +97,35 @@
             isLoading: false,
             history: [],
             async fetchHistory(pelangganId) {
-                // ... isi skrip ...
+                this.isLoading = true;
+                this.history = [];
+                try {
+                    // Use the new route to fetch data
+                    const response = await fetch(`/pelanggan/${pelangganId}/riwayat`);
+                    if (!response.ok) {
+                        throw new Error('Gagal mengambil data riwayat.');
+                    }
+                    const data = await response.json();
+                    this.history = data;
+                    this.openModal = true;
+                } catch (error) {
+                    console.error(error);
+                    alert('Tidak dapat memuat riwayat transaksi.');
+                } finally {
+                    this.isLoading = false;
+                }
             },
             formatTanggal(tanggal) {
-                // ... isi skrip ...
+                return new Date(tanggal).toLocaleDateString('id-ID', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
             },
             formatRupiah(angka) {
-                // ... isi skrip ...
+                return new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0
+                }).format(angka);
             }
         }
     }
