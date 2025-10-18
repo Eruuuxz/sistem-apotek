@@ -50,11 +50,18 @@ class PelangganController extends Controller
         return redirect()->route('pelanggan.index')->with('success', 'Data pelanggan tetap berhasil ditambahkan.');
     }
 
-    public function show(Pelanggan $pelanggan)
-    {
-        // PERBAIKAN PATH
-        return view('admin.master.pelanggan.show', compact('pelanggan'));
-    }
+public function show(Pelanggan $pelanggan)
+{
+    // Mengambil data riwayat transaksi 1 bulan terakhir
+    $riwayat = $pelanggan->penjualan()
+        ->where('tanggal', '>=', now()->subMonth())
+        ->with('details.obat')
+        ->latest('tanggal')
+        ->get();
+
+    // Kirim data pelanggan beserta riwayatnya ke view
+    return view('admin.master.pelanggan.show', compact('pelanggan', 'riwayat'));
+}
 
     public function edit(Pelanggan $pelanggan)
     {
