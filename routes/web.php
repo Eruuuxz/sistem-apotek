@@ -16,6 +16,8 @@ use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BiayaOperasionalController;
 use App\Http\Controllers\POSController;
+use App\Http\Controllers\POSPrintController; 
+use App\Http\Controllers\POSSearchController; 
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\SuratPesananController;
 use App\Http\Controllers\ShiftController;
@@ -111,32 +113,33 @@ Route::middleware('auth')->group(function () {
     });
     
         Route::middleware(['auth', 'role:kasir'])->group(function () {
-        Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
-        
-        // Rute Baru: Untuk mengatur modal awal saat memulai sesi
-        Route::post('/pos/set-initial-cash', [POSController::class, 'setInitialCash'])->name('pos.setInitialCash');
-        
-        // Rute Baru: Untuk logout / mengakhiri sesi kasir
-        Route::post('/pos/clear-initial-cash', [POSController::class, 'clearInitialCash'])->name('pos.clearInitialCash');
-        
-        // Operasi POS tidak lagi memerlukan middleware shift
-        Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
-        Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
-        Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
-        Route::post('/pos/set-diskon', [POSController::class, 'setDiskon'])->name('pos.setDiskon');
-        Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
-        
-        Route::get('/pos/print-options/{id}', [POSController::class, 'printOptions'])->name('pos.print.options');
-        Route::get('/pos/print-faktur/{id}', [POSController::class, 'printFaktur'])->name('pos.print.faktur');
-        Route::get('/pos/print-invoice/{id}', [POSController::class, 'printInvoice'])->name('pos.print.invoice');
-        
-        Route::get('/pos/riwayat', [POSController::class, 'riwayatKasir'])->name('kasir.riwayat');
-        Route::get('/pos/riwayat/{id}', [POSController::class, 'show'])->name('penjualan.show');
-        
-        Route::get('/pos/search', [POSController::class, 'search'])->name('pos.search');
-        Route::get('/pos/search-pelanggan', [POSController::class, 'searchPelanggan'])->name('pos.searchPelanggan');
-        Route::post('/pos/add-pelanggan-cepat', [POSController::class, 'addPelangganCepat'])->name('pos.addPelangganCepat');
-    });
+        // --- Rute POS Core (Index, Shift, Cart, Checkout) ---
+    Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
+    Route::post('/pos/set-initial-cash', [POSController::class, 'setInitialCash'])->name('pos.setInitialCash');
+    Route::post('/pos/clear-initial-cash', [POSController::class, 'clearInitialCash'])->name('pos.clearInitialCash');
+    
+    // Cart Operations (Moved from methods to be more RESTful)
+    Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
+    Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
+    Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
+    Route::post('/pos/set-diskon', [POSController::class, 'setDiskon'])->name('pos.setDiskon');
+    Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
+
+    // Riwayat (Tetap di POSController atau pindah ke RiwayatController, tapi untuk Scope refactoring ini, tetap di Core)
+    Route::get('/pos/riwayat', [POSController::class, 'riwayatKasir'])->name('kasir.riwayat');
+    Route::get('/pos/riwayat/{id}', [POSController::class, 'show'])->name('penjualan.show');
+
+    // --- Rute POS Print (Pindah ke POSPrintController) ---
+    Route::get('/pos/print-options/{id}', [POSPrintController::class, 'printOptions'])->name('pos.print.options');
+    Route::get('/pos/print-faktur/{id}', [POSPrintController::class, 'printFaktur'])->name('pos.print.faktur');
+    Route::get('/pos/print-invoice/{id}', [POSPrintController::class, 'printInvoice'])->name('pos.print.invoice');
+
+    // --- Rute POS Search (Pindah ke POSSearchController) ---
+    Route::get('/pos/search', [POSSearchController::class, 'searchObat'])->name('pos.search');
+    Route::get('/pos/search-pelanggan', [POSSearchController::class, 'searchPelanggan'])->name('pos.searchPelanggan');
+    Route::post('/pos/add-pelanggan-cepat', [POSSearchController::class, 'addPelangganCepat'])->name('pos.addPelangganCepat');
+
+});
 
 });
 

@@ -3,18 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\SuratPesanan;
-use App\Models\SuratPesananDetail;
 use App\Models\Supplier;
 use App\Models\Obat;
-use App\Models\Pembelian;
+use App\Services\SuratPesananService; // Import Service CRUD
+use App\Services\PDF\SuratPesananPDFService; // Import Service PDF
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use PDF;
 
 class SuratPesananController extends Controller
 {
+    protected SuratPesananService $spService;
+    protected SuratPesananPDFService $pdfService;
+
+    // Dependency Injection
+    public function __construct(SuratPesananService $spService, SuratPesananPDFService $pdfService)
+    {
+        $this->spService = $spService;
+        $this->pdfService = $pdfService;
+    }
+
     /**
      * Mengalihkan ke halaman indeks pembelian yang terintegrasi.
      */
@@ -29,8 +38,8 @@ class SuratPesananController extends Controller
     public function create()
     {
         $suppliers = Supplier::all();
-        $obats = Obat::all(); // Dipertahankan untuk fallback jika diperlukan
-        $noSp = $this->generateNoSp();
+        $obats = Obat::all(); 
+        $noSp = $this->spService->generateNoSp();
         return view('admin.Transaksi.surat_pesanan.create', compact('suppliers', 'obats', 'noSp'));
     }
 
@@ -54,45 +63,13 @@ class SuratPesananController extends Controller
             'keterangan' => 'nullable|string',
         ]);
 
-        DB::beginTransaction();
         try {
-            $suratPesanan = SuratPesanan::create([
-                'no_sp' => $request->no_sp,
-                'tanggal_sp' => $request->tanggal_sp,
-                'supplier_id' => $request->supplier_id,
-                'user_id' => Auth::id(),
-                'keterangan' => $request->keterangan,
-                'sp_mode' => $request->sp_mode,
-                'jenis_sp' => $request->jenis_sp,
-                'status' => 'pending',
-            ]);
-
-            if ($request->sp_mode === 'dropdown') {
-                foreach ($request->obat_id as $key => $obatId) {
-                    SuratPesananDetail::create([
-                        'surat_pesanan_id' => $suratPesanan->id,
-                        'obat_id' => $obatId,
-                        'qty_pesan' => $request->qty_pesan[$key],
-                        'qty_terima' => 0,
-                    ]);
-                }
-            } elseif ($request->sp_mode === 'manual') {
-                foreach ($request->obat_manual as $key => $namaManual) {
-                    SuratPesananDetail::create([
-                        'surat_pesanan_id' => $suratPesanan->id,
-                        'nama_manual' => $namaManual,
-                        'qty_pesan' => $request->qty_pesan[$key],
-                        'qty_terima' => 0,
-                    ]);
-                }
-            }
-            DB::commit();
+            $this->spService->createSuratPesanan($request->all());
 
             return redirect()->route('pembelian.index')->with([
                 'success' => 'Surat Pesanan berhasil dibuat dan menunggu untuk diproses.',
             ]);
         } catch (\Exception $e) {
-            DB::rollBack();
             return back()->withInput()->with('error', 'Gagal membuat Surat Pesanan: ' . $e->getMessage());
         }
     }
@@ -138,36 +115,15 @@ class SuratPesananController extends Controller
             'status' => 'required|in:pending,parsial,selesai,dibatalkan',
         ]);
 
-        DB::beginTransaction();
         try {
-            $suratPesanan->update($request->only(['no_sp', 'tanggal_sp', 'supplier_id', 'keterangan', 'sp_mode', 'jenis_sp', 'status']));
-
-            $suratPesanan->details()->delete();
-            if ($request->sp_mode === 'dropdown') {
-                foreach ($request->obat_id as $key => $obatId) {
-                    SuratPesananDetail::create([
-                        'surat_pesanan_id' => $suratPesanan->id,
-                        'obat_id' => $obatId,
-                        'qty_pesan' => $request->qty_pesan[$key],
-                        'qty_terima' => 0,
-                    ]);
-                }
-            } elseif ($request->sp_mode === 'manual') {
-                foreach ($request->obat_manual as $key => $namaManual) {
-                    SuratPesananDetail::create([
-                        'surat_pesanan_id' => $suratPesanan->id,
-                        'nama_manual' => $namaManual,
-                        'qty_pesan' => $request->qty_pesan[$key],
-                        'qty_terima' => 0,
-                    ]);
-                }
-            }
-
-            DB::commit();
+            $this->spService->updateSuratPesanan($suratPesanan, $request->only([
+                'no_sp', 'tanggal_sp', 'supplier_id', 'keterangan', 'sp_mode', 'jenis_sp', 'status',
+                // Masukkan juga detail fields agar bisa diproses di service
+                'obat_id', 'obat_manual', 'qty_pesan'
+            ]));
 
             return redirect()->route('pembelian.index')->with('success', 'Surat Pesanan berhasil diperbarui.');
         } catch (\Exception $e) {
-            DB::rollBack();
             return back()->withInput()->with('error', 'Gagal memperbarui Surat Pesanan: ' . $e->getMessage());
         }
     }
@@ -177,60 +133,24 @@ class SuratPesananController extends Controller
      */
     public function destroy(SuratPesanan $suratPesanan)
     {
-        DB::beginTransaction();
         try {
-            if ($suratPesanan->pembelian()->exists()) {
-                DB::rollBack();
-                return redirect()->route('pembelian.index')->with('error', 'Surat Pesanan tidak dapat dihapus karena sudah ada pembelian terkait.');
-            }
-
-            $suratPesanan->details()->delete();
-            $suratPesanan->delete();
-            DB::commit();
+            $this->spService->destroySuratPesanan($suratPesanan);
             return redirect()->route('pembelian.index')->with('success', 'Surat Pesanan berhasil dihapus.');
         } catch (\Exception $e) {
-            DB::rollBack();
             return back()->with('error', 'Gagal menghapus Surat Pesanan: ' . $e->getMessage());
         }
     }
 
     /**
-     * Membuat file PDF dari Surat Pesanan.
+     * Membuat file PDF dari Surat Pesanan (Delegate ke PDF Service).
      */
     public function generatePdf($id)
     {
-        $suratPesanan = SuratPesanan::with('details.obat', 'supplier', 'user')->findOrFail($id);
-        $clinicData = [
-            'nama' => 'Apotek Liz Farma 02',
-            'alamat' => 'Jl. Raya Batujajar No.321, Batujajar Bar., Kec. Batujajar, Kabupaten Bandung, Jawa Barat 40561',
-            'telepon' => '+62 22 86674232',
-            'email' => 'kliniksindangsari@gmail.com',
-            'sio' => 'SIO: 03022300571070001',
-        ];
-        $apotekerData = [
-            'nama' => 'apt. MINA YULIANTI, S.Farm',
-            'sipa' => 'SIPA: 440/0027/SIPA/DPMPTSP/X/2024',
-            'jabatan' => 'Apoteker Penanggung Jawab',
-        ];
-        $containsPrekursor = $suratPesanan->details->contains(fn($detail) => $detail->obat && $detail->obat->is_prekursor);
-        
-        $viewName = $containsPrekursor
-                    ? 'admin.Transaksi.surat_pesanan.pdf_prekursor'
-                    : 'admin.Transaksi.surat_pesanan.pdf_regular';
-
-        $pdf = PDF::loadView($viewName, compact('suratPesanan', 'clinicData', 'apotekerData'));
-        $pdf->setPaper('A4', 'portrait');
-        return $pdf->stream('SP_' . $suratPesanan->no_sp . '.pdf');
-    }
-
-    /**
-     * Membuat nomor Surat Pesanan baru secara otomatis.
-     */
-    private function generateNoSp()
-    {
-        $latestSp = SuratPesanan::latest()->first();
-        $lastNumber = $latestSp ? (int) Str::afterLast($latestSp->no_sp, '-') : 0;
-        return 'SP-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        try {
+            return $this->pdfService->generatePDF($id);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal membuat PDF Surat Pesanan: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -248,9 +168,7 @@ class SuratPesananController extends Controller
      */
     public function getObatBySupplier(Supplier $supplier)
     {
-        $obats = Obat::where('supplier_id', $supplier->id)
-            ->select('id', 'nama', 'stok')
-            ->get();
+        $obats = $this->spService->getObatBySupplier($supplier);
         return response()->json($obats);
     }
 }

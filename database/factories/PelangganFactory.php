@@ -28,8 +28,8 @@ class PelangganFactory extends Factory
             'alamat' => $this->faker->address(),
             'no_ktp' => $this->faker->unique()->numerify('################'), // 16 digit angka
             'file_ktp' => null, // Untuk dummy, biarkan null atau tambahkan logika jika ingin dummy file
-            'status_member' => $this->faker->randomElement(['member', 'non_member']),
-            'point' => $this->faker->numberBetween(0, 1000),
+            // 'status_member' => $this->faker->randomElement(['member', 'non_member']),
+            // 'point' => $this->faker->numberBetween(0, 1000),
         ];
     }
 }
