@@ -52,12 +52,8 @@ class PelangganController extends Controller
 
 public function show(Pelanggan $pelanggan)
 {
-    // Mengambil data riwayat transaksi 1 bulan terakhir
-    $riwayat = $pelanggan->penjualan()
-        ->where('tanggal', '>=', now()->subMonth())
-        ->with('details.obat')
-        ->latest('tanggal')
-        ->get();
+    // Panggil fungsi private yang sudah kita buat
+    $riwayat = $this->getRiwayat($pelanggan);
 
     // Kirim data pelanggan beserta riwayatnya ke view
     return view('admin.master.pelanggan.show', compact('pelanggan', 'riwayat'));
@@ -96,6 +92,14 @@ public function show(Pelanggan $pelanggan)
         }
         $pelanggan->delete();
         return redirect()->route('pelanggan.index')->with('success', 'Data pelanggan tetap berhasil dihapus.');
+    }
+    private function getRiwayat(Pelanggan $pelanggan)
+    {
+        return $pelanggan->penjualan()
+            ->where('tanggal', '>=', now()->subMonth())
+            ->with('details.obat')
+            ->latest('tanggal')
+            ->get();
     }
 
     public function riwayatPembelianJson(Pelanggan $pelanggan)

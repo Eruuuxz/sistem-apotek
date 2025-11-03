@@ -100,12 +100,12 @@
             // --- FUNGSI KALKULASI & FORMAT ---
             function hitungTotal() {
                 const subtotal = parseFloat($('#total_subtotal').val()) || 0;
-                const ppn = parseFloat($('#total_ppn').val()) || 0;
+                // const ppn = parseFloat($('#total_ppn').val()) || 0; // PPN Dihapus
                 const diskonValue = parseFloat($('#diskon_value').val()) || 0;
                 const diskonType = $('#diskon_type').val();
 
                 let diskonAmount = 0;
-                const totalSebelumDiskon = subtotal + ppn;
+                const totalSebelumDiskon = subtotal; // PPN Dihapus (sebelumnya: subtotal + ppn)
                 if (diskonType === 'persen') {
                     diskonAmount = totalSebelumDiskon * (diskonValue / 100);
                 } else {

@@ -63,11 +63,11 @@
                             <td class="px-4 py-3">
                                 <ul class="list-disc list-inside space-y-1">
                                     @foreach ($transaksi->details as $item)
-                                        <li>{{ $item->obat->nama }} ({{ $item->jumlah }} pcs)</li>
+                                        <li>{{ $item->obat->nama }} ({{ $item->qty }} pcs)</li>
                                     @endforeach
                                 </ul>
                             </td>
-                            <td class="px-4 py-3 text-right align-top font-semibold">@rupiah($transaksi->total_harga)</td>
+                            <td class="px-4 py-3 text-right align-top font-semibold">Rp {{ number_format($transaksi->total_harga, 0, ',', '.') }}</td>
                         </tr>
                     @empty
                         <tr>

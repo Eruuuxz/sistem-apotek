@@ -27,7 +27,6 @@
                     <th class="px-3 py-2 text-left">Expired Date</th>
                     <th class="px-3 py-2 text-right">Harga</th>
                     <th class="px-3 py-2 text-center">Qty</th>
-                    <th class="px-3 py-2 text-right">PPN</th>
                     <th class="px-3 py-2 text-right">Stok</th>
                     <th class="px-3 py-2 text-right">Subtotal</th>
                     <th class="px-3 py-2 text-center">Aksi</th>
@@ -45,11 +44,6 @@
                                 $isExpired = \Carbon\Carbon::parse($expiredDate)->isPast();
                             }
                         }
-                        $hargaJualBersih = $item['harga'];
-                        if ($item['ppn_included'] && $item['ppn_rate'] > 0) {
-                            $hargaJualBersih = $item['harga'] / (1 + $item['ppn_rate'] / 100);
-                        }
-                        $ppnPerItem = $item['harga'] - $hargaJualBersih;
                     @endphp
                     <tr class="hover:bg-gray-50 transition duration-150 {{ $item['stok'] == 0 || $isExpired ? 'bg-red-50' : ($item['stok'] < 10 ? 'bg-yellow-50' : '') }}"
                         data-is-psikotropika="{{ $item['is_psikotropika'] ? 'true' : 'false' }}">
@@ -72,7 +66,7 @@
                                     min="0" max="{{ $item['stok'] }}">
                             </form>
                         </td>
-                        <td class="border px-3 py-2 text-right">Rp {{ number_format($ppnPerItem * $item['qty'], 0, ',', '.') }}</td>
+                        {{-- <td class="border px-3 py-2 text-right">Rp {{ number_format($ppnPerItem * $item['qty'], 0, ',', '.') }}</td> --}} {{-- PPN Dihapus --}}
                         <td class="border px-3 py-2 text-right">
                             {{ $item['stok'] }}
                             @if($item['stok'] == 0)
@@ -92,7 +86,8 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="border px-3 py-2 text-center text-gray-400">Keranjang kosong.</td>
+                        {{-- Colspan diubah dari 10 menjadi 9 --}}
+                        <td colspan="9" class="border px-3 py-2 text-center text-gray-400">Keranjang kosong.</td>
                     </tr>
                 @endforelse
             </tbody>

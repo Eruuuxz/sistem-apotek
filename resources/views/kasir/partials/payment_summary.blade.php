@@ -78,7 +78,7 @@
             </div>
         </div>
 
-        {{-- Total, Diskon, PPN --}}
+        {{-- Total, Diskon --}} {{-- PPN Dihapus --}}
         <div class="grid grid-cols-3 items-center gap-2">
             <label class="text-sm font-medium text-gray-700">Total Harga</label>
             <div class="col-span-2">
@@ -101,15 +101,6 @@
                     <option value="persen" {{ old('diskon_type', $diskonType) == 'persen' ? 'selected' : '' }}>%
                     </option>
                 </select>
-            </div>
-        </div>
-        <div class="grid grid-cols-3 items-center gap-2">
-            <label class="text-sm font-medium text-gray-700">PPN (11%)</label>
-            <div class="col-span-2">
-                <input type="text" id="ppn_display"
-                    class="w-full border rounded-lg px-3 py-2 text-right font-bold bg-gray-100"
-                    value="Rp {{ number_format($totalPpn, 0, ',', '.') }}" readonly>
-                <input type="hidden" name="total_ppn" id="total_ppn" value="{{ $totalPpn }}">
             </div>
         </div>
         <div class="grid grid-cols-3 items-center gap-2">

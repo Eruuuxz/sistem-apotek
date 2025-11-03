@@ -69,12 +69,12 @@
                 <td>Subtotal:</td>
                 <td>{{ number_format($penjualan->subtotal_attribute, 0, ',', '.') }}</td>
             </tr>
-             @if($penjualan->ppn_amount > 0)
+             {{-- @if($penjualan->ppn_amount > 0)
             <tr>
                 <td>PPN:</td>
                 <td>{{ number_format($penjualan->ppn_amount, 0, ',', '.') }}</td>
             </tr>
-            @endif
+            @endif --}}
             @if($penjualan->diskon_amount > 0)
             <tr>
                 <td>Diskon:</td>
@@ -102,4 +102,3 @@
     </div>
 </body>
 </html>
-
