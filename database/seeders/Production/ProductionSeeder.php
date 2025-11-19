@@ -18,10 +18,7 @@ class ProductionSeeder extends Seeder
         // 1. Cabang (wajib ada sebelum user)
         $this->call(CabangSeeder::class);
 
-        // 2. Shift (wajib untuk kasir)
-        $this->call(ShiftSeeder::class);
-
-        // 3. Admin user (untuk login pertama kali)
+        // 2. Admin user (untuk login pertama kali)
         $this->call(AdminUserSeeder::class);
 
         $this->command->newLine();

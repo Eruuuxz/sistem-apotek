@@ -118,10 +118,13 @@ class PembelianService
 
                 if (!$detail || !$obat) continue;
 
-                $jumlahLama = $detail->jumlah;
+                // --- FIX LOGIKA STOK ---
+                // Karena ini transisi dari DRAFT ke FINAL, stok lama di database dianggap 0 (karena belum masuk gudang).
+                // Ini memastikan DeltaQty = JumlahBaru - 0 = JumlahBaru.
+                // Sehingga stok master akan bertambah sesuai jumlah yang diinput.
+                $jumlahLamaUntukStok = 0; 
+                
                 $jumlahBaru = (int)$itemData['jumlah'];
-                $deltaQty = $jumlahBaru - $jumlahLama; // Perubahan kuantitas
-
                 $hargaBeli = (float)$itemData['harga_beli'];
                 
                 // Hitung ulang PPN dan Harga Bersih per unit
@@ -130,7 +133,7 @@ class PembelianService
                 $totalPembelian += $hargaDenganPpnPerUnit * $jumlahBaru;
                 $totalPpn += $ppnPerUnit * $jumlahBaru;
 
-                // Update detail pembelian
+                // Update detail pembelian dengan data final
                 $detail->update([
                     'jumlah' => $jumlahBaru,
                     'harga_beli' => $hargaBeli,
@@ -140,14 +143,23 @@ class PembelianService
                 ]);
 
                 // Update Stok & Batch
-                $this->updateStockAndBatches($pembelian, $detail, $jumlahBaru, $jumlahLama, $hargaBeli, $itemData['no_batch'], $itemData['expired_date']);
+                // Kita kirim $jumlahLamaUntukStok (0) agar fungsi menganggap ini penambahan stok baru sepenuhnya
+                $this->updateStockAndBatches(
+                    $pembelian, 
+                    $detail, 
+                    $jumlahBaru, 
+                    $jumlahLamaUntukStok, 
+                    $hargaBeli, 
+                    $itemData['no_batch'], 
+                    $itemData['expired_date']
+                );
             }
 
             // Hitung total akhir dan diskon
             $diskonAmount = $this->calculateDiskonAmount($totalPembelian, $data['diskon'] ?? 0, $data['diskon_type'] ?? 'nominal');
             $finalTotal = max($totalPembelian - $diskonAmount, 0);
 
-            // Update header pembelian
+            // Update header pembelian menjadi FINAL
             $pembelian->update([
                 'no_faktur_pbf' => $data['no_faktur_pbf'],
                 'tanggal' => $data['tanggal'],
@@ -195,14 +207,6 @@ class PembelianService
 
     // --- Private Calculation & DB Helpers ---
 
-    /**
-     * Menghitung total transaksi dari daftar item.
-     *
-     * @param array $items
-     * @param float $diskon
-     * @param string $diskonType
-     * @return array
-     */
     private function calculateTotals(array $items, float $diskon, string $diskonType): array
     {
         $totalPembelian = 0; // Total sebelum diskon
@@ -232,13 +236,6 @@ class PembelianService
         return compact('totalPembelian', 'totalPpn', 'diskonAmount', 'finalTotal');
     }
 
-    /**
-     * Menghitung PPN per unit.
-     *
-     * @param Obat $obat
-     * @param float $hargaBeli
-     * @return float
-     */
     private function calculatePpnPerUnit(Obat $obat, float $hargaBeli): float
     {
         if (($obat->ppn_rate ?? 0) <= 0) return 0;
@@ -253,14 +250,6 @@ class PembelianService
         }
     }
 
-    /**
-     * Menghitung jumlah diskon.
-     *
-     * @param float $total
-     * @param float $diskonValue
-     * @param string $diskonType
-     * @return float
-     */
     private function calculateDiskonAmount(float $total, float $diskonValue, string $diskonType): float
     {
         if ($diskonType === 'persen') {
@@ -269,13 +258,6 @@ class PembelianService
         return $diskonValue;
     }
 
-    /**
-     * Membuat detail pembelian dari data item.
-     *
-     * @param Pembelian $pembelian
-     * @param array $items
-     * @return void
-     */
     private function processDetails(Pembelian $pembelian, array $items): void
     {
         $obatIds = collect($items)->pluck('obat_id')->unique();
@@ -300,25 +282,17 @@ class PembelianService
 
     /**
      * Update stok Obat dan Batch saat finalisasi pembelian.
-     *
-     * @param Pembelian $pembelian
-     * @param PembelianDetail $detail
-     * @param int $jumlahBaru
-     * @param int $jumlahLama
-     * @param float $hargaBeli
-     * @param string $noBatch
-     * @param string $expiredDate
-     * @return void
      */
     private function updateStockAndBatches(Pembelian $pembelian, PembelianDetail $detail, int $jumlahBaru, int $jumlahLama, float $hargaBeli, string $noBatch, string $expiredDate): void
     {
         $obat = $detail->obat;
+        
+        // Delta adalah selisih. 
+        // Jika jumlahLama = 0 (dari draft yang belum punya stok), maka delta = jumlahBaru.
+        // Jika jumlahLama > 0 (edit transaksi final), maka delta = selisihnya.
         $deltaQty = $jumlahBaru - $jumlahLama;
 
-        // 1. Update Batch (Hapus batch lama jika ada, lalu buat/update batch baru)
-        // Dalam konteks ini, kita asumsikan detail pembelian yang di-update
-        // hanya mengacu pada satu batch. Karena ini proses finalisasi
-        
+        // 1. Update Batch 
         $batch = BatchObat::firstOrNew([
             'obat_id' => $obat->id,
             'no_batch' => $noBatch,
@@ -327,7 +301,7 @@ class PembelianService
         ]);
 
         if ($batch->exists) {
-            // Jika batch sudah ada, tambahkan delta (perubahan kuantitas)
+            // Jika batch sudah ada, tambahkan delta
             $batch->stok_awal += $deltaQty;
             $batch->stok_saat_ini += $deltaQty;
             $batch->harga_beli_per_unit = $hargaBeli; // Update harga beli terbaru
@@ -343,14 +317,11 @@ class PembelianService
 
         // 2. Update Stok Obat Total
         $obat->increment('stok', $deltaQty);
+        
+        // Opsional: Update harga dasar obat master dengan harga beli terbaru
+        // $obat->update(['harga_dasar' => $hargaBeli]);
     }
     
-    /**
-     * Membatalkan stok Obat dan Batch saat menghapus pembelian final.
-     *
-     * @param Pembelian $pembelian
-     * @return void
-     */
     private function rollbackStockAndBatches(Pembelian $pembelian): void
     {
         foreach ($pembelian->detail as $detail) {
@@ -375,11 +346,6 @@ class PembelianService
         }
     }
 
-    /**
-     * Membuat nomor faktur pembelian baru.
-     *
-     * @return string
-     */
     private function generateNoFaktur(): string
     {
         return 'FPB-' . date('Ymd') . '-' . str_pad((Pembelian::count() + 1), 3, '0', STR_PAD_LEFT);

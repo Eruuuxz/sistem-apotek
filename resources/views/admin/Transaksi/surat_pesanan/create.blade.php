@@ -68,7 +68,6 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Mode Input Obat</label>
                     <select name="sp_mode" id="sp_mode" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
                         <option value="dropdown" {{ old('sp_mode', 'dropdown') == 'dropdown' ? 'selected' : '' }}>Pilih Obat dari Daftar</option>
-                        <option value="manual" {{ old('sp_mode') == 'manual' ? 'selected' : '' }}>Ketik Nama Obat Manual</option>
                         <option value="blank" {{ old('sp_mode') == 'blank' ? 'selected' : '' }}>Cetak Kosong</option>
                     </select>
                 </div>

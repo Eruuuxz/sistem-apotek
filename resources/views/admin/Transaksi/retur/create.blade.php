@@ -3,11 +3,13 @@
 @section('title', 'Tambah Retur Baru')
 
 @section('content')
+    {{-- MODIFIKASI: Logika 'jenisRetur' disederhanakan, default 'pembelian' --}}
     <div class="max-w-4xl mx-auto space-y-4" x-data="returForm()">
         <div class="bg-white p-8 shadow-xl rounded-xl">
             <div class="mb-8">
                 <h2 class="text-2xl font-bold text-gray-800">Formulir Retur Barang</h2>
-                <p class="text-sm text-gray-500">Pilih jenis retur dan ikuti langkah-langkah selanjutnya.</p>
+                {{-- MODIFIKASI: Teks disesuaikan --}}
+                <p class="text-sm text-gray-500">Formulir ini digunakan untuk retur pembelian (pengembalian barang ke supplier).</p>
             </div>
 
             <form action="{{ route('retur.store') }}" method="POST" class="space-y-6">
@@ -25,22 +27,22 @@
                             <label class="block font-medium text-gray-700 mb-1 text-sm">Tanggal</label>
                             <input type="datetime-local" name="tanggal" value="{{ date('Y-m-d\TH:i') }}" class="w-full border rounded-lg px-3 py-2">
                         </div>
+                        {{-- MODIFIKASI: Dropdown Jenis Retur dihapus, diganti hidden input --}}
                         <div>
                             <label class="block font-medium text-gray-700 mb-1 text-sm">Jenis Retur</label>
-                            <select name="jenis" x-model="jenisRetur" class="w-full border rounded-lg px-3 py-2">
-                                <option value="">-- Pilih Jenis --</option>
-                                <option value="pembelian">Retur Pembelian (ke Supplier)</option>
-                                <option value="penjualan">Retur Penjualan (dari Customer)</option>
-                            </select>
+                            <input type="text" value="Retur Pembelian" class="w-full border rounded-lg px-3 py-2 bg-gray-100" readonly>
+                            <input type="hidden" name="jenis" value="pembelian">
                         </div>
                     </div>
                 </div>
 
                 {{-- Step 2: Pilih Transaksi --}}
-                <div class="border-t pt-6" x-show="jenisRetur" x-transition>
+                <div class="border-t pt-6">
                     <h3 class="text-lg font-semibold text-gray-700 mb-4">Langkah 2: Pilih Transaksi Sumber</h3>
-                    <div x-show="jenisRetur === 'pembelian'">
+                    {{-- MODIFIKASI: 'x-show' dihapus agar selalu tampil --}}
+                    <div>
                         <label class="block font-medium text-gray-700 mb-1">Pilih Faktur Pembelian</label>
+                        {{-- MODIFIKASI: event.target.value dikirim langsung, 'pembelian' di-hardcode --}}
                         <select name="transaksi_pembelian_id" @change="fetchItems('pembelian', $event.target.value)" class="w-full border rounded-lg px-3 py-2">
                             <option value="">-- Pilih Faktur --</option>
                             @foreach($pembelian as $p)
@@ -48,19 +50,13 @@
                             @endforeach
                         </select>
                     </div>
-                    <div x-show="jenisRetur === 'penjualan'">
-                        <label class="block font-medium text-gray-700 mb-1">Pilih Nota Penjualan</label>
-                        <select name="transaksi_penjualan_id" @change="fetchItems('penjualan', $event.target.value)" class="w-full border rounded-lg px-3 py-2">
-                            <option value="">-- Pilih Nota --</option>
-                            @foreach($penjualan as $pj)
-                                <option value="{{ $pj->id }}">{{ $pj->no_transaksi }} ({{ $pj->pelanggan->nama ?? 'Umum' }})</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    {{-- MODIFIKASI: Div 'Retur Penjualan' dihapus --}}
+                    {{-- <div x-show="jenisRetur === 'penjualan'"> ... </div> --}}
+                    
                     <input type="hidden" name="transaksi_id" x-model="transaksiId">
                 </div>
 
-                {{-- Step 3: Item Retur --}}
+                {{-- Step 3: Item Retur (Tidak perlu diubah) --}}
                 <div class="border-t pt-6" x-show="items.length > 0" x-transition>
                     <h3 class="text-lg font-semibold text-gray-700 mb-4">Langkah 3: Pilih Item yang Diretur</h3>
                     <div class="overflow-x-auto border rounded-lg bg-gray-50">
@@ -102,13 +98,13 @@
                     </div>
                 </div>
 
-                {{-- Keterangan --}}
+                {{-- Keterangan (Tidak perlu diubah) --}}
                  <div class="border-t pt-6">
                     <label class="block font-medium text-gray-700 mb-1">Keterangan (Opsional)</label>
                     <textarea name="keterangan" class="w-full border rounded-lg px-3 py-2" rows="3"></textarea>
                 </div>
 
-                {{-- Aksi --}}
+                {{-- Aksi (Tidak perlu diubah) --}}
                 <div class="flex items-center justify-end gap-4">
                     <a href="{{ route('retur.index') }}" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 font-semibold">Batal</a>
                     <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-bold">Simpan Retur</button>
@@ -122,11 +118,13 @@
     <script>
         function returForm() {
             return {
-                jenisRetur: '',
+                // MODIFIKASI: jenisRetur di-hardcode ke 'pembelian'
+                // jenisRetur: '', 
                 transaksiId: '',
                 items: [],
                 total: 0,
                 async fetchItems(jenis, id) {
+                    // jenis 'pembelian' di-pass dari <select>
                     if (!jenis || !id) {
                         this.items = [];
                         this.transaksiId = '';
@@ -135,7 +133,8 @@
                     }
                     this.transaksiId = id;
                     try {
-                        const response = await fetch(`/retur/sumber/${jenis}/${id}`);
+                        // URL fetch tetap dinamis, tidak masalah
+                        const response = await fetch(`/retur/sumber/${jenis}/${id}`); 
                         const data = await response.json();
                         this.items = data.items.map(item => ({...item, qty: 1, subtotal: item.harga }));
                         this.calculateTotal();

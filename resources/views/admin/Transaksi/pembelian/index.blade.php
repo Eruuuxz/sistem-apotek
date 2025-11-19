@@ -4,156 +4,201 @@
 
 @section('content')
 <div class="space-y-6">
+    
+    {{-- Header & Actions --}}
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Transaksi Pembelian</h2>
+            <p class="text-sm text-gray-500">Kelola Surat Pesanan (SP) dan riwayat pembelian barang.</p>
+        </div>
+        <div>
+            {{-- HANYA ADA TOMBOL BUAT SP (Input Manual Dihapus) --}}
+             <a href="{{ route('surat_pesanan.create') }}" class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-sm text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-sm">
+                <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                Buat Surat Pesanan Baru
+            </a>
+        </div>
+    </div>
+
     @if (session('success'))
-        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
-            <p class="font-bold">Sukses</p>
-            <p>{{ session('success') }}</p>
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm flex items-center" role="alert">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            {{ session('success') }}
         </div>
     @endif
     @if (session('error'))
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
-            <p class="font-bold">Error</p>
-            <p>{{ session('error') }}</p>
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center" role="alert">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            {{ session('error') }}
         </div>
     @endif
 
-    <div class="bg-white p-4 sm:p-6 shadow-lg rounded-xl">
-        <div class="mb-4 border-b border-gray-200">
-            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="pembelianTab" role="tablist">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {{-- Tabs Header --}}
+        <div class="border-b border-gray-100">
+            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center bg-gray-50/50" id="pembelianTab" role="tablist">
                 <li class="mr-2" role="presentation">
-                    <button class="inline-flex items-center justify-center p-4 border-b-2 rounded-t-lg group"
+                    <button class="inline-flex items-center justify-center p-4 border-b-2 transition-colors duration-200 group"
                             id="sp-tab" type="button" role="tab" aria-controls="sp" aria-selected="true">
-                        <svg class="w-5 h-5 mr-2 text-gray-400 group-hover:text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"><path d="M19 4h-1.25a1 1 0 0 0-1-1h-1.5a1 1 0 0 0-1 1H4a1 1 0 0 0-1 1v1h1.25a1 1 0 0 1 1 1h12.5a1 1 0 0 1 1-1H20V5a1 1 0 0 0-1-1Zm0 3H1v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7Z"/></svg>
-                        Perlu Diproses
+                        <i data-feather="inbox" class="w-4 h-4 mr-2"></i>
+                        SP Menunggu Proses
                         @if($suratPesanans->count() > 0)
-                            <span class="bg-blue-100 text-blue-800 text-xs font-semibold ml-2 px-2.5 py-0.5 rounded-full">{{ $suratPesanans->count() }}</span>
+                            <span class="bg-blue-100 text-blue-700 text-xs font-bold ml-2 px-2 py-0.5 rounded-full">{{ $suratPesanans->count() }}</span>
                         @endif
                     </button>
                 </li>
                 <li role="presentation">
-                    <button class="inline-flex items-center justify-center p-4 border-b-2 rounded-t-lg group"
+                    <button class="inline-flex items-center justify-center p-4 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 transition-colors duration-200 group text-gray-500"
                             id="riwayat-tab" type="button" role="tab" aria-controls="riwayat" aria-selected="false">
-                        <svg class="w-5 h-5 mr-2 text-gray-400 group-hover:text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clip-rule="evenodd"/></svg>
-                        Riwayat Pembelian
+                        <i data-feather="file-text" class="w-4 h-4 mr-2"></i>
+                        Riwayat Pembelian & SP
                     </button>
                 </li>
             </ul>
         </div>
 
-        <div id="pembelianTabContent">
-            <div class="hidden" id="sp" role="tabpanel" aria-labelledby="sp-tab">
-                <div class="flex justify-between items-center mb-5">
-                    <h3 class="text-lg font-semibold text-gray-700">Surat Pesanan Menunggu Diproses</h3>
-                    <a href="{{ route('surat_pesanan.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center transition duration-300">
-                        <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                        Buat SP Baru
-                    </a>
-                </div>
-                 <div class="space-y-3">
-                    @forelse ($suratPesanans as $sp)
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:shadow-md transition-shadow duration-200">
-                            <div class="flex items-center space-x-4 mb-3 sm:mb-0">
-                                <div class="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex-shrink-0 flex items-center justify-center">
-                                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+        <div class="p-6" id="pembelianTabContent">
+            {{-- TAB 1: Surat Pesanan (Perlu Diproses) --}}
+            <div class="hidden space-y-4" id="sp" role="tabpanel" aria-labelledby="sp-tab">
+                @forelse ($suratPesanans as $sp)
+                    <div class="group bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-blue-200 transition-all duration-200">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div class="flex items-center gap-4">
+                                <div class="flex-shrink-0 w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
+                                    <i data-feather="shopping-bag" class="w-5 h-5"></i>
                                 </div>
                                 <div>
-                                    <p class="font-bold text-gray-800">{{ $sp->no_sp }}</p>
-                                    <p class="text-sm text-gray-600">Supplier: <span class="font-semibold">{{ $sp->supplier->nama ?? '-' }}</span></p>
-                                    <p class="text-xs text-gray-500">Tanggal: {{ $sp->tanggal_sp->format('d M Y, H:i') }}</p>
+                                    <div class="flex items-center gap-2">
+                                        <h4 class="text-lg font-bold text-gray-800">{{ $sp->no_sp }}</h4>
+                                        <span class="px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
+                                            {{ ucfirst($sp->status) }}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mt-0.5">
+                                        Supplier: <span class="font-semibold text-gray-800">{{ $sp->supplier->nama ?? '-' }}</span>
+                                        <span class="mx-1 text-gray-300">|</span>
+                                        <span class="text-gray-500">{{ $sp->tanggal_sp->format('d M Y, H:i') }}</span>
+                                    </p>
                                 </div>
                             </div>
-                            <div class="flex items-center space-x-3 w-full sm:w-auto">
-                                <form action="{{ route('pembelian.createFromSp', $sp->id) }}" method="POST" class="w-full sm:w-auto" onsubmit="return confirm('Proses SP ini menjadi pembelian?');">
+                            
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
+                                {{-- Tombol Proses hanya muncul jika status pending --}}
+                                @if($sp->status == 'pending')
+                                <form action="{{ route('pembelian.createFromSp', $sp->id) }}" method="POST" class="w-full sm:w-auto" onsubmit="return confirm('Barang sudah datang? Lanjutkan proses penerimaan barang?');">
                                     @csrf
-                                    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition duration-300 ease-in-out flex items-center justify-center">
-                                        <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                                        Proses Pesanan
+                                    <button type="submit" class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                                        <i data-feather="check-circle" class="w-4 h-4 mr-2"></i> Terima Barang
                                     </button>
                                 </form>
-                                <a href="{{ route('surat_pesanan.edit', $sp->id) }}" class="text-gray-500 hover:text-yellow-600 p-2 rounded-full bg-gray-200 hover:bg-yellow-100 transition" title="Edit SP">
-                                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
-                                </a>
-                                <a href="{{ route('surat_pesanan.pdf', $sp->id) }}" target="_blank" class="text-gray-500 hover:text-blue-600 p-2 rounded-full bg-gray-200 hover:bg-blue-100 transition" title="Lihat PDF">
-                                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639l4.43-4.43a1.012 1.012 0 0 1 1.431 0l4.43 4.43a1.012 1.012 0 0 1 0 .639l-4.43 4.43a1.012 1.012 0 0 1-1.431 0l-4.43-4.43Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
-                                </a>
+                                @endif
+
+                                <div class="flex gap-1">
+                                    <a href="{{ route('surat_pesanan.edit', $sp->id) }}" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit SP">
+                                        <i data-feather="edit-2" class="w-4 h-4"></i>
+                                    </a>
+                                    <a href="{{ route('surat_pesanan.pdf', $sp->id) }}" target="_blank" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Cetak PDF">
+                                        <i data-feather="printer" class="w-4 h-4"></i>
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    @empty
-                        <div class="text-center py-12 border-2 border-dashed rounded-lg">
-                             <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 9.75v4.5a3.375 3.375 0 0 1-3.375 3.375h-9.75a3.375 3.375 0 0 1-3.375-3.375v-4.5M21.75 9.75 19.5 7.5l-4.125 4.125-4.125-4.125L4.5 9.75m17.25 0-4.125-4.125M4.5 9.75l4.125-4.125" /></svg>
-                            <h4 class="mt-2 text-lg font-semibold text-gray-700">Tidak Ada Surat Pesanan</h4>
-                            <p class="mt-1 text-sm text-gray-500">Semua surat pesanan sudah diproses atau belum ada yang dibuat.</p>
+                    </div>
+                @empty
+                    <div class="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                        <div class="bg-white p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-sm">
+                            <i data-feather="inbox" class="w-8 h-8 text-gray-300"></i>
                         </div>
-                    @endforelse
-                </div>
+                        <h3 class="text-lg font-medium text-gray-900">Semua SP Sudah Diproses</h3>
+                        <p class="text-gray-500 text-sm mt-1">Belum ada Surat Pesanan baru yang perlu ditindaklanjuti.</p>
+                    </div>
+                @endforelse
             </div>
 
+            {{-- TAB 2: Riwayat Pembelian & SP --}}
             <div class="hidden" id="riwayat" role="tabpanel" aria-labelledby="riwayat-tab">
-                 <h3 class="text-lg font-semibold text-gray-700 mb-5">Riwayat Transaksi Pembelian</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full table-auto text-sm border-collapse">
-                        <thead class="bg-gray-50">
+                <div class="overflow-x-auto rounded-lg border border-gray-100">
+                    <table class="w-full text-sm text-left text-gray-600">
+                        <thead class="text-xs text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100">
                             <tr>
-                                <th class="border px-4 py-2 text-left">No Faktur</th>
-                                <th class="border px-4 py-2 text-left">Tanggal</th>
-                                <th class="border px-4 py-2 text-left">Supplier</th>
-                                <th class="border px-4 py-2 text-right">Total</th>
-                                <th class="border px-4 py-2 text-center">Status</th>
-                                <th class="border px-4 py-2 text-center">Aksi</th>
+                                <th class="px-6 py-3 font-semibold">Faktur & Referensi SP</th>
+                                <th class="px-6 py-3 font-semibold">Tanggal Terima</th>
+                                <th class="px-6 py-3 font-semibold">Supplier</th>
+                                <th class="px-6 py-3 font-semibold text-right">Total Faktur</th>
+                                <th class="px-6 py-3 font-semibold text-center">Status</th>
+                                <th class="px-6 py-3 font-semibold text-center">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-gray-100 bg-white">
                             @forelse($pembelians as $row)
-                            <tr class="hover:bg-gray-50 {{ $row->status == 'draft' ? 'bg-yellow-50/50' : '' }}">
-                                <td class="border px-4 py-2 font-medium">
-                                    <span class="block text-gray-800">{{ $row->no_faktur_pbf ?? $row->no_faktur }}</span>
-                                    @if(!$row->no_faktur_pbf) <span class="text-xs text-gray-500">(Internal)</span> @endif
+                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                <td class="px-6 py-4">
+                                    {{-- Tampilkan No Faktur --}}
+                                    <div class="font-bold text-gray-800">
+                                        {{ $row->no_faktur_pbf ?? $row->no_faktur }}
+                                        @if(!$row->no_faktur_pbf) <span class="text-[10px] text-gray-400 font-normal border border-gray-200 rounded px-1">Internal</span> @endif
+                                    </div>
+                                    
+                                    {{-- Tampilkan Referensi SP --}}
+                                    @if($row->suratPesanan)
+                                        <div class="flex items-center mt-1 text-xs text-blue-600 font-medium bg-blue-50 w-fit px-2 py-0.5 rounded">
+                                            <i data-feather="link" class="w-3 h-3 mr-1"></i>
+                                            SP: {{ $row->suratPesanan->no_sp }}
+                                        </div>
+                                    @else
+                                        <div class="text-xs text-gray-400 mt-1">Tanpa SP (Manual)</div>
+                                    @endif
                                 </td>
-                                <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($row->tanggal)->format('d-m-Y H:i') }}</td>
-                                <td class="border px-4 py-2">{{ $row->supplier->nama ?? '-' }}</td>
-                                <td class="border px-4 py-2 text-right font-semibold text-blue-600">Rp {{ number_format($row->total, 0, ',', '.') }}</td>
-                                <td class="border px-4 py-2 text-center">
+                                <td class="px-6 py-4">
+                                    {{ \Carbon\Carbon::parse($row->tanggal)->format('d M Y') }}
+                                    <div class="text-xs text-gray-400">{{ \Carbon\Carbon::parse($row->tanggal)->format('H:i') }}</div>
+                                </td>
+                                <td class="px-6 py-4">{{ $row->supplier->nama ?? '-' }}</td>
+                                <td class="px-6 py-4 text-right font-semibold text-gray-900">Rp {{ number_format($row->total, 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 text-center">
                                     @if($row->status == 'draft')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                            <svg class="-ml-0.5 mr-1.5 h-2 w-2 text-yellow-400" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>
-                                            Menunggu Faktur
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
+                                            Draft
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            <svg class="-ml-0.5 mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
                                             Selesai
                                         </span>
                                     @endif
                                 </td>
-                                <td class="border px-4 py-2 text-center">
-                                    <div class="flex items-center justify-center space-x-2">
+                                <td class="px-6 py-4 text-center">
+                                    <div class="flex items-center justify-center gap-2">
                                         @if($row->status == 'draft')
-                                            <a href="{{ route('pembelian.edit', $row->id) }}" class="text-yellow-600 hover:text-yellow-900 font-bold inline-flex items-center text-sm" title="Input Faktur">
-                                                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 7.125L18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+                                            <a href="{{ route('pembelian.edit', $row->id) }}" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors">
+                                                Lengkapi Faktur
                                             </a>
                                         @else
-                                            <a href="{{ route('pembelian.faktur', $row->id) }}" class="text-blue-600 hover:text-blue-900 inline-flex items-center text-sm" title="Lihat Faktur">
-                                                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639l4.43-4.43a1.012 1.012 0 011.431 0l4.43 4.43a1.012 1.012 0 010 .639l-4.43 4.43a1.012 1.012 0 01-1.431 0l-4.43-4.43z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                            {{-- Tombol Lihat Faktur --}}
+                                            <a href="{{ route('pembelian.faktur', $row->id) }}" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors tooltip" title="Lihat Detail Faktur">
+                                                 <i data-feather="eye" class="w-4 h-4"></i>
                                             </a>
-                                        @endif
-                                        
-                                        @if($row->suratPesanan)
-                                            <a href="{{ route('surat_pesanan.pdf', $row->surat_pesanan_id) }}" target="_blank" class="text-gray-500 hover:text-indigo-600 inline-flex items-center text-sm" title="Lihat PDF SP">
-                                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12.75h7.5" /></svg>
-                                            </a>
+                                            
+                                            {{-- Tombol Lihat PDF SP (Jika ada) --}}
+                                            @if($row->suratPesanan)
+                                                <a href="{{ route('surat_pesanan.pdf', $row->surat_pesanan_id) }}" target="_blank" class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors tooltip" title="Lihat PDF SP Asli">
+                                                    <i data-feather="file-text" class="w-4 h-4"></i>
+                                                </a>
+                                            @endif
                                         @endif
                                     </div>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="border px-4 py-4 text-center text-gray-500">Belum ada data pembelian.</td>
+                                <td colspan="6" class="px-6 py-12 text-center text-gray-400 bg-white">
+                                    Belum ada riwayat pembelian yang tercatat.
+                                </td>
                             </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-4 flex justify-end">
+                <div class="mt-6">
                     {{ $pembelians->links() }}
                 </div>
             </div>
@@ -165,50 +210,45 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const tabElements = [
-            { id: 'sp', triggerEl: document.querySelector('#sp-tab'), targetEl: document.querySelector('#sp') },
-            { id: 'riwayat', triggerEl: document.querySelector('#riwayat-tab'), targetEl: document.querySelector('#riwayat') }
+        feather.replace();
+
+        const tabs = [
+            { id: 'sp', button: document.getElementById('sp-tab') },
+            { id: 'riwayat', button: document.getElementById('riwayat-tab') }
         ];
 
-        const options = {
-            defaultTabId: 'sp',
-            activeClasses: 'text-blue-600 border-blue-600',
-            inactiveClasses: 'text-gray-500 hover:text-gray-600 border-transparent hover:border-gray-300',
-            onShow: () => {}
-        };
+        function setActiveTab(tabId) {
+            tabs.forEach(tab => {
+                const content = document.getElementById(tab.id);
+                const isSelected = tab.id === tabId;
+                
+                if (isSelected) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
 
-        let activeTabId = options.defaultTabId;
-
-        const getTab = (tabId) => tabElements.find(tab => tab.id === tabId);
-
-        const showTab = (tabId) => {
-            const tab = getTab(tabId);
-            if (!tab) return;
-
-            tabElements.forEach(t => {
-                t.targetEl.classList.add('hidden');
-                t.triggerEl.setAttribute('aria-selected', 'false');
-                t.triggerEl.classList.remove(...options.activeClasses.split(" "));
-                t.triggerEl.classList.add(...options.inactiveClasses.split(" "));
-                t.triggerEl.firstElementChild.classList.add('text-gray-400', 'group-hover:text-gray-500');
-                t.triggerEl.firstElementChild.classList.remove('text-blue-600');
+                if (isSelected) {
+                    tab.button.classList.add('text-blue-600', 'border-blue-600');
+                    tab.button.classList.remove('text-gray-500', 'border-transparent');
+                    const icon = tab.button.querySelector('svg');
+                    if(icon) icon.classList.add('text-blue-600');
+                } else {
+                    tab.button.classList.remove('text-blue-600', 'border-blue-600');
+                    tab.button.classList.add('text-gray-500', 'border-transparent');
+                    const icon = tab.button.querySelector('svg');
+                    if(icon) icon.classList.remove('text-blue-600');
+                }
             });
+        }
 
-            tab.targetEl.classList.remove('hidden');
-            tab.triggerEl.setAttribute('aria-selected', 'true');
-            tab.triggerEl.classList.remove(...options.inactiveClasses.split(" "));
-            tab.triggerEl.classList.add(...options.activeClasses.split(" "));
-            tab.triggerEl.firstElementChild.classList.remove('text-gray-400', 'group-hover:text-gray-500');
-            tab.triggerEl.firstElementChild.classList.add('text-blue-600');
-            
-            activeTabId = tabId;
-        };
-
-        showTab(activeTabId);
-
-        tabElements.forEach(tab => {
-            tab.triggerEl.addEventListener('click', () => showTab(tab.id));
+        tabs.forEach(tab => {
+            if(tab.button) {
+                tab.button.addEventListener('click', () => setActiveTab(tab.id));
+            }
         });
+
+        setActiveTab('sp');
     });
 </script>
 @endpush

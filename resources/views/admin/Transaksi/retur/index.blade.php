@@ -13,8 +13,8 @@
     <div class="bg-white p-6 shadow-lg rounded-xl">
          <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
             <div>
-                <h2 class="text-2xl font-bold text-gray-800">Riwayat Retur Barang</h2>
-                <p class="text-sm text-gray-500">Lacak semua transaksi retur pembelian dan penjualan.</p>
+                <h2 class="text-2xl font-bold text-gray-800">Riwayat Retur Pembelian</h2>
+                <p class="text-sm text-gray-500">Lacak semua transaksi retur pembelian ke supplier.</p>
             </div>
             <a href="{{ route('retur.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center transition duration-300">
                 <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -22,16 +22,16 @@
             </a>
         </div>
 
-        {{-- Filter --}}
+        {{-- MODIFIKASI: Filter Jenis Retur Dihapus --}}
         <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg mb-6">
-            <div>
+            {{-- <div>
                 <label for="jenis_filter" class="block text-sm font-medium text-gray-700 mb-1">Jenis Retur</label>
                 <select name="jenis" id="jenis_filter" class="w-full border rounded-md px-2 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Semua Jenis</option>
                     <option value="pembelian" {{ request('jenis') == 'pembelian' ? 'selected' : '' }}>Pembelian</option>
                     <option value="penjualan" {{ request('jenis') == 'penjualan' ? 'selected' : '' }}>Penjualan</option>
                 </select>
-            </div>
+            </div> --}}
             <div>
                 <label for="from_date" class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
                 <input type="date" name="from" id="from_date" value="{{ request('from') }}"
@@ -42,7 +42,8 @@
                 <input type="date" name="to" id="to_date" value="{{ request('to') }}"
                     class="w-full border rounded-md px-2 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
             </div>
-            <div class="flex gap-2 items-end">
+            {{-- MODIFIKASI: Dibuat jadi col-span-2 agar rapi --}}
+            <div class="flex gap-2 items-end md:col-span-2">
                 <button type="submit" class="w-full bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition font-semibold">Filter</button>
                 <a href="{{ route('retur.index') }}" class="w-full bg-gray-200 text-gray-700 text-center px-3 py-2 rounded-lg hover:bg-gray-300 transition font-semibold">Reset</a>
             </div>

@@ -12,10 +12,4 @@ class RoleLoginController extends Controller
     {
         return view('auth.login', ['role' => 'admin']);
     }
-
-    // Form login untuk Kasir
-    public function showKasirLoginForm()
-    {
-        return view('auth.login', ['role' => 'kasir']);
-    }
 }

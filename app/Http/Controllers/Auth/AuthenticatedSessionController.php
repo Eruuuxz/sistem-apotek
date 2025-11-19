@@ -8,7 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-use Illuminate\Validation\ValidationException; // Tambahkan ini
+use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -23,52 +23,31 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(LoginRequest $request): RedirectResponse
     {
-        $request->validate([
-            'email' => 'required|string|email',
-            'password' => 'required|string',
-        ]);
-
-        $role = $request->input('role'); // ambil role dari form
-
-        if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-            throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
-            ]);
-        }
+        $request->authenticate();
 
         $request->session()->regenerate();
 
-        // cek role user
-        if ($role && Auth::user()->role !== $role) {
-            Auth::logout();
-            throw ValidationException::withMessages([ // Gunakan ValidationException
-                'email' => 'Anda tidak memiliki akses sebagai ' . $role,
+        // Ambil user yang baru saja login
+        $user = $request->user();
+
+        // LOGIKA: Hanya izinkan role 'admin'
+        if ($user->role !== 'admin') {
+            // Jika bukan admin, paksa logout segera
+            Auth::guard('web')->logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            // Lempar error validasi agar kembali ke halaman login dengan pesan
+            throw ValidationException::withMessages([
+                'email' => 'Akses ditolak.',
             ]);
         }
 
-        // Redirect berdasarkan role user yang sebenarnya
-        if (Auth::user()->role === 'admin') {
-            return redirect()->intended(route('dashboard'));
-        } elseif (Auth::user()->role === 'kasir') {
-            return redirect()->intended(route('pos.index'));
-        }
-
-        // Fallback jika role tidak dikenali
-        return redirect()->intended(RouteServiceProvider::HOME);
-    }
-
-
-    protected function authenticated(Request $request, $user)
-    {
-        if ($user->role === 'admin') {
-            return redirect()->route('dashboard');
-        } elseif ($user->role === 'kasir') {
-            return redirect()->route('pos.index');
-        }
-
-        abort(403);
+        // Jika admin, arahkan ke dashboard
+        return redirect()->intended(route('dashboard'));
     }
 
     /**

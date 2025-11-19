@@ -10,21 +10,21 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ObatController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\PembelianController;
-use App\Http\Controllers\PenjualanController;
+// use App\Http\Controllers\PenjualanController; // Dihapus (Out of Scope)
 use App\Http\Controllers\ReturController;
-use App\Http\Controllers\LaporanController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\BiayaOperasionalController;
-use App\Http\Controllers\POSController;
-use App\Http\Controllers\POSPrintController; 
-use App\Http\Controllers\POSSearchController; 
-use App\Http\Controllers\StockMovementController;
+// use App\Http\Controllers\LaporanController; // Dihapus (Out of Scope)
+// use App\Http\Controllers\UserController; // Dihapus (Out of Scope)
+// use App\Http\Controllers\BiayaOperasionalController; // Dihapus (Out of Scope)
+// use App\Http\Controllers\POSController; // Dihapus (Out of Scope)
+// use App\Http\Controllers\POSPrintController; // Dihapus (Out of Scope)
+// use App\Http\Controllers\POSSearchController; // Dihapus (Out of Scope)
+// use App\Http\Controllers\StockMovementController; // Dihapus (Out of Scope)
 use App\Http\Controllers\SuratPesananController;
-use App\Http\Controllers\ShiftController;
-use App\Http\Controllers\PelangganController;
+// use App\Http\Controllers\ShiftController; // Dihapus (Out of Scope)
+// use App\Http\Controllers\PelangganController; // Dihapus (Out of Scope)
 use App\Http\Controllers\StockOpnameController;
-use App\Models\Shift;
-use App\Models\CashierShift;
+// use App\Models\Shift; // Dihapus (Out of Scope)
+// use App\Models\CashierShift; // Dihapus (Out of Scope)
 
 /*
 |--------------------------------------------------------------------------
@@ -33,114 +33,96 @@ use App\Models\CashierShift;
 */
 
 // Route Publik
+// --- MODIFIKASI: Arahkan root / ke halaman login admin ---
 Route::get('/', function () {
-    return view('auth.pilih-login');
-})->name('pilih-login');
+    return redirect()->route('login');
+});
 
-
-Route::get('/login/admin', [RoleLoginController::class, 'showAdminLoginForm'])->name('login.admin');
-Route::get('/login/kasir', [RoleLoginController::class, 'showKasirLoginForm'])->name('login.kasir');
-Route::post('/login', [CustomAuthenticatedSessionController::class, 'store'])->name('login');
+// --- MODIFIKASI: /login sekarang adalah halaman login admin ---
+Route::get('/login', [RoleLoginController::class, 'showAdminLoginForm'])->name('login');
+// Route::get('/login/kasir', [RoleLoginController::class, 'showKasirLoginForm'])->name('login.kasir'); // Dihapus (Out of Scope)
+Route::post('/login', [CustomAuthenticatedSessionController::class, 'store']); // Tetap, tapi controller akan dimodifikasi
 
 
 // Route yang Memerlukan Autentikasi
 Route::middleware('auth')->group(function () {
-    // Rute Logout dimodifikasi untuk redirect ke halaman pilih-login
+    
+    // --- MODIFIKASI: Logout redirect ke halaman login admin ---
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
-
-        return redirect()->route('pilih-login');
+        return redirect()->route('login'); // Redirect ke /login (admin)
     })->name('logout');
 
 
-    // Profil Pengguna
+    // Profil Pengguna (Disimpan)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // ===================================================================
-    // GRUP ROUTE ADMIN
+    // GRUP ROUTE ADMIN (HANYA INI YANG DIGUNAKAN)
     // ===================================================================
     Route::middleware('role:admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-        // --- Master Data ---
+        // --- Master Data (Sesuai Scope) ---
         Route::resource('obat', ObatController::class);
         Route::get('/obat-search', [ObatController::class, 'search'])->name('obat.search');
-        
         Route::resource('supplier', SupplierController::class);
-        Route::resource('users', UserController::class);
-        Route::resource('pelanggan', PelangganController::class);
-        Route::get('/pelanggan/{pelanggan}/riwayat-json', [\App\Http\Controllers\PelangganController::class, 'riwayatPembelianJson'])->name('pelanggan.riwayatJson');
         
-        // --- Transaksi ---
+        // --- Dihapus (Out of Scope) ---
+        // Route::resource('users', UserController::class);
+        // Route::resource('pelanggan', PelangganController::class);
+        // Route::get('/pelanggan/{pelanggan}/riwayat-json', [\App\Http\Controllers\PelangganController::class, 'riwayatPembelianJson'])->name('pelanggan.riwayatJson');
+        
+        // --- Transaksi (Sesuai Scope) ---
         Route::resource('surat_pesanan', SuratPesananController::class);
         Route::get('surat_pesanan/{id}/details', [SuratPesananController::class, 'getSpDetails'])->name('surat_pesanan.details');
         Route::get('/surat-pesanan/get-obat-by-supplier/{supplier}', [SuratPesananController::class, 'getObatBySupplier'])->name('surat_pesanan.getObatBySupplier');
         Route::get('/surat_pesanan/{id}/pdf', [SuratPesananController::class, 'generatePdf'])->name('surat_pesanan.pdf');
 
-        // --- Rute Pembelian ---
+        // --- Rute Pembelian (Sesuai Scope) ---
         Route::resource('pembelian', PembelianController::class);
         Route::post('pembelian/from-sp/{suratPesanan}', [PembelianController::class, 'createFromSp'])->name('pembelian.createFromSp');
         Route::get('pembelian/{pembelian}/faktur', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
         Route::get('pembelian/{pembelian}/pdf', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
         Route::get('/pembelian/get-obat-by-supplier/{supplierId}', [PembelianController::class, 'getObatBySupplier'])->name('pembelian.getObatBySupplier');
         
+        // --- Retur (Sesuai Scope, akan dimodifikasi) ---
         Route::get('/retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');
         Route::resource('retur', ReturController::class);
 
         
-        // --- Keuangan ---
-        Route::resource('biaya-operasional', BiayaOperasionalController::class);
+        // --- Keuangan (Dihapus, Out of Scope) ---
+        // Route::resource('biaya-operasional', BiayaOperasionalController::class);
         
-        // --- Laporan ---
-        Route::prefix('laporan')->name('laporan.')->group(function () {
-            Route::get('/', [LaporanController::class, 'index'])->name('index');
-            Route::get('/penjualan/{format}', [LaporanController::class, 'exportPenjualan'])->name('penjualan.export');
-        });
+        // --- Laporan (Dihapus, Out of Scope) ---
+        // Route::prefix('laporan')->name('laporan.')->group(function () {
+        //     Route::get('/', [LaporanController::class, 'index'])->name('index');
+        //     Route::get('/penjualan/{format}', [LaporanController::class, 'exportPenjualan'])->name('penjualan.export');
+        // });
         
+        // --- Stok (Sesuai Scope) ---
         Route::resource('stock-opname', StockOpnameController::class);
         Route::post('stock-opname/{stock_opname}/approve', [StockOpnameController::class, 'approve'])->name('stock_opname.approve');
         Route::post('stock-opname/{stock_opname}/reject', [StockOpnameController::class, 'reject'])->name('stock_opname.reject');
         Route::get('stock-opname/{stock_opname}/pdf', [StockOpnameController::class, 'generatePdf'])->name('stock_opname.pdf');
         
-        Route::get('/stock-movement/detail', [StockMovementController::class, 'detail'])->name('stock_movement.detail');
+        // --- Laporan Stok (Dihapus, Out of Scope) ---
+        // Route::get('/stock-movement/detail', [StockMovementController::class, 'detail'])->name('stock_movement.detail');
 
     });
     
-        Route::middleware(['auth', 'role:kasir'])->group(function () {
-        // --- Rute POS Core (Index, Shift, Cart, Checkout) ---
-    Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
-    Route::post('/pos/set-initial-cash', [POSController::class, 'setInitialCash'])->name('pos.setInitialCash');
-    Route::post('/pos/clear-initial-cash', [POSController::class, 'clearInitialCash'])->name('pos.clearInitialCash');
-    
-    // Cart Operations (Moved from methods to be more RESTful)
-    Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
-    Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
-    Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
-    Route::post('/pos/set-diskon', [POSController::class, 'setDiskon'])->name('pos.setDiskon');
-    Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
-
-    // Riwayat (Tetap di POSController atau pindah ke RiwayatController, tapi untuk Scope refactoring ini, tetap di Core)
-    Route::get('/pos/riwayat', [POSController::class, 'riwayatKasir'])->name('kasir.riwayat');
-    Route::get('/pos/riwayat/{id}', [POSController::class, 'show'])->name('penjualan.show');
-
-    // --- Rute POS Print (Pindah ke POSPrintController) ---
-    Route::get('/pos/print-options/{id}', [POSPrintController::class, 'printOptions'])->name('pos.print.options');
-    Route::get('/pos/print-faktur/{id}', [POSPrintController::class, 'printFaktur'])->name('pos.print.faktur');
-    Route::get('/pos/print-invoice/{id}', [POSPrintController::class, 'printInvoice'])->name('pos.print.invoice');
-
-    // --- Rute POS Search (Pindah ke POSSearchController) ---
-    Route::get('/pos/search', [POSSearchController::class, 'searchObat'])->name('pos.search');
-    Route::get('/pos/search-pelanggan', [POSSearchController::class, 'searchPelanggan'])->name('pos.searchPelanggan');
-    Route::post('/pos/add-pelanggan-cepat', [POSSearchController::class, 'addPelangganCepat'])->name('pos.addPelangganCepat');
+    // ===================================================================
+    // GRUP ROUTE KASIR (SEMUA DIHAPUS)
+    // ===================================================================
+    // Route::middleware(['auth', 'role:kasir'])->group(function () {
+        // ... semua route POS dihapus ...
+    // });
 
 });
 
-});
-
+// File auth.php standar Laravel tetap dimuat untuk proses reset password, dll.
 require __DIR__.'/auth.php';

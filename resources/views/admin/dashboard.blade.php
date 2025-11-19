@@ -1,130 +1,138 @@
 @extends('layouts.admin')
 
-@section('title', 'Dashboard')
+@section('title', 'Dashboard Overview')
 
 @section('content')
-<div class="space-y-8">
-    <!-- Ringkasan Data -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-6 rounded-xl shadow-lg text-white">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-sm font-medium opacity-80">Penjualan Hari Ini</p>
-                    <p class="text-3xl font-bold mt-1">Rp {{ number_format($penjualanHariIni ?? 0, 0, ',', '.') }}</p>
-                </div>
-                <div class="bg-white/20 p-2 rounded-full">
-                     <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" /></svg>
-                </div>
-            </div>
+<div class="space-y-8 animate-fade-in-down">
+
+    {{-- SECTION 1: HEADER & SAMBUTAN --}}
+    <div class="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Selamat Datang, {{ Auth::user()->name ?? 'Admin' }}! </h2>
+            <p class="text-gray-500 text-sm mt-1">Berikut adalah ringkasan data stok dan pengadaan apotek hari ini.</p>
         </div>
-        <a href="{{ route('obat.index', ['filter' => 'menipis']) }}" class="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between hover:shadow-xl transition-shadow">
-            <div>
-                <p class="text-sm font-medium text-gray-500">Stok Menipis</p>
-                <p class="text-3xl font-bold text-yellow-600 mt-1">{{ $stokMenipis ?? 0 }}</p>
-            </div>
-             <div class="bg-yellow-100 p-3 rounded-full">
-                <svg class="w-8 h-8 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
-            </div>
-        </a>
-        <a href="{{ route('obat.index', ['filter' => 'habis']) }}" class="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between hover:shadow-xl transition-shadow">
-            <div>
-                <p class="text-sm font-medium text-gray-500">Stok Habis</p>
-                <p class="text-3xl font-bold text-red-600 mt-1">{{ $stokHabis ?? 0 }}</p>
-            </div>
-            <div class="bg-red-100 p-3 rounded-full">
-                <svg class="w-8 h-8 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-            </div>
-        </a>
-         <a href="{{ route('obat.index', ['filter' => 'kadaluarsa']) }}" class="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between hover:shadow-xl transition-shadow">
-            <div>
-                <p class="text-sm font-medium text-gray-500">Akan Kadaluarsa</p>
-                <p class="text-3xl font-bold text-orange-600 mt-1">{{ $obatHampirExpired ?? 0 }}</p>
-            </div>
-             <div class="bg-orange-100 p-3 rounded-full">
-                <svg class="w-8 h-8 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-            </div>
-        </a>
+        <div class="mt-4 md:mt-0 text-right">
+
+        </div>
     </div>
 
-    <!-- Grafik & Statistik Umum -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">Penjualan 7 Hari Terakhir</h2>
-            <canvas id="penjualanHarianChart" height="120"></canvas>
+    {{-- SECTION 2: STATISTIK UTAMA (GENERAL STATS) --}}
+    {{-- Informasi umum mengenai volume data dan keuangan --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        {{-- Card 1: Total Obat --}}
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+            <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                <i data-feather="package" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Obat</p>
+                <h3 class="text-2xl font-bold text-gray-800">{{ $totalObat ?? 0 }} <span class="text-xs font-normal text-gray-400">Item</span></h3>
+            </div>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-lg">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">Obat Terlaris Bulan Ini</h2>
-            <canvas id="obatTerlarisChart" height="250"></canvas>
+
+        {{-- Card 2: Total Supplier --}}
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                <i data-feather="truck" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Mitra Supplier</p>
+                <h3 class="text-2xl font-bold text-gray-800">{{ $totalSupplier ?? 0 }} <span class="text-xs font-normal text-gray-400">Mitra</span></h3>
+            </div>
+        </div>
+
+        {{-- Card 3: SP Pending --}}
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 relative overflow-hidden">
+            <div class="p-3 bg-purple-50 text-purple-600 rounded-lg z-10">
+                <i data-feather="file-text" class="w-6 h-6"></i>
+            </div>
+            <div class="z-10">
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">SP Belum Proses</p>
+                <h3 class="text-2xl font-bold text-gray-800">{{ $spPending ?? 0 }} <span class="text-xs font-normal text-gray-400">Pesanan</span></h3>
+            </div>
+            {{-- Indikator visual jika ada pending --}}
+            @if(($spPending ?? 0) > 0)
+                <span class="absolute top-2 right-2 w-3 h-3 bg-purple-500 rounded-full animate-ping"></span>
+                <span class="absolute top-2 right-2 w-3 h-3 bg-purple-500 rounded-full"></span>
+            @endif
+        </div>
+
+        {{-- Card 4: Pengeluaran --}}
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                <i data-feather="dollar-sign" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Pembelian (Bulan Ini)</p>
+                <h3 class="text-xl font-bold text-gray-800">Rp {{ number_format($totalPembelianBulanIni ?? 0, 0, ',', '.') }}</h3>
+            </div>
         </div>
     </div>
+
+    {{-- SECTION 3: PERINGATAN STOK (CRITICAL ALERTS) --}}
+    {{-- Dibuat menonjol agar admin segera bertindak --}}
+    <div>
+        <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
+            <i data-feather="alert-circle" class="w-5 h-5 text-gray-400"></i>
+            Status Stok Perlu Perhatian
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {{-- Alert: Stok Menipis --}}
+            <a href="{{ route('obat.index', ['filter' => 'menipis']) }}" class="group bg-white p-6 rounded-xl shadow-sm border border-l-4 border-yellow-400 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 group-hover:text-yellow-600 transition-colors">Stok Menipis</p>
+                        <p class="text-4xl font-bold text-gray-800 mt-2">{{ $stokMenipis ?? 0 }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Perlu restock segera</p>
+                    </div>
+                    <div class="p-3 rounded-full bg-yellow-50 text-yellow-500 group-hover:bg-yellow-100 transition-colors">
+                        <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+                    </div>
+                </div>
+            </a>
+
+            {{-- Alert: Stok Habis --}}
+            <a href="{{ route('obat.index', ['filter' => 'habis']) }}" class="group bg-white p-6 rounded-xl shadow-sm border border-l-4 border-red-500 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 group-hover:text-red-600 transition-colors">Stok Habis (0)</p>
+                        <p class="text-4xl font-bold text-gray-800 mt-2">{{ $stokHabis ?? 0 }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Hilang potensi penjualan</p>
+                    </div>
+                    <div class="p-3 rounded-full bg-red-50 text-red-500 group-hover:bg-red-100 transition-colors">
+                        <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    </div>
+                </div>
+            </a>
+
+            {{-- Alert: Kadaluarsa --}}
+            <a href="{{ route('obat.index', ['filter' => 'kadaluarsa']) }}" class="group bg-white p-6 rounded-xl shadow-sm border border-l-4 border-orange-400 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 group-hover:text-orange-600 transition-colors">Hampir Expired</p>
+                        <p class="text-4xl font-bold text-gray-800 mt-2">{{ $obatHampirExpired ?? 0 }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Dalam 30 hari kedepan</p>
+                    </div>
+                    <div class="p-3 rounded-full bg-orange-50 text-orange-500 group-hover:bg-orange-100 transition-colors">
+                        <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    </div>
+                </div>
+            </a>
+
+        </div>
+    </div>
+
 </div>
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Animasi sederhana saat halaman dimuat (opsional)
     document.addEventListener('DOMContentLoaded', function () {
-        // Data penjualan harian
-        const harianLabels = @json($penjualanHarian->pluck('tgl')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d M')) ?? []);
-        const harianData = @json($penjualanHarian->pluck('total') ?? []);
-        const ctxHarian = document.getElementById('penjualanHarianChart').getContext('2d');
-        const gradientHarian = ctxHarian.createLinearGradient(0, 0, 0, 300);
-        gradientHarian.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
-        gradientHarian.addColorStop(1, 'rgba(59, 130, 246, 0)');
-
-        new Chart(ctxHarian, {
-            type: 'line',
-            data: {
-                labels: harianLabels,
-                datasets: [{
-                    label: 'Penjualan (Rp)',
-                    data: harianData,
-                    fill: true,
-                    backgroundColor: gradientHarian,
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: 4,
-                    pointBackgroundColor: 'rgba(59, 130, 246, 1)',
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { callback: v => 'Rp ' + Number(v).toLocaleString('id-ID') }
-                    }
-                }
-            }
-        });
-
-        // Data obat terlaris
-        const obatLabels = @json($obatTerlaris->pluck('nama') ?? []);
-        const obatData = @json($obatTerlaris->pluck('total_terjual') ?? []);
-        const ctxObat = document.getElementById('obatTerlarisChart').getContext('2d');
-
-        new Chart(ctxObat, {
-            type: 'bar',
-            data: {
-                labels: obatLabels,
-                datasets: [{
-                    label: 'Jumlah Terjual',
-                    data: obatData,
-                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                    borderRadius: 4,
-                    hoverBackgroundColor: 'rgba(5, 150, 105, 0.9)'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                indexAxis: 'y',
-                scales: { x: { beginAtZero: true } }
-            }
-        });
+        feather.replace();
     });
 </script>
 @endpush

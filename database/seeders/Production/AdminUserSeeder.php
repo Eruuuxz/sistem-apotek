@@ -26,7 +26,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'admin@apotek.local'],
             [
                 'name' => 'Administrator',
-                'password' => Hash::make('admin123'), // ⚠️ Password sementara
+                'password' => Hash::make('admin123'),
                 'role' => 'admin',
                 'cabang_id' => $cabangPusat->id,
             ]
