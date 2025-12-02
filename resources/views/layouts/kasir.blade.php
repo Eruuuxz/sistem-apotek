@@ -10,32 +10,26 @@
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <style>
         @import url('https://rsms.me/inter/inter.css');
-
-        html {
-            font-family: 'Inter', sans-serif;
-        }
-
-        [x-cloak] {
-            display: none !important;
-        }
-
+        html { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
         body {
             opacity: 0;
-            transition: opacity 0.3s ease-in-out;
+            transform: translateY(15px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
         }
-
         body.loaded {
             opacity: 1;
+            transform: translateY(0);
         }
     </style>
 </head>
 
 <body class="bg-slate-100 flex min-h-screen font-sans">
 
-    <aside class="w-64 bg-green-900 text-white flex flex-col shadow-lg fixed inset-y-0 left-0 z-30">
-        <div class="p-6 h-20 flex items-center justify-center border-b border-green-800/50">
-            <h1 class="text-xl font-bold text-white tracking-wide">
-                Apotek <span class="text-green-300">Liz Farma 02</span>
+    <aside class="w-64 bg-white text-slate-800 flex flex-col fixed inset-y-0 left-0 z-30 border-r border-slate-200">
+        <div class="p-6 h-20 flex items-center justify-center border-b border-slate-200">
+            <h1 class="text-xl font-bold text-slate-900 tracking-wide">
+                Apotek <span class="text-green-600">Liz Farma 02</span>
             </h1>
         </div>
 
@@ -45,13 +39,13 @@
                 @if(Auth::user()->role === 'kasir')
 
                     <a href="{{ route('pos.index') }}"
-                        class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium {{ request()->routeIs('pos.*') ? 'bg-green-600 text-white' : 'text-green-200 hover:bg-white/10 hover:text-white' }}">
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium {{ request()->routeIs('pos.*') ? 'bg-green-50 text-green-600 font-semibold' : 'text-slate-600 hover:bg-green-50 hover:text-green-600' }}">
                         <i data-feather="shopping-cart" class="w-5 h-5"></i>
                         <span>POS Penjualan</span>
                     </a>
 
                     <a href="{{ route('kasir.riwayat') }}"
-                        class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium {{ request()->routeIs('kasir.riwayat') ? 'bg-green-600 text-white' : 'text-green-200 hover:bg-white/10 hover:text-white' }}">
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium {{ request()->routeIs('kasir.riwayat') ? 'bg-green-50 text-green-600 font-semibold' : 'text-slate-600 hover:bg-green-50 hover:text-green-600' }}">
                         <i data-feather="clock" class="w-5 h-5"></i>
                         <span>Riwayat Penjualan</span>
                     </a>
@@ -67,10 +61,7 @@
                 @if (!request()->routeIs('pos.index'))
                     <a href="{{ url()->previous() }}" title="Kembali"
                         class="p-2 rounded-full hover:bg-slate-200 transition-colors">
-                        <svg class="w-5 h-5 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none"
-                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                        </svg>
+                        <i data-feather="arrow-left" class="w-5 h-5 text-slate-600"></i>
                     </a>
                 @endif
                 <h1 class="text-2xl font-bold text-slate-800 tracking-tight">@yield('title', 'POS Kasir')</h1>
@@ -85,7 +76,7 @@
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open"
                             class="flex items-center gap-2 p-1.5 rounded-full hover:bg-slate-200 transition-colors">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=16a34a&color=fff&size=40"
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=15803d&color=fff&size=40"
                                 alt="Avatar" class="w-9 h-9 rounded-full">
                             <div class="hidden md:block text-left">
                                 <p class="font-semibold text-sm text-slate-800">{{ Auth::user()->name }}</p>
@@ -119,7 +110,7 @@
     @stack('scripts')
     <script>
         feather.replace();
-
+        
         function updateClock() {
             const now = new Date();
             const dateEl = document.getElementById('date');
@@ -134,17 +125,7 @@
 
         document.addEventListener("DOMContentLoaded", function () {
             document.body.classList.add("loaded");
-            document.querySelectorAll("a[href]:not([target='_blank']):not([href^='#'])").forEach(link => {
-                link.addEventListener("click", function (e) {
-                    if (!this.closest('[x-data]')) {
-                        e.preventDefault();
-                        document.body.classList.remove("loaded");
-                        setTimeout(() => { window.location.href = this.href; }, 300);
-                    }
-                });
-            });
         });
     </script>
 </body>
-
 </html>

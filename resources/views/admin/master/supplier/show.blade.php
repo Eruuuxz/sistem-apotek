@@ -34,9 +34,15 @@
         </div>
 
         {{-- Tab Riwayat Transaksi --}}
-        <div class="bg-white p-6 shadow-lg rounded-xl" x-data="{ activeTab: 'pembelian' }">
+        <div class="bg-white p-6 shadow-lg rounded-xl" x-data="{ activeTab: 'obat' }">
              <div class="mb-4 border-b border-gray-200">
                 <ul class="flex flex-wrap -mb-px text-sm font-medium text-center">
+                    {{-- TAB BARU: Daftar Obat --}}
+                    <li class="mr-2">
+                        <button @click="activeTab = 'obat'" :class="{ 'text-blue-600 border-blue-600': activeTab === 'obat', 'text-gray-500 hover:text-gray-600 border-transparent hover:border-gray-300': activeTab !== 'obat' }" class="inline-block p-4 border-b-2 rounded-t-lg">
+                            Daftar Obat
+                        </button>
+                    </li>
                     <li class="mr-2">
                         <button @click="activeTab = 'pembelian'" :class="{ 'text-blue-600 border-blue-600': activeTab === 'pembelian', 'text-gray-500 hover:text-gray-600 border-transparent hover:border-gray-300': activeTab !== 'pembelian' }" class="inline-block p-4 border-b-2 rounded-t-lg">
                             Riwayat Pembelian
@@ -57,6 +63,37 @@
             
             {{-- Konten Tab --}}
             <div>
+                {{-- KONTEN TAB BARU: Daftar Obat --}}
+                <div x-show="activeTab === 'obat'" x-cloak>
+                    <table class="w-full text-sm">
+                         <thead class="bg-gray-50 text-gray-600 uppercase">
+                            <tr>
+                                <th class="px-4 py-2 text-left">Kode</th>
+                                <th class="px-4 py-2 text-left">Nama Obat</th>
+                                <th class="px-4 py-2 text-right">Stok</th>
+                                <th class="px-4 py-2 text-right">Harga Jual</th>
+                                <th class="px-4 py-2 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-700">
+                            @forelse($obats as $obat)
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="px-4 py-3">{{ $obat->kode }}</td>
+                                    <td class="px-4 py-3 font-semibold">{{ $obat->nama }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $obat->stok }}</td>
+                                    <td class="px-4 py-3 text-right">Rp {{ number_format($obat->harga_jual, 0, ',', '.') }}</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <a href="{{ route('obat.edit', $obat->id) }}" class="text-blue-600 hover:underline">Lihat/Edit</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5" class="text-center py-5 text-gray-500">Supplier ini belum memasok obat apapun.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                     <div class="mt-4">{{ $obats->links('pagination::tailwind', ['pageName' => 'obatPage']) }}</div>
+                </div>
+
                 {{-- Riwayat Pembelian --}}
                 <div x-show="activeTab === 'pembelian'">
                     <table class="w-full text-sm">
@@ -83,7 +120,7 @@
                             @endforelse
                         </tbody>
                     </table>
-                     <div class="mt-4">{{ $riwayatPembelian->links('pagination::tailwind') }}</div>
+                     <div class="mt-4">{{ $riwayatPembelian->links('pagination::tailwind', ['pageName' => 'pembelianPage']) }}</div>
                 </div>
 
                 {{-- Riwayat Surat Pesanan --}}
@@ -119,7 +156,7 @@
                             @endforelse
                         </tbody>
                     </table>
-                    <div class="mt-4">{{ $riwayatSuratPesanan->links('pagination::tailwind') }}</div>
+                    <div class="mt-4">{{ $riwayatSuratPesanan->links('pagination::tailwind', ['pageName' => 'spPage']) }}</div>
                 </div>
 
                  {{-- Riwayat Retur --}}
@@ -148,7 +185,7 @@
                             @endforelse
                         </tbody>
                     </table>
-                     <div class="mt-4">{{ $riwayatRetur->links('pagination::tailwind') }}</div>
+                     <div class="mt-4">{{ $riwayatRetur->links('pagination::tailwind', ['pageName' => 'returPage']) }}</div>
                 </div>
             </div>
         </div>

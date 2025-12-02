@@ -16,13 +16,20 @@
     <main class="w-full max-w-md">
         <div class="bg-white rounded-2xl shadow-xl p-8">
             
-            <div class="text-center mb-8">
+            {{-- Logo --}}
+            <div class="text-center mb-6">
                 <a href="#">
                     <img src="{{ asset('images/logoAdmin.png') }}" alt="Logo Apotek" 
                          class="h-20 w-20 mx-auto rounded-full object-cover shadow-md">
                 </a>
             </div>
-
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-slate-800">Selamat Datang</h1>
+                <p class="text-sm text-slate-500 mt-2">
+                    Selamat datang di <strong>Sistem Apotek Liz Farma 02</strong>.
+                    <br>Silakan pilih peran Anda untuk melanjutkan.
+                </p>
+            </div>
             <div class="space-y-4">
                 
                 {{-- Tombol Login Admin --}}

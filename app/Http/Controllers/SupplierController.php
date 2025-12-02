@@ -48,34 +48,39 @@ class SupplierController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Supplier $supplier)
+        public function show(Supplier $supplier)
     {
-        // Load relasi yang diperlukan
-        $supplier->load('obat');
+        // Ambil riwayat pembelian dengan nama paginator 'pembelianPage'
+        $riwayatPembelian = $supplier->pembelian()
+                                ->latest()
+                                ->paginate(10, ['*'], 'pembelianPage');
 
-        // Ambil riwayat pembelian
-        $riwayatPembelian = Pembelian::where('supplier_id', $supplier->id)
-                                    ->with('detail.obat')
+        // Ambil riwayat Surat Pesanan dengan nama paginator 'spPage'
+        $riwayatSuratPesanan = $supplier->suratPesanans() // Gunakan relasi 'suratPesanans'
                                     ->latest()
-                                    ->paginate(5, ['*'], 'pembelian_page');
-
-        // Ambil riwayat retur pembelian (jika ada)
-        // Asumsi retur pembelian memiliki jenis 'pembelian' dan transaksi_id mengacu ke pembelian_id
+                                    ->paginate(10, ['*'], 'spPage');
+        
+        // Ambil riwayat retur
         $riwayatRetur = Retur::where('jenis', 'pembelian')
-                            ->whereHas('pembelian', function ($query) use ($supplier) {
-                                $query->where('supplier_id', $supplier->id);
-                            })
-                            ->with('details.obat')
-                            ->latest()
-                            ->paginate(5, ['*'], 'retur_page');
+                             ->whereHas('pembelian', function ($query) use ($supplier) {
+                                 $query->where('supplier_id', $supplier->id);
+                             })
+                             ->latest()
+                             ->paginate(5, ['*'], 'returPage');
 
-        // Ambil riwayat Surat Pesanan
-        $riwayatSuratPesanan = SuratPesanan::where('supplier_id', $supplier->id)
-                                            ->with('details.obat')
-                                            ->latest()
-                                            ->paginate(5, ['*'], 'sp_page');
+        // Ambil data obat dari supplier ini dengan nama paginator 'obatPage'
+        $obats = $supplier->obats() // Gunakan relasi 'obats' (plural)
+                         ->latest()
+                         ->paginate(10, ['*'], 'obatPage');
 
-        return view('admin.master.supplier.show', compact('supplier', 'riwayatPembelian', 'riwayatRetur', 'riwayatSuratPesanan'));
+        // Kirim semua data ke view
+        return view('admin.master.supplier.show', compact(
+            'supplier',
+            'riwayatPembelian',
+            'riwayatSuratPesanan',
+            'riwayatRetur',
+            'obats' // Pastikan 'obats' ada di sini
+        ));
     }
 
     /**

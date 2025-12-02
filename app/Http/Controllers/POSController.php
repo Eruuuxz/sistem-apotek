@@ -60,7 +60,7 @@ class POSController extends Controller
     /**
      * Mengatur modal awal saat memulai sesi kasir.
      */
-    public function setInitialCash(Request $request)
+public function setInitialCash(Request $request)
     {
         $request->validate(['initial_cash' => 'required|numeric|min:0']);
 
@@ -70,11 +70,15 @@ class POSController extends Controller
 
         $currentTime = Carbon::now();
         $shiftName = ($currentTime->hour >= 7 && $currentTime->hour < 15) ? 'Pagi' : 'Sore';
-        $shift = Shift::where('name', $shiftName)->first();
-
-        if (!$shift) {
-            return back()->with('error', 'Shift saat ini tidak ditemukan. Silakan hubungi administrator.');
-        }
+        
+        $shift = Shift::firstOrCreate(
+            ['name' => $shiftName], 
+            [
+                'start_time' => $shiftName == 'Pagi' ? '07:00:00' : '15:00:00',
+                'end_time'   => $shiftName == 'Pagi' ? '15:00:00' : '22:00:00',
+            ]
+        );
+        // -------------------------
 
         CashierShift::create([
             'user_id' => Auth::id(),
@@ -87,9 +91,6 @@ class POSController extends Controller
         return redirect()->route('pos.index')->with('success', 'Sesi kasir berhasil dimulai.');
     }
 
-    /**
-     * Menghapus item dari keranjang.
-     */
     public function add(Request $request)
     {
         $request->validate(['kode' => 'required|string|exists:obat,kode']);
@@ -103,9 +104,6 @@ class POSController extends Controller
         }
     }
 
-    /**
-     * Memperbarui kuantitas item di keranjang.
-     */
     public function updateQty(Request $request)
     {
         $request->validate(['kode' => 'required|string|exists:obat,kode', 'qty' => 'required|integer|min:0']);
@@ -119,9 +117,6 @@ class POSController extends Controller
         }
     }
 
-    /**
-     * Menghapus item dari keranjang.
-     */
     public function remove(Request $request)
     {
         $request->validate(['kode' => 'required']);
@@ -129,9 +124,6 @@ class POSController extends Controller
         return back();
     }
 
-    /**
-     * Mengatur diskon untuk transaksi.
-     */
     public function setDiskon(Request $request)
     {
         $request->validate([
@@ -142,9 +134,6 @@ class POSController extends Controller
         return back()->with('success', 'Diskon berhasil diterapkan');
     }
 
-    /**
-     * Memproses checkout dan menyimpan transaksi.
-     */
     public function checkout(Request $request)
     {
         $totals = $this->cartService->calculateTotals($this->cartService->getCart());

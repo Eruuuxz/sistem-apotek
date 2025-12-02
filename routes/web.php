@@ -16,8 +16,8 @@ use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BiayaOperasionalController;
 use App\Http\Controllers\POSController;
-use App\Http\Controllers\POSPrintController; 
-use App\Http\Controllers\POSSearchController; 
+use App\Http\Controllers\POSPrintController;
+use App\Http\Controllers\POSSearchController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\SuratPesananController;
 use App\Http\Controllers\ShiftController;
@@ -69,14 +69,18 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         // --- Master Data ---
-        Route::resource('obat', ObatController::class);
+        // PERBAIKAN DI SINI: Route export/import dipindahkan ke ATAS resource
+        Route::get('obat/export', [ObatController::class, 'export'])->name('obat.export');
+        Route::post('obat/import', [ObatController::class, 'import'])->name('obat.import');
         Route::get('/obat-search', [ObatController::class, 'search'])->name('obat.search');
         
+        Route::resource('obat', ObatController::class);
+
         Route::resource('supplier', SupplierController::class);
         Route::resource('users', UserController::class);
         Route::resource('pelanggan', PelangganController::class);
         Route::get('/pelanggan/{pelanggan}/riwayat-json', [\App\Http\Controllers\PelangganController::class, 'riwayatPembelianJson'])->name('pelanggan.riwayatJson');
-        
+
         // --- Transaksi ---
         Route::resource('surat_pesanan', SuratPesananController::class);
         Route::get('surat_pesanan/{id}/details', [SuratPesananController::class, 'getSpDetails'])->name('surat_pesanan.details');
@@ -89,58 +93,59 @@ Route::middleware('auth')->group(function () {
         Route::get('pembelian/{pembelian}/faktur', [PembelianController::class, 'faktur'])->name('pembelian.faktur');
         Route::get('pembelian/{pembelian}/pdf', [PembelianController::class, 'pdf'])->name('pembelian.pdf');
         Route::get('/pembelian/get-obat-by-supplier/{supplierId}', [PembelianController::class, 'getObatBySupplier'])->name('pembelian.getObatBySupplier');
-        
+
         Route::get('/retur/sumber/{jenis}/{id}', [ReturController::class, 'sumber'])->name('retur.sumber');
         Route::resource('retur', ReturController::class);
+        Route::get('retur/{id}/pdf', [ReturController::class, 'printPdf'])->name('retur.pdf');
 
-        
+
         // --- Keuangan ---
         Route::resource('biaya-operasional', BiayaOperasionalController::class);
-        
+
         // --- Laporan ---
         Route::prefix('laporan')->name('laporan.')->group(function () {
             Route::get('/', [LaporanController::class, 'index'])->name('index');
             Route::get('/penjualan/{format}', [LaporanController::class, 'exportPenjualan'])->name('penjualan.export');
         });
-        
+
         Route::resource('stock-opname', StockOpnameController::class);
         Route::post('stock-opname/{stock_opname}/approve', [StockOpnameController::class, 'approve'])->name('stock_opname.approve');
         Route::post('stock-opname/{stock_opname}/reject', [StockOpnameController::class, 'reject'])->name('stock_opname.reject');
         Route::get('stock-opname/{stock_opname}/pdf', [StockOpnameController::class, 'generatePdf'])->name('stock_opname.pdf');
-        
+
         Route::get('/stock-movement/detail', [StockMovementController::class, 'detail'])->name('stock_movement.detail');
 
     });
-    
-        Route::middleware(['auth', 'role:kasir'])->group(function () {
+
+    Route::middleware(['auth', 'role:kasir'])->group(function () {
         // --- Rute POS Core (Index, Shift, Cart, Checkout) ---
-    Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
-    Route::post('/pos/set-initial-cash', [POSController::class, 'setInitialCash'])->name('pos.setInitialCash');
-    Route::post('/pos/clear-initial-cash', [POSController::class, 'clearInitialCash'])->name('pos.clearInitialCash');
-    
-    // Cart Operations (Moved from methods to be more RESTful)
-    Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
-    Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
-    Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
-    Route::post('/pos/set-diskon', [POSController::class, 'setDiskon'])->name('pos.setDiskon');
-    Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
+        Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
+        Route::post('/pos/set-initial-cash', [POSController::class, 'setInitialCash'])->name('pos.setInitialCash');
+        Route::post('/pos/clear-initial-cash', [POSController::class, 'clearInitialCash'])->name('pos.clearInitialCash');
 
-    // Riwayat (Tetap di POSController atau pindah ke RiwayatController, tapi untuk Scope refactoring ini, tetap di Core)
-    Route::get('/pos/riwayat', [POSController::class, 'riwayatKasir'])->name('kasir.riwayat');
-    Route::get('/pos/riwayat/{id}', [POSController::class, 'show'])->name('penjualan.show');
+        // Cart Operations (Moved from methods to be more RESTful)
+        Route::post('/pos/add', [POSController::class, 'add'])->name('pos.add');
+        Route::post('/pos/update', [POSController::class, 'updateQty'])->name('pos.update');
+        Route::post('/pos/remove', [POSController::class, 'remove'])->name('pos.remove');
+        Route::post('/pos/set-diskon', [POSController::class, 'setDiskon'])->name('pos.setDiskon');
+        Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
 
-    // --- Rute POS Print (Pindah ke POSPrintController) ---
-    Route::get('/pos/print-options/{id}', [POSPrintController::class, 'printOptions'])->name('pos.print.options');
-    Route::get('/pos/print-faktur/{id}', [POSPrintController::class, 'printFaktur'])->name('pos.print.faktur');
-    Route::get('/pos/print-invoice/{id}', [POSPrintController::class, 'printInvoice'])->name('pos.print.invoice');
+        // Riwayat (Tetap di POSController atau pindah ke RiwayatController, tapi untuk Scope refactoring ini, tetap di Core)
+        Route::get('/pos/riwayat', [POSController::class, 'riwayatKasir'])->name('kasir.riwayat');
+        Route::get('/pos/riwayat/{id}', [POSController::class, 'show'])->name('penjualan.show');
 
-    // --- Rute POS Search (Pindah ke POSSearchController) ---
-    Route::get('/pos/search', [POSSearchController::class, 'searchObat'])->name('pos.search');
-    Route::get('/pos/search-pelanggan', [POSSearchController::class, 'searchPelanggan'])->name('pos.searchPelanggan');
-    Route::post('/pos/add-pelanggan-cepat', [POSSearchController::class, 'addPelangganCepat'])->name('pos.addPelangganCepat');
+        // --- Rute POS Print (Pindah ke POSPrintController) ---
+        Route::get('/pos/print-options/{id}', [POSPrintController::class, 'printOptions'])->name('pos.print.options');
+        Route::get('/pos/print-faktur/{id}', [POSPrintController::class, 'printFaktur'])->name('pos.print.faktur');
+        Route::get('/pos/print-invoice/{id}', [POSPrintController::class, 'printInvoice'])->name('pos.print.invoice');
+
+        // --- Rute POS Search (Pindah ke POSSearchController) ---
+        Route::get('/pos/search', [POSSearchController::class, 'searchObat'])->name('pos.search');
+        Route::get('/pos/search-pelanggan', [POSSearchController::class, 'searchPelanggan'])->name('pos.searchPelanggan');
+        Route::post('/pos/add-pelanggan-cepat', [POSSearchController::class, 'addPelangganCepat'])->name('pos.addPelangganCepat');
+
+    });
 
 });
 
-});
-
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

@@ -4,7 +4,7 @@
 
 @section('content')
 
-    {{-- Alert --}}
+    {{-- Alert Success --}}
     @if (session('success'))
         <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
             <p class="font-bold">Sukses</p>
@@ -12,15 +12,37 @@
         </div>
     @endif
 
+    {{-- Alert Error --}}
+    @if (session('error'))
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+            <p class="font-bold">Error</p>
+            <p>{{ session('error') }}</p>
+        </div>
+    @endif
+
     <div class="bg-white p-6 shadow-lg rounded-xl">
         {{-- Header --}}
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <div class="flex flex-col lg:flex-row justify-between items-center mb-6 gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-gray-800">Manajemen Obat</h2>
-                <p class="text-sm text-gray-500">Kelola daftar obat, stok, dan harga.</p>
+                <p class="text-sm text-gray-500">Kelola daftar obat, stok, import/export excel.</p>
             </div>
-            <div class="flex items-center gap-2">
-                 <a href="{{ route('obat.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center transition duration-300">
+            
+            <div class="flex flex-wrap items-center gap-2">
+                {{-- Tombol Export --}}
+                <a href="{{ route('obat.export') }}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center transition duration-300 shadow-sm">
+                    <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                    Export Excel
+                </a>
+
+                {{-- Tombol Import (Trigger Modal) --}}
+                <button onclick="document.getElementById('import-modal').classList.remove('hidden'); document.getElementById('import-modal').classList.add('flex');" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center transition duration-300 shadow-sm">
+                    <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+                    Import Excel
+                </button>
+
+                {{-- Tombol Tambah --}}
+                 <a href="{{ route('obat.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center transition duration-300 shadow-sm">
                     <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     Tambah Obat
                 </a>
@@ -42,10 +64,8 @@
                         <th class="px-4 py-3 text-left cursor-pointer" onclick="sortTable(2)">Kemasan</th>
                         <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(3)">Stok</th>
                         <th class="px-4 py-3 text-left">Batch / ED</th>
-                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(4)">Harga Dasar (HPP)</th>
-                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(5)">Margin (%)</th>
-                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(6)">Harga Jual</th>
-                        <th class="px-4 py-3 text-left cursor-pointer" onclick="sortTable(7)">Supplier</th>
+                        <th class="px-4 py-3 text-right cursor-pointer" onclick="sortTable(4)">Harga Jual</th>
+                        <th class="px-4 py-3 text-left cursor-pointer" onclick="sortTable(5)">Supplier</th>
                         <th class="px-4 py-3 text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -62,7 +82,6 @@
                             </td>
                             <td class="px-4 py-3">{{ $obat->kemasan_besar ?? '-' }}</td>
                             
-                            {{-- Stok (Tampilan Baru) --}}
                             <td class="px-4 py-3 text-right">
                                 <span class="font-bold text-lg text-blue-600">{{ $obat->stok }}</span>
                                 <span class="block text-xs text-gray-500">{{ $obat->satuan_terkecil }}</span>
@@ -73,7 +92,6 @@
                                 @endif
                             </td>
 
-                            {{-- Batch --}}
                             <td class="px-4 py-3 text-xs">
                                 @if($obat->batches->isNotEmpty())
                                     @foreach($obat->batches as $batch)
@@ -87,13 +105,9 @@
                                 @endif
                             </td>
                             
-                            {{-- Kolom Harga Baru --}}
-                            <td class="px-4 py-3 text-right font-semibold">Rp {{ number_format($obat->harga_dasar, 0, ',', '.') }}</td>
-                            <td class="px-4 py-3 text-right font-semibold">{{ $obat->persen_untung ?? 0 }}%</td>
                             <td class="px-4 py-3 text-right font-bold text-green-600">Rp {{ number_format($obat->harga_jual, 0, ',', '.') }}</td>
                             <td class="px-4 py-3">{{ $obat->supplier->nama ?? '-' }}</td>
 
-                            {{-- Aksi --}}
                             <td class="px-4 py-3 text-center">
                                 <div class="flex justify-center items-center space-x-2">
                                     <a href="{{ route('obat.edit', $obat->id) }}" class="text-gray-500 hover:text-yellow-600 p-2 rounded-full bg-gray-100 hover:bg-yellow-100 transition" title="Edit Obat">
@@ -112,20 +126,45 @@
                     @empty
                         <tr>
                             <td colspan="10" class="text-center py-10 text-gray-500">
-                                <div class="flex flex-col items-center">
-                                    <svg class="w-12 h-12 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M9 9.563C9 9.252 9.252 9 9.563 9h4.874c.311 0 .563.252.563.563v4.874c0 .311-.252.563-.563.563H9.563A.562.562 0 0 1 9 14.437V9.564Z" /></svg>
-                                    <h4 class="mt-2 text-lg font-semibold text-gray-700">Belum Ada Data Obat</h4>
-                                    <p class="mt-1 text-sm">Mulai dengan menambahkan data obat baru.</p>
-                                </div>
+                                Belum ada data obat.
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+
+        {{-- Pagination Links --}}
+        <div class="mt-6">
+            {{ $obats->links() }}
+        </div>
     </div>
 
-    {{-- Popup Konfirmasi Hapus --}}
+    {{-- Modal Import --}}
+    <div id="import-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Import Data Obat</h3>
+                <button onclick="document.getElementById('import-modal').classList.add('hidden'); document.getElementById('import-modal').classList.remove('flex');" class="text-gray-500 hover:text-gray-700">&times;</button>
+            </div>
+            
+            <form action="{{ route('obat.import') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih File Excel (.xlsx, .csv)</label>
+                    <input type="file" name="file" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Pastikan format kolom sesuai (Kode, Nama, Kategori, dll).</p>
+                </div>
+                
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="document.getElementById('import-modal').classList.add('hidden'); document.getElementById('import-modal').classList.remove('flex');" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Upload & Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Popup Konfirmasi Hapus (Code Lama) --}}
     <div id="confirm-popup" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm text-center">
             <h2 class="text-xl font-bold mb-4">Konfirmasi Hapus</h2>
@@ -138,8 +177,8 @@
     </div>
 
     <script>
+        // Script Sort Table dan Delete sama seperti sebelumnya
         let sortDirection = {};
-
         function sortTable(colIndex) {
             const table = document.querySelector("table");
             const tbody = table.tBodies[0];
@@ -157,17 +196,13 @@
                 let valA = a.cells[colIndex].innerText.trim();
                 let valB = b.cells[colIndex].innerText.trim();
 
-                // Numeric sort untuk Stok, HPP, Margin, Harga Jual
-                if ([3, 4, 5, 6].includes(colIndex)) {
+                if ([3, 4, 5].includes(colIndex)) { // Index kolom angka
                     let numA = parseFloat(valA.replace(/[^\d.-]/g, '')) || 0;
                     let numB = parseFloat(valB.replace(/[^\d.-]/g, '')) || 0;
                     return (numA - numB) * (isAsc ? 1 : -1);
                 }
-
-                // Default text sort
                 return valA.localeCompare(valB) * (isAsc ? 1 : -1);
             });
-
             rows.forEach(row => tbody.appendChild(row));
         }
 

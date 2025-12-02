@@ -3,35 +3,55 @@
 @section('title', 'POS Kasir')
 
 @section('content')
-
-    {{-- Notifikasi --}}
-    @if (session('success'))
-        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
-            <span class="block sm:inline">{{ session('success') }}</span>
+<div class="h-[calc(100vh-100px)] flex flex-col md:flex-row gap-4 overflow-hidden">
+    
+    <div class="md:w-8/12 flex flex-col gap-4 h-full">
+        <div class="bg-white p-4 rounded-xl shadow-sm shrink-0">
+            <form action="{{ route('pos.add') }}" method="POST" class="relative">
+                @csrf
+                <i data-feather="search" class="absolute left-4 top-3.5 w-5 h-5 text-gray-400"></i>
+                <input type="text" id="search" name="kode" 
+                    placeholder="Scan Barcode atau Cari Nama Obat..." 
+                    class="w-full pl-12 pr-4 py-3 rounded-lg border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-lg"
+                    autofocus autocomplete="off">
+                <ul id="suggestions" class="absolute z-50 bg-white border border-gray-100 w-full mt-2 rounded-xl shadow-xl hidden max-h-60 overflow-y-auto"></ul>
+            </form>
         </div>
-    @endif
-    @if (session('error'))
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
-            <span class="block sm:inline">{{ session('error') }}</span>
+
+        <div class="bg-white rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col">
+            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-gray-700">Daftar Obat Tersedia</h3>
+                <button onclick="openObatModal()" class="text-sm text-green-600 font-semibold hover:underline flex items-center gap-1">
+                    <i data-feather="grid" class="w-4 h-4"></i> Lihat Katalog (F2)
+                </button>
+            </div>
+            
+            <div class="overflow-y-auto p-0 flex-1">
+                @include('kasir.partials.cart_table') 
+            </div>
         </div>
-    @endif
+    </div>
 
-    {{-- 
-        Logika ini akan memeriksa apakah sesi kasir aktif. 
-        Jika $activeShift bernilai true, antarmuka POS akan ditampilkan.
-        Jika null, form modal awal akan ditampilkan.
-    --}}
-    @if ($activeShift)
-        {{-- Tampilan POS utama jika sesi kasir aktif --}}
-        @include('kasir.partials.pos_interface')
+    <div class="md:w-4/12 flex flex-col h-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        {{-- Header Total (HIJAU) --}}
+        <div class="p-4 bg-green-600 text-white shadow-md z-10">
+            <div class="flex justify-between items-center">
+                <span class="text-green-100 text-sm">Total Tagihan</span>
+                <span class="text-xs bg-green-500 px-2 py-1 rounded text-white font-semibold">{{ count($cart) }} Item</span>
+            </div>
+            <div class="text-4xl font-bold mt-1 text-right tracking-tight">
+                <span id="total_display_big">Rp {{ number_format($totalAkhir ?? 0, 0, ',', '.') }}</span>
+            </div>
+        </div>
 
-        {{-- Sertakan modal yang relevan --}}
-        @include('kasir.partials.modal_list_obat')
-        @include('kasir.partials.modal_add_pelanggan')
-    @else
-        {{-- Tampilan form "Input Modal Awal" jika sesi belum dimulai --}}
-        @include('kasir.partials.set_initial_cash_form')
-    @endif
+        <div class="flex-1 overflow-y-auto p-4 bg-gray-50">
+            @include('kasir.partials.payment_summary')
+        </div>
+    </div>
+</div>
+
+@include('kasir.partials.modal_list_obat')
+@include('kasir.partials.modal_add_pelanggan')
 
 @endsection
 

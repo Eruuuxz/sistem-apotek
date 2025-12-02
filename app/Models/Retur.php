@@ -32,11 +32,11 @@ class Retur extends Model
     // Relasi ke transaksi sumber
     public function pembelian()
     {
-        return $this->belongsTo(Pembelian::class, 'transaksi_id')->where('jenis', 'pembelian');
+        return $this->belongsTo(Pembelian::class, 'transaksi_id');
     }
 
     public function penjualan()
     {
-        return $this->belongsTo(Penjualan::class, 'transaksi_id')->where('jenis', 'penjualan');
+        return $this->belongsTo(Penjualan::class, 'transaksi_id');
     }
 }

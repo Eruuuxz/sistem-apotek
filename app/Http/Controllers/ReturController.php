@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReturController extends Controller
 {
@@ -130,6 +131,21 @@ class ReturController extends Controller
         });
 
         return redirect()->route('retur.index')->with('success', 'Data retur berhasil disimpan.');
+    }
+    public function printPdf($id)
+    {
+        // Load retur beserta detail obat, dan relasi ke pembelian/penjualan untuk ambil nama partner
+        $retur = Retur::with([
+            'details.obat',
+            'pembelian.supplier',   // Untuk ambil nama supplier
+            'penjualan.pelanggan'   // Untuk ambil nama pelanggan
+        ])->findOrFail($id);
+
+        // Load view khusus PDF (kita buat di langkah 3)
+        $pdf = Pdf::loadView('admin.Transaksi.retur.pdf', compact('retur'));
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->stream('Bukti-Retur-' . $retur->no_retur . '.pdf');
     }
 
     public function show($id)

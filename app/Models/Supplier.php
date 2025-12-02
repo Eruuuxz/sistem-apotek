@@ -19,22 +19,27 @@ class Supplier extends Model
         'telepon',
     ];
 
-    public function obat()
+    // UBAH INI: dari 'obat' menjadi 'obats'
+    public function obats()
     {
         return $this->hasMany(Obat::class);
     }
 
-    public function pembelian() // Tambahkan relasi ini
+    public function pembelian()
     {
         return $this->hasMany(Pembelian::class);
     }
 
-    public function suratPesanans() // Tambahkan relasi ini
+    public function suratPesanans()
     {
         return $this->hasMany(SuratPesanan::class);
     }
 
-    // Relasi retur tidak langsung ke supplier, tapi melalui pembelian.
-    // Jika ingin langsung, perlu kolom supplier_id di tabel retur atau relasi hasManyThrough
-    // Untuk saat ini, kita akan mengambilnya melalui Pembelian di SupplierController@show
+    // Relasi untuk mengambil retur pembelian
+    public function returPembelian()
+    {
+        // Asumsi: 'pembelian' adalah nama relasi di model Retur
+        return $this->hasManyThrough(Retur::class, Pembelian::class)
+                    ->where('retur.jenis', 'pembelian');
+    }
 }
