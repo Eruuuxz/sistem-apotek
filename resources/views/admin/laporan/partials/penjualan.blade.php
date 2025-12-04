@@ -96,8 +96,10 @@
         return $rows->map(function ($row) {
             return [
                 'no_nota' => $row->no_nota,
-                'kasir' => $row->user->name ?? 'N/A',
-                'pelanggan' => $row->pelanggan->nama ?? 'Umum',
+                // PERBAIKAN 1: Ganti user->name menjadi kasir->name
+                'kasir' => $row->kasir->name ?? 'N/A',
+                // PERBAIKAN 2: Tambahkan pengecekan $row->nama_pelanggan
+                'pelanggan' => $row->pelanggan->nama ?? $row->nama_pelanggan ?? 'Umum',
                 'waktu' => \Carbon\Carbon::parse($row->tanggal)->format('H:i:s'),
                 'total' => $row->total,
                 'items' => $row->details->map(fn($d) => $d->obat->nama . ' (' . $d->qty . ')')->implode(', '),

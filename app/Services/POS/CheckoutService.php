@@ -8,6 +8,7 @@ use App\Models\Obat;
 use App\Models\BatchObat;
 use App\Models\Cabang;
 use App\Models\CashierShift;
+use App\Models\Pelanggan; // Tambahkan Import Model Pelanggan
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Collection;
@@ -21,13 +22,6 @@ class CheckoutService
         $this->cartService = $cartService;
     }
 
-    /**
-     * Memproses transaksi checkout.
-     *
-     * @param array $validatedData
-     * @return Penjualan
-     * @throws \Exception
-     */
     public function processCheckout(array $validatedData): Penjualan
     {
         $cart = $this->cartService->getCart();
@@ -58,6 +52,26 @@ class CheckoutService
         }
 
         return DB::transaction(function () use ($cart, $totals, $validatedData, $hasPsikotropika, $activeShift, $obats, $finalTotal) {
+            
+            // --- PERBAIKAN: LOGIKA SIMPAN PELANGGAN BARU ---
+            $pelangganId = $validatedData['pelanggan_id'] ?? null;
+
+            // Jika ID kosong TAPI ada nama pelanggan (input manual), buat data baru/cari yg ada
+            if (empty($pelangganId) && !empty($validatedData['nama_pelanggan'])) {
+                // Gunakan firstOrCreate agar tidak duplikat jika nama sama persis sudah ada
+                $pelangganBaru = Pelanggan::firstOrCreate(
+                    ['nama' => $validatedData['nama_pelanggan']], 
+                    [
+                        'alamat' => $validatedData['alamat_pelanggan'] ?? '-',
+                        'telepon' => $validatedData['telepon_pelanggan'] ?? '-',
+                        'tipe' => 'umum', // Set tipe default
+                        'no_ktp' => $validatedData['no_ktp'] ?? null,
+                    ]
+                );
+                $pelangganId = $pelangganBaru->id;
+            }
+            // -----------------------------------------------
+
             // 1. Buat Header Penjualan
             $penjualan = Penjualan::create([
                 'no_nota' => $this->generateNoNota(),
@@ -70,7 +84,7 @@ class CheckoutService
                 'nama_pelanggan' => $validatedData['nama_pelanggan'],
                 'alamat_pelanggan' => $validatedData['alamat_pelanggan'] ?? null,
                 'telepon_pelanggan' => $validatedData['telepon_pelanggan'] ?? null,
-                'pelanggan_id' => $validatedData['pelanggan_id'] ?? null,
+                'pelanggan_id' => $pelangganId, // Gunakan ID yang sudah diproses di atas
                 'diskon_type' => $totals['diskonType'],
                 'diskon_value' => $totals['diskonValue'],
                 'diskon_amount' => $totals['diskonAmount'],
@@ -88,30 +102,18 @@ class CheckoutService
         });
     }
 
-    /**
-     * Membuat detail penjualan, mengurangi stok obat, dan mengurangi stok batch.
-     *
-     * @param Penjualan $penjualan
-     * @param array $cart
-     * @param Collection $obats
-     * @param bool $hasPsikotropika
-     * @param string|null $noKtp
-     * @return void
-     * @throws \Exception
-     */
+    // ... sisa kode (processDetails, generateNoNota) biarkan tetap sama ...
+    
     protected function processDetails(Penjualan $penjualan, array $cart, Collection $obats, bool $hasPsikotropika, ?string $noKtp): void
     {
         foreach ($cart as $item) {
             $obat = $obats->get($item['id']);
             if (!$obat) throw new \Exception("Obat ID {$item['id']} tidak valid saat proses detail.");
             
-            // Hitung HPP (Harga Pokok Penjualan) dari batch yang digunakan
             $totalHPP = collect($item['batches_used'])->sum(fn($b) => $b['harga_beli_per_unit'] * $b['qty_from_batch']);
             $totalQtyUsed = collect($item['batches_used'])->sum('qty_from_batch');
-            // Jika ada masalah batch, fallback ke harga_dasar obat
             $hpp = $totalQtyUsed > 0 ? $totalHPP / $totalQtyUsed : $obat->harga_dasar;
 
-            // Buat Detail Penjualan
             PenjualanDetail::create([
                 'penjualan_id' => $penjualan->id,
                 'obat_id' => $obat->id,
@@ -122,10 +124,8 @@ class CheckoutService
                 'no_ktp' => $hasPsikotropika ? $noKtp : null,
             ]);
 
-            // Kurangi Stok Obat Total
             $obat->decrement('stok', $item['qty']);
 
-            // Kurangi Stok dari Batch
             foreach ($item['batches_used'] as $batchDetail) {
                 $batch = $obat->batches->find($batchDetail['batch_id']);
                 if ($batch) {
@@ -135,11 +135,6 @@ class CheckoutService
         }
     }
 
-    /**
-     * Membuat nomor nota penjualan baru.
-     *
-     * @return string
-     */
     protected function generateNoNota(): string
     {
         $countToday = Penjualan::whereDate('tanggal', date('Y-m-d'))->count();
