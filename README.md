@@ -1,61 +1,134 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sistem Informasi Manajemen Apotek & Klinik
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem Apotek adalah aplikasi berbasis web yang dibangun menggunakan framework Laravel. Aplikasi ini dirancang untuk mempermudah operasional apotek dan klinik, mulai dari manajemen stok obat, transaksi penjualan (POS), pembelian ke supplier, hingga pencatatan tindakan medis dan konsultasi.
 
-## About Laravel
+## 🌟 Fitur Utama
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 1. Manajemen Inventaris (Inventory)
+* **Master Data Obat:** Manajemen data obat lengkap dengan dukungan *batch*, tanggal kedaluwarsa (expired date), dan kategori (termasuk psikotropika).
+* **Stok Opname:** Fitur untuk penyesuaian stok fisik dan sistem.
+* **Pergerakan Stok (Stock Movement):** Melacak riwayat masuk dan keluarnya barang.
+* **Kartu Stok:** Monitoring detail perubahan stok per item.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 2. Point of Sales (POS) / Kasir
+* Antarmuka kasir yang responsif dan mudah digunakan.
+* Dukungan untuk shift kasir (Buka/Tutup Shift).
+* Cetak struk belanja dan invoice.
+* Manajemen keranjang belanja (Cart).
+* Integrasi data pelanggan saat transaksi.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 3. Pembelian & Supplier
+* **Surat Pesanan (SP):** Pembuatan surat pesanan (Reguler/Prekursor) dengan fitur ekspor PDF.
+* **Pembelian:** Pencatatan faktur pembelian dari supplier.
+* **Manajemen Supplier:** Database pemasok obat.
 
-## Learning Laravel
+### 4. Layanan Klinis (Clinic Integration)
+* **Pendaftaran & Konsultasi:** Pencatatan data konsultasi pasien.
+* **Tindakan Medis:** Manajemen jenis tindakan medis dan biayanya.
+* Integrasi resep obat dari konsultasi ke penjualan.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 5. Keuangan & Laporan
+* **Laporan Penjualan:** Harian, bulanan, dan detail per transaksi.
+* **Laporan Laba/Rugi:** Analisis profitabilitas.
+* **Biaya Operasional:** Pencatatan pengeluaran operasional apotek.
+* Ekspor laporan ke format Excel dan PDF.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 6. Manajemen Pengguna & Cabang
+* **Multi-Role:** Mendukung peran Admin, Kasir, dan user lainnya.
+* **Multi-Cabang:** Dukungan untuk manajemen data berbasis cabang.
+* Autentikasi aman (Login, Register, Verifikasi Email).
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 🛠 Teknologi yang Digunakan
 
-## Laravel Sponsors
+* **Backend:** [Laravel](https://laravel.com) (PHP Framework)
+* **Frontend:** [Tailwind CSS](https://tailwindcss.com), Blade Templates, JavaScript
+* **Database:** MySQL / MariaDB
+* **Build Tools:** Vite, NPM, Composer
+* **Library Tambahan:**
+    * `dompdf/dompdf`: Untuk mencetak laporan/surat pesanan ke PDF.
+    * `maatwebsite/excel`: Untuk ekspor laporan Excel.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 📋 Prasyarat Instalasi
 
-### Premium Partners
+Sebelum memulai, pastikan komputer Anda telah terinstal:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+* PHP >= 8.1
+* Composer
+* Node.js & NPM
+* MySQL Database
+* Git
 
-## Contributing
+## 🚀 Panduan Instalasi
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Ikuti langkah-langkah berikut untuk menjalankan proyek ini di komputer lokal Anda:
 
-## Code of Conduct
+1.  **Clone Repository**
+    ```bash
+    git clone [https://github.com/username/sistem-apotek.git](https://github.com/username/sistem-apotek.git)
+    cd sistem-apotek
+    ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+2.  **Install Dependencies (Backend)**
+    ```bash
+    composer install
+    ```
 
-## Security Vulnerabilities
+3.  **Install Dependencies (Frontend)**
+    ```bash
+    npm install
+    npm run build
+    ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+4.  **Konfigurasi Environment**
+    Salin file `.env.example` menjadi `.env`:
+    ```bash
+    cp .env.example .env
+    ```
+    Buka file `.env` dan sesuaikan konfigurasi database Anda:
+    ```env
+    DB_CONNECTION=mysql
+    DB_HOST=127.0.0.1
+    DB_PORT=3306
+    DB_DATABASE=nama_database_apotek
+    DB_USERNAME=root
+    DB_PASSWORD=
+    ```
 
-## License
+5.  **Generate Application Key**
+    ```bash
+    php artisan key:generate
+    ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+6.  **Migrasi Database & Seeder**
+    Jalankan migrasi untuk membuat tabel dan mengisi data awal (user admin, master data dummy, dll):
+    ```bash
+    php artisan migrate --seed
+    ```
+
+7.  **Jalankan Server**
+    ```bash
+    php artisan serve
+    ```
+    Akses aplikasi melalui browser di `http://localhost:8000`.
+
+## 📖 Contoh Penggunaan
+
+**Login:**
+Gunakan akun yang telah digenerate oleh seeder (cek `database/seeders/UserFactory.php` atau `AdminUserSeeder.php` untuk detail kredensial default, biasanya `admin@example.com` / `password`).
+
+**Alur Transaksi Kasir:**
+1.  Login sebagai User dengan role Kasir.
+2.  Masuk ke menu **POS**.
+3.  Buka shift baru (masukkan modal awal).
+4.  Cari obat, masukkan ke keranjang, dan proses pembayaran.
+5.  Cetak struk.
+
+## 🤝 Kontribusi
+
+Kontribusi sangat diterima! Jika Anda ingin meningkatkan fitur atau memperbaiki bug:
+
+1.  *Fork* repository ini.
+2.  Buat *branch* fitur baru (`git checkout -b fitur-keren`).
+3.  *Commit* perubahan Anda (`git commit -m 'Menambahkan fitur keren'`).
+4.  *Push* ke branch (`git push origin fitur-keren`).
+5.  Buat **Pull Request**.
