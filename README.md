@@ -1,46 +1,33 @@
-# Sistem Informasi Manajemen Apotek
+<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-Sistem Apotek adalah aplikasi berbasis web yang dibangun menggunakan framework Laravel. Aplikasi ini dirancang untuk mempermudah operasional apotek, mulai dari manajemen stok obat, transaksi penjualan (POS), pembelian ke supplier, hingga pelaporan keuangan.
+<p align="center">
+<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+</p>
 
-## 🌟 Fitur Utama
+## About Laravel
 
-### 1. Manajemen Inventaris (Inventory)
-* **Master Data Obat:** Manajemen data obat lengkap dengan dukungan *batch*, tanggal kedaluwarsa (expired date), dan kategori (termasuk psikotropika).
-* **Stok Opname:** Fitur untuk penyesuaian stok fisik dan sistem.
-* **Pergerakan Stok (Stock Movement):** Melacak riwayat masuk dan keluarnya barang.
-* **Kartu Stok:** Monitoring detail perubahan stok per item.
+Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
-### 2. Point of Sales (POS) / Kasir
-* Antarmuka kasir yang responsif dan mudah digunakan.
-* Dukungan untuk shift kasir (Buka/Tutup Shift).
-* Cetak struk belanja dan invoice.
-* Manajemen keranjang belanja (Cart).
-* Integrasi data pelanggan saat transaksi.
+- [Simple, fast routing engine](https://laravel.com/docs/routing).
+- [Powerful dependency injection container](https://laravel.com/docs/container).
+- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
+- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
+- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
+- [Robust background job processing](https://laravel.com/docs/queues).
+- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-### 3. Pembelian & Supplier
-* **Surat Pesanan (SP):** Pembuatan surat pesanan (Reguler/Prekursor) dengan fitur ekspor PDF.
-* **Pembelian:** Pencatatan faktur pembelian dari supplier.
-* **Manajemen Supplier:** Database pemasok obat.
+Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-### 4. Keuangan & Laporan
-* **Laporan Penjualan:** Harian, bulanan, dan detail per transaksi.
-* **Laporan Laba/Rugi:** Analisis profitabilitas.
-* **Biaya Operasional:** Pencatatan pengeluaran operasional apotek.
-* Ekspor laporan ke format Excel dan PDF.
+## Learning Laravel
 
-### 5. Manajemen Pengguna
-* **Multi-Role:** Mendukung peran Admin, Kasir, dan user lainnya.
-* Autentikasi aman (Login, Register, Verifikasi Email).
+Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
 
-## 🛠 Teknologi yang Digunakan
+You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
 
-* **Backend:** [Laravel](https://laravel.com) (PHP Framework)
-* **Frontend:** [Tailwind CSS](https://tailwindcss.com), Blade Templates, JavaScript
-* **Database:** MySQL / MariaDB
-* **Build Tools:** Vite, NPM, Composer
-* **Library Tambahan:**
-    * `dompdf/dompdf`: Untuk mencetak laporan/surat pesanan ke PDF.
-    * `maatwebsite/excel`: Untuk ekspor laporan Excel.
+If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
 
 ## 📋 Prasyarat Instalasi
 
@@ -117,12 +104,6 @@ Gunakan akun yang telah digenerate oleh seeder (cek `database/seeders/UserFactor
 4.  Cari obat, masukkan ke keranjang, dan proses pembayaran.
 5.  Cetak struk.
 
-## 🤝 Kontribusi
+## License
 
-Kontribusi sangat diterima! Jika Anda ingin meningkatkan fitur atau memperbaiki bug:
-
-1.  *Fork* repository ini.
-2.  Buat *branch* fitur baru (`git checkout -b fitur-keren`).
-3.  *Commit* perubahan Anda (`git commit -m 'Menambahkan fitur keren'`).
-4.  *Push* ke branch (`git push origin fitur-keren`).
-5.  Buat **Pull Request**.
+The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
