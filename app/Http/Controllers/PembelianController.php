@@ -8,19 +8,19 @@ use App\Models\Obat;
 use App\Models\Supplier;
 use App\Models\SuratPesanan;
 use App\Models\Cabang;
-use App\Services\PembelianService; // Import Service
+use App\Services\PembelianService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage; // TAMBAHAN PENTING
 use PDF;
 
 class PembelianController extends Controller
 {
     protected PembelianService $pembelianService;
 
-    // Dependency Injection
     public function __construct(PembelianService $pembelianService)
     {
         $this->pembelianService = $pembelianService;
@@ -44,13 +44,10 @@ class PembelianController extends Controller
         $pembelians = $query->where('cabang_id', $cabangId)
             ->latest()
             ->paginate(10);
-        
+
         return view('admin.Transaksi.pembelian.index', compact('pembelians', 'suratPesanans'));
     }
 
-    /**
-     * Membuat data pembelian draft dari Surat Pesanan.
-     */
     public function createFromSp(SuratPesanan $suratPesanan)
     {
         try {
@@ -61,15 +58,13 @@ class PembelianController extends Controller
         }
     }
 
-
     public function create()
     {
         $suppliers = Supplier::orderBy('nama')->get();
         $obats = Obat::orderBy('nama')->get();
-        // Generate No. Faktur tetap di Controller (atau Helper) karena ini lebih ke tampilan awal
         $noFaktur = 'FPB-' . date('Ymd') . '-' . str_pad((Pembelian::count() + 1), 3, '0', STR_PAD_LEFT);
         $suratPesanans = SuratPesanan::where('status', 'pending')->get();
-        return view('admin.pembelian.create', compact('suppliers', 'obats', 'noFaktur', 'suratPesanans'));
+        return view('admin.Transaksi.pembelian.create', compact('suppliers', 'obats', 'noFaktur', 'suratPesanans'));
     }
 
     public function store(Request $request)
@@ -104,8 +99,7 @@ class PembelianController extends Controller
     public function pdf($id)
     {
         $p = Pembelian::with(['supplier', 'detail.obat', 'cabang'])->findOrFail($id);
-        // Menggunakan DomPDF
-        $pdf = PDF::loadView('transaksi.pembelian.faktur', compact('p'));
+        $pdf = PDF::loadView('admin.Transaksi.pembelian.faktur', compact('p'));
         return $pdf->download('Faktur-' . $p->no_faktur . '.pdf');
     }
 
@@ -117,11 +111,14 @@ class PembelianController extends Controller
         return view('admin.Transaksi.pembelian.edit', compact('pembelian', 'suppliers', 'obats'));
     }
 
+    // --- BAGIAN UTAMA YANG DIUPDATE ---
     public function update(Request $request, Pembelian $pembelian)
     {
         $request->validate([
             'no_faktur_pbf' => 'required|string|max:255',
             'tanggal' => 'required|date',
+            // Validasi file (Opsional, max 2MB)
+            'file_faktur' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'diskon' => 'nullable|numeric|min:0',
             'diskon_type' => 'nullable|in:nominal,persen',
             'items' => 'required|array|min:1',
@@ -132,10 +129,35 @@ class PembelianController extends Controller
             'items.*.expired_date' => 'required|date|after:today',
         ]);
 
+        $uploadedPath = null;
+
         try {
+            // 1. Handle File Upload
+            if ($request->hasFile('file_faktur')) {
+                // Hapus file lama jika ada
+                if ($pembelian->file_faktur) {
+                    Storage::disk('public')->delete($pembelian->file_faktur);
+                }
+
+                // Upload file baru
+                $uploadedPath = $request->file('file_faktur')->store('faktur_uploads', 'public');
+
+                // Simpan path ke model secara langsung agar aman
+                $pembelian->file_faktur = $uploadedPath;
+                $pembelian->save();
+            }
+
+            // 2. Panggil Service untuk Finalisasi Data & Stok
             $this->pembelianService->finalizePembelian($pembelian, $request->all());
-            return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil difinalisasi dan stok telah diperbarui.');
+
+            return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil difinalisasi, bukti faktur disimpan, dan stok diperbarui.');
+
         } catch (\Exception $e) {
+            // Jika gagal, hapus file yang baru saja diupload agar tidak menumpuk
+            if ($uploadedPath) {
+                Storage::disk('public')->delete($uploadedPath);
+            }
+
             return back()->with('error', 'Gagal memproses pembelian: ' . $e->getMessage());
         }
     }
@@ -143,7 +165,13 @@ class PembelianController extends Controller
     public function destroy(Pembelian $pembelian)
     {
         try {
+            // Hapus file fisik jika ada saat pembelian dihapus
+            if ($pembelian->file_faktur) {
+                Storage::disk('public')->delete($pembelian->file_faktur);
+            }
+
             $this->pembelianService->destroyPembelian($pembelian);
+
             $message = $pembelian->status === 'final' ? 'Pembelian dan stok terkait berhasil dihapus.' : 'Pembelian draft berhasil dihapus.';
             return redirect()->route('pembelian.index')->with('success', $message);
         } catch (\Exception $e) {
@@ -156,7 +184,6 @@ class PembelianController extends Controller
         try {
             $obat = $this->pembelianService->getAvailableObatBySupplier((int) $supplierId);
             if ($obat->isEmpty()) {
-                // Sesuai dengan response sebelumnya, berikan pesan jika kosong
                 return response()->json(['message' => 'Tidak ada obat tersedia untuk supplier ini atau stok habis/kadaluarsa.'], 200);
             }
             return response()->json($obat);
@@ -171,12 +198,10 @@ class PembelianController extends Controller
         if (!$suratPesanan) {
             return response()->json(['error' => 'Surat Pesanan tidak ditemukan'], 404);
         }
-        
+
         $items = $suratPesanan->details->map(function ($detail) {
             $obat = $detail->obat;
-            // Handle jika mode SP manual dan obat_id null
             if (!$obat && $detail->nama_manual) {
-                // Jika manual, tidak bisa mendapatkan data obat (kode, ppn_rate)
                 return [
                     'obat_id' => null,
                     'kode' => $detail->nama_manual,
@@ -199,7 +224,7 @@ class PembelianController extends Controller
                 'ppn_rate' => $obat->ppn_rate,
                 'ppn_included' => $obat->ppn_included,
             ];
-        })->filter()->values(); // Filter nulls dan reset keys
+        })->filter()->values();
 
         return response()->json([
             'supplier_id' => $suratPesanan->supplier_id,

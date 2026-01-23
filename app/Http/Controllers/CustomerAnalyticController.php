@@ -11,7 +11,7 @@ use PDF;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
-class CustomerAnalyticsController extends Controller
+class CustomerAnalyticController extends Controller
 {
     public function index(Request $request)
     {
@@ -82,7 +82,8 @@ class CustomerAnalyticsController extends Controller
         foreach ($obatSales as $sale) {
             $currentRank++;
             $obat = Obat::find($sale->obat_id);
-            if (!$obat) continue;
+            if (!$obat)
+                continue;
 
             $obat->total_qty_sold = $sale->total_qty_sold;
 
@@ -164,7 +165,8 @@ class CustomerAnalyticsController extends Controller
             foreach ($obatSales as $sale) {
                 $currentRank++;
                 $obat = Obat::find($sale->obat_id);
-                if (!$obat) continue;
+                if (!$obat)
+                    continue;
 
                 $obat->total_qty_sold = $sale->total_qty_sold;
 
@@ -201,8 +203,11 @@ class CustomerAnalyticsController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $filename = '';
+        $lastRow = 0; // Variabel untuk melacak baris terakhir
+        $lastCol = 'B'; // Default kolom terakhir
 
         if ($reportType == 'customer_analytics') {
+            // ... (Logika data sama seperti sebelumnya) ...
             $month = $request->input('month', Carbon::now()->format('Y-m'));
             $startOfMonth = Carbon::parse($month)->startOfMonth();
             $endOfMonth = Carbon::parse($month)->endOfMonth();
@@ -215,17 +220,26 @@ class CustomerAnalyticsController extends Controller
 
             $sheet->setCellValue('A1', 'Laporan Customer Analytics');
             $sheet->setCellValue('A2', 'Bulan: ' . Carbon::parse($month)->translatedFormat('F Y'));
-            $sheet->setCellValue('A4', 'Total Pendapatan Penjualan Bulanan');
-            $sheet->setCellValue('B4', $totalPenjualanBulanan);
-            $sheet->setCellValue('A5', 'Jumlah Transaksi Unik');
-            $sheet->setCellValue('B5', $uniqueTransactions);
-            $sheet->setCellValue('A6', 'Rata-rata Orang Datang Per Hari');
-            $sheet->setCellValue('B6', round($averageCustomersPerDay, 2));
-            $sheet->setCellValue('A7', 'Rata-rata Pembelian Per Orang');
-            $sheet->setCellValue('B7', round($averagePurchasePerCustomer, 2));
+
+            // Header Data
+            $sheet->setCellValue('A4', 'Metrik');
+            $sheet->setCellValue('B4', 'Nilai');
+
+            $sheet->setCellValue('A5', 'Total Pendapatan Penjualan Bulanan');
+            $sheet->setCellValue('B5', $totalPenjualanBulanan);
+            $sheet->setCellValue('A6', 'Jumlah Transaksi Unik');
+            $sheet->setCellValue('B6', $uniqueTransactions);
+            $sheet->setCellValue('A7', 'Rata-rata Orang Datang Per Hari');
+            $sheet->setCellValue('B7', round($averageCustomersPerDay, 2));
+            $sheet->setCellValue('A8', 'Rata-rata Pembelian Per Orang');
+            $sheet->setCellValue('B8', round($averagePurchasePerCustomer, 2));
 
             $filename = 'laporan_customer_analytics_' . $month . '.xlsx';
+            $lastRow = 8;
+            $lastCol = 'B';
+
         } elseif ($reportType == 'daily_sales_recap') {
+            // ... (Logika data sama) ...
             $month = $request->input('month', Carbon::now()->format('Y-m'));
             $startOfMonth = Carbon::parse($month)->startOfMonth();
             $endOfMonth = Carbon::parse($month)->endOfMonth();
@@ -250,7 +264,11 @@ class CustomerAnalyticsController extends Controller
                 $row++;
             }
             $filename = 'rekap_penjualan_harian_' . $month . '.xlsx';
+            $lastRow = $row - 1;
+            $lastCol = 'C';
+
         } elseif ($reportType == 'stock_movement_analysis') {
+            // ... (Logika data sama) ...
             $period = $request->input('period', 3);
             $endDate = Carbon::now();
             $startDate = $endDate->copy()->subMonths($period);
@@ -271,22 +289,22 @@ class CustomerAnalyticsController extends Controller
             $slowMoving = collect();
             $deadStock = collect();
 
+            // ... (Logika sorting sama seperti file asli, disingkat disini) ...
             $currentRank = 0;
             foreach ($obatSales as $sale) {
                 $currentRank++;
                 $obat = Obat::find($sale->obat_id);
-                if (!$obat) continue;
-
+                if (!$obat)
+                    continue;
                 $obat->total_qty_sold = $sale->total_qty_sold;
-
-                if ($currentRank <= $fastMovingCount) {
+                if ($currentRank <= $fastMovingCount)
                     $fastMoving->push($obat);
-                } elseif ($currentRank <= ($fastMovingCount + $slowMovingCount)) {
+                elseif ($currentRank <= ($fastMovingCount + $slowMovingCount))
                     $slowMoving->push($obat);
-                } else {
+                else
                     $deadStock->push($obat);
-                }
             }
+            // Deadstock logic...
             $soldObatIds = $obatSales->pluck('obat_id')->toArray();
             $unsoldObat = Obat::whereNotIn('id', $soldObatIds)->get();
             foreach ($unsoldObat as $obat) {
@@ -320,11 +338,35 @@ class CustomerAnalyticsController extends Controller
                 $row++;
             }
             $filename = 'analisis_perputaran_stok_' . $period . 'bulan.xlsx';
+            $lastRow = $row - 1;
+            $lastCol = 'C';
         }
 
         if (empty($filename)) {
             abort(404, 'Report type not found.');
         }
+
+        // --- STYLING (BARU) ---
+        // 1. Auto Size Column
+        foreach (range('A', $lastCol) as $columnID) {
+            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        }
+
+        // 2. Header Bold (Baris 4)
+        $sheet->getStyle('A4:' . $lastCol . '4')->getFont()->setBold(true);
+
+        // 3. Border (Mulai A4 sampai data terakhir)
+        if ($lastRow >= 4) {
+            $styleArray = [
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    ],
+                ],
+            ];
+            $sheet->getStyle('A4:' . $lastCol . $lastRow)->applyFromArray($styleArray);
+        }
+        // ----------------------
 
         $writer = new Xlsx($spreadsheet);
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

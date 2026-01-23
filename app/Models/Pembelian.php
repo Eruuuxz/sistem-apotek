@@ -14,6 +14,7 @@ class Pembelian extends Model
     protected $fillable = [
         'no_faktur',
         'no_faktur_pbf', 
+        'file_faktur',
         'tanggal',
         'supplier_id',
         'surat_pesanan_id', 

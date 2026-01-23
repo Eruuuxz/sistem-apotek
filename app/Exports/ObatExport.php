@@ -6,12 +6,13 @@ use App\Models\Obat;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithStyles; // Tambahan untuk Style
+use Maatwebsite\Excel\Concerns\ShouldAutoSize; // Tambahan agar kolom otomatis lebar
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
-class ObatExport implements FromCollection, WithHeadings, WithMapping
+class ObatExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
-    /**
-    * @return \Illuminate\Support\Collection
-    */
     public function collection()
     {
         return Obat::with('supplier')->get();
@@ -42,8 +43,27 @@ class ObatExport implements FromCollection, WithHeadings, WithMapping
             $obat->stok,
             $obat->harga_dasar,
             $obat->harga_jual,
-            $obat->supplier->nama ?? '-', // Mengambil nama supplier
+            $obat->supplier->nama ?? '-',
             $obat->expired_date,
+        ];
+    }
+
+    // FUNGSI BARU: Menambahkan garis (border) dan menebalkan header
+    public function styles(Worksheet $sheet)
+    {
+        return [
+            // Baris 1 (Header) di-bold
+            1 => ['font' => ['bold' => true]],
+
+            // Semua sel yang ada isinya diberi garis tepi (border)
+            'A1:' . $sheet->getHighestColumn() . $sheet->getHighestRow() => [
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['argb' => '000000'],
+                    ],
+                ],
+            ],
         ];
     }
 }
