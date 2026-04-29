@@ -98,8 +98,13 @@ public function setInitialCash(Request $request)
         try {
             $obat = Obat::where('kode', $request->kode)->firstOrFail();
             $this->cartService->addItem($obat);
+            
+            if ($request->ajax()) {
+                return $this->cartResponse('Berhasil menambahkan obat ke keranjang.');
+            }
             return back();
         } catch (\Exception $e) {
+            if ($request->ajax()) return response()->json(['error' => $e->getMessage()], 400);
             return back()->with('error', $e->getMessage());
         }
     }
@@ -111,8 +116,13 @@ public function setInitialCash(Request $request)
         try {
             $obat = Obat::where('kode', $request->kode)->firstOrFail();
             $this->cartService->updateItemQty($obat, (int) $request->qty);
+            
+            if ($request->ajax()) {
+                return $this->cartResponse('Kuantitas berhasil diperbarui.');
+            }
             return back();
         } catch (\Exception $e) {
+            if ($request->ajax()) return response()->json(['error' => $e->getMessage()], 400);
             return back()->with('error', $e->getMessage());
         }
     }
@@ -121,6 +131,10 @@ public function setInitialCash(Request $request)
     {
         $request->validate(['kode' => 'required']);
         $this->cartService->removeItem($request->kode);
+        
+        if ($request->ajax()) {
+            return $this->cartResponse('Obat berhasil dihapus dari keranjang.');
+        }
         return back();
     }
 
@@ -145,10 +159,13 @@ public function setInitialCash(Request $request)
             'telepon_pelanggan' => 'nullable|string|max:20',
             'pelanggan_id' => 'nullable|exists:pelanggan,id',
             'bayar' => 'required|numeric|min:' . $finalTotal, // Validasi Min di sini membantu UX
-            'no_ktp' => 'nullable|string|max:20',
+            'no_ktp' => 'nullable|string|digits:16',
             'diskon_type' => 'required|in:nominal,persen', // Diperlukan untuk CheckoutService
             'diskon_value' => 'required|numeric|min:0', // Diperlukan untuk CheckoutService
-        ], ['bayar.min' => 'Pembayaran kurang dari total belanja.']);
+        ], [
+            'bayar.min' => 'Pembayaran kurang dari total belanja.',
+            'no_ktp.digits' => 'Nomor KTP harus terdiri dari tepat 16 angka.'
+        ]);
         
         try {
             $penjualan = $this->checkoutService->processCheckout($validated);
@@ -213,5 +230,23 @@ public function setInitialCash(Request $request)
         }
 
         return redirect()->route('pos.index')->with('error', 'Tidak ada sesi kasir aktif ditemukan.');
+    }
+
+    /**
+     * Mengembalikan response JSON untuk AJAX call keranjang belanja.
+     */
+    protected function cartResponse($message = '')
+    {
+        $cart = $this->cartService->getCart();
+        $totals = $this->cartService->calculateTotals($cart);
+        $html = view('kasir.partials.cart_table', compact('cart'))->render();
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'html' => $html,
+            'cart_count' => count($cart),
+            'totals' => $totals
+        ]);
     }
 }

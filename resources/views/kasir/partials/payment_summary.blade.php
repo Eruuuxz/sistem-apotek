@@ -33,7 +33,10 @@
         <div id="ktp-input-group" style="display: none;" class="animate-fade-in-down">
             <input type="text" id="no_ktp" name="no_ktp" 
                 class="w-full border-red-300 text-red-900 placeholder-red-400 rounded-lg text-sm px-3 py-2 bg-red-50 focus:ring-red-500" 
-                placeholder="No. KTP (Wajib untuk Psikotropika)" value="{{ old('no_ktp') }}">
+                placeholder="No. KTP (16 Angka)" 
+                minlength="16" maxlength="16" pattern="\d{16}" 
+                title="Nomor KTP harus terdiri dari tepat 16 angka"
+                value="{{ old('no_ktp') }}">
         </div>
     </div>
 

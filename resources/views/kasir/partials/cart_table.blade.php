@@ -1,4 +1,4 @@
-<table class="w-full text-sm text-left border-collapse">
+<table id="cart-table" class="w-full text-sm text-left border-collapse">
     <thead class="bg-gray-100 text-gray-600 font-semibold sticky top-0 z-10 shadow-sm">
         <tr>
             <th class="px-4 py-3 w-1/3">Produk</th>
@@ -14,7 +14,8 @@
                 $isExpired = !empty($item['batches_used']) && collect($item['batches_used'])->min('expired_date') && \Carbon\Carbon::parse(collect($item['batches_used'])->min('expired_date'))->isPast();
             @endphp
             {{-- Ubah hover:bg-blue-50 menjadi hover:bg-green-50 --}}
-            <tr class="hover:bg-green-50 transition duration-75 group {{ $isExpired ? 'bg-red-50' : '' }}">
+            <tr class="hover:bg-green-50 transition duration-75 group {{ $isExpired ? 'bg-red-50' : '' }}" 
+                data-is-psikotropika="{{ $item['is_psikotropika'] ? 'true' : 'false' }}">
                 
                 {{-- Nama & Kode --}}
                 <td class="px-4 py-3 align-middle">
@@ -37,14 +38,12 @@
 
                 {{-- Qty (Input Focus Hijau) --}}
                 <td class="px-4 py-3 align-middle">
-                    <form action="{{ route('pos.update') }}" method="POST" class="flex items-center justify-center">
-                        @csrf
-                        <input type="hidden" name="kode" value="{{ $item['kode'] }}">
+                    <div class="flex items-center justify-center">
                         <input type="number" name="qty" value="{{ $item['qty'] }}"
                             class="w-16 text-center border-gray-300 rounded-md shadow-sm focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50 font-bold text-gray-800 py-1"
-                            onchange="this.form.submit()"
+                            onchange="updateQtyAjax('{{ $item['kode'] }}', this.value)"
                             min="1" max="{{ $item['stok'] }}">
-                    </form>
+                    </div>
                     <div class="text-[10px] text-center text-gray-400 mt-1">Stok: {{ $item['stok'] }}</div>
                 </td>
 
@@ -55,13 +54,9 @@
 
                 {{-- Hapus --}}
                 <td class="px-4 py-3 text-center align-middle">
-                    <form action="{{ route('pos.remove') }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="kode" value="{{ $item['kode'] }}">
-                        <button type="submit" class="text-gray-400 hover:text-red-500 transition p-1 rounded-full hover:bg-red-50">
-                            <i data-feather="x" class="w-4 h-4"></i>
-                        </button>
-                    </form>
+                    <button type="button" onclick="removeFromCartAjax('{{ $item['kode'] }}')" class="text-gray-400 hover:text-red-500 transition p-1 rounded-full hover:bg-red-50">
+                        <i data-feather="x" class="w-4 h-4"></i>
+                    </button>
                 </td>
             </tr>
         @empty

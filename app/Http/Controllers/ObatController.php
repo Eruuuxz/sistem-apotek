@@ -59,7 +59,12 @@ class ObatController extends Controller
             'expired_date' => 'nullable|date|after_or_equal:today',
         ]);
 
-        Obat::create($request->all());
+        $data = $request->all();
+        if (empty($data['persen_untung'])) {
+            $data['persen_untung'] = 0;
+        }
+
+        Obat::create($data);
 
         return redirect()->route('obat.index')->with('success', 'Data obat berhasil ditambahkan.');
     }
@@ -95,7 +100,12 @@ class ObatController extends Controller
             'expired_date' => 'nullable|date|after_or_equal:today',
         ]);
 
-        $obat->update($request->all());
+        $data = $request->all();
+        if (empty($data['persen_untung'])) {
+            $data['persen_untung'] = 0;
+        }
+
+        $obat->update($data);
 
         return redirect()->route('obat.index')->with('success', 'Data obat berhasil diperbarui.');
     }

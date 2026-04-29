@@ -12,20 +12,20 @@
             {{-- Informasi Faktur --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label class="block font-semibold mb-1">No Faktur Internal</label>
-                    <input type="text" name="no_faktur" value="{{ $noFaktur }}" class="border rounded w-full px-3 py-2 bg-gray-100" readonly>
+                    <label class="block text-sm font-semibold mb-1 text-gray-700">No Faktur Internal</label>
+                    <input type="text" name="no_faktur" value="{{ $noFaktur }}" class="border border-gray-300 rounded-lg w-full px-3 py-2 bg-gray-100 text-gray-600 focus:outline-none" readonly>
                 </div>
                 <div>
-                    <label class="block font-semibold mb-1">No Faktur PBF</label>
-                    <input type="text" name="no_faktur_pbf" value="{{ old('no_faktur_pbf') }}" class="border rounded w-full px-3 py-2" placeholder="Nomor faktur dari PBF">
+                    <label class="block text-sm font-semibold mb-1 text-gray-700">No Faktur PBF</label>
+                    <input type="text" name="no_faktur_pbf" value="{{ old('no_faktur_pbf') }}" class="border border-gray-300 rounded-lg w-full px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" placeholder="Nomor faktur dari PBF">
                 </div>
                 <div>
-                    <label class="block font-semibold mb-1">Tanggal</label>
-                    <input type="datetime-local" name="tanggal" value="{{ old('tanggal', date('Y-m-d\TH:i:s')) }}" class="border rounded w-full px-3 py-2">
+                    <label class="block text-sm font-semibold mb-1 text-gray-700">Tanggal</label>
+                    <input type="datetime-local" name="tanggal" value="{{ old('tanggal', date('Y-m-d\TH:i:s')) }}" class="border border-gray-300 rounded-lg w-full px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition">
                 </div>
                 <div>
-                    <label class="block font-semibold mb-1">Supplier</label>
-                    <select name="supplier_id" id="supplier-select" class="border rounded w-full px-3 py-2">
+                    <label class="block text-sm font-semibold mb-1 text-gray-700">Supplier</label>
+                    <select name="supplier_id" id="supplier-select" class="border border-gray-300 rounded-lg w-full px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-white">
                         <option value="">-- Pilih Supplier --</option>
                         @foreach($suppliers as $s)
                             <option value="{{ $s->id }}" {{ old('supplier_id') == $s->id ? 'selected' : '' }}>{{ $s->nama }}</option>
@@ -33,8 +33,8 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block font-semibold mb-1">Surat Pesanan (Opsional)</label>
-                    <select name="surat_pesanan_id" id="surat-pesanan-select" class="border rounded w-full px-3 py-2">
+                    <label class="block text-sm font-semibold mb-1 text-gray-700">Surat Pesanan (Opsional)</label>
+                    <select name="surat_pesanan_id" id="surat-pesanan-select" class="border border-gray-300 rounded-lg w-full px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-white">
                         <option value="">-- Pilih Surat Pesanan --</option>
                         @foreach($suratPesanans as $sp)
                             <option value="{{ $sp->id }}" data-supplier-id="{{ $sp->supplier_id }}" {{ old('surat_pesanan_id') == $sp->id ? 'selected' : '' }}>
@@ -179,16 +179,32 @@
                 });
             }
 
+            function showToast(message, type = 'success') {
+                const color = type === 'success' ? 'bg-green-500' : (type === 'error' ? 'bg-red-500' : 'bg-blue-500');
+                const icon = type === 'success' ? 'check-circle' : (type === 'error' ? 'alert-circle' : 'info');
+                const toast = document.createElement('div');
+                toast.className = `fixed top-5 right-5 ${color} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-[9999] opacity-0 transition-all duration-300 transform translate-y-[-20px]`;
+                toast.innerHTML = `<i data-feather="${icon}" class="w-5 h-5"></i><span class="text-sm font-medium">${message}</span>`;
+                document.body.appendChild(toast);
+                if (typeof feather !== 'undefined') feather.replace();
+                
+                setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-[-20px]'), 10);
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-[-20px]');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
             function tambahItem(obat, spData = null) {
                 if ([...tableItems.querySelectorAll('tr')].some(tr => tr.dataset.id == obat.id)) {
-                    alert('Obat ini sudah ada di daftar pembelian.');
+                    showToast('Obat ini sudah ada di daftar pembelian.', 'error');
                     return;
                 }
 
                 let row = document.createElement('tr');
                 row.dataset.id = obat.id;
                 row.dataset.index = itemIndex; // Set the unique index
-                row.classList.add('hover:bg-gray-50');
+                row.classList.add('hover:bg-blue-50', 'transition-all', 'duration-300', 'opacity-0');
 
                 let hargaDasar = parseFloat(obat.harga_dasar) || 0;
                 let qtyAwal = 1;
@@ -202,36 +218,49 @@
                 }
 
                 row.innerHTML = `
-                    <td class="px-2 py-1 border">${obat.kode} - ${obat.nama}</td>
-                    <td class="px-2 py-1 border">
+                    <td class="px-3 py-2 border-b border-gray-200 text-gray-800 font-medium">${obat.kode} - ${obat.nama}</td>
+                    <td class="px-3 py-2 border-b border-gray-200">
                         <input type="number" name="items[${itemIndex}][jumlah]" value="${qtyAwal}" min="1"
-                               class="w-full jumlah px-2 py-1 border rounded">
+                               class="w-full jumlah px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-center">
                     </td>
-                    <td class="px-2 py-1 border">
+                    <td class="px-3 py-2 border-b border-gray-200">
                         <input type="number" name="items[${itemIndex}][harga_beli]" value="${hargaDasar}" step="0.01" min="0"
-                               class="w-full harga px-2 py-1 border rounded">
+                               class="w-full harga px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-right">
                     </td>
-                    <td class="px-2 py-1 border text-right subtotal" data-subtotal="${hargaDasar * qtyAwal}">
+                    <td class="px-3 py-2 border-b border-gray-200 text-right subtotal font-semibold text-green-600" data-subtotal="${hargaDasar * qtyAwal}">
                         ${formatRupiah(hargaDasar * qtyAwal)}
                     </td>
-                    <td class="px-2 py-1 border text-center">
-                        <button type="button" class="text-red-500 font-bold remove-item">✖</button>
+                    <td class="px-3 py-2 border-b border-gray-200 text-center">
+                        <button type="button" class="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition remove-item"><i data-feather="trash-2" class="w-4 h-4"></i></button>
                     </td>
                     <input type="hidden" name="items[${itemIndex}][obat_id]" value="${obat.id}">
                     ${spDetailId ? `<input type="hidden" name="items[${itemIndex}][sp_detail_id]" value="${spDetailId}">` : ''}
                 `;
                 tableItems.appendChild(row);
+                if (typeof feather !== 'undefined') feather.replace();
+
+                // Animasi masuk
+                setTimeout(() => row.classList.remove('opacity-0'), 10);
 
                 addEventListenersToRow(row);
                 itemIndex++;
                 hitungTotal();
+                showToast(`Menambahkan ${obat.nama}`, 'success');
             }
+
+            const spinnerHtml = `<div class="flex items-center justify-center p-8 space-x-3 text-gray-500">
+                    <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="font-medium">Memuat data obat...</span>
+                </div>`;
 
             // Event listener untuk supplier select
             supplierSelect.addEventListener('change', function () {
                 const supplierId = this.value;
                 suratPesananSelect.value = ''; // Reset SP saat supplier berubah
-                obatList.innerHTML = '<div class="text-gray-500 text-sm">Memuat...</div>';
+                obatList.innerHTML = spinnerHtml;
                 tableItems.innerHTML = ''; // Clear item pembelian
                 itemIndex = 0; // Reset counter
 
@@ -249,16 +278,16 @@
                             return;
                         }
 
-                        let html = '<table class="w-full border border-gray-300 table-auto">';
-                        html += '<thead class="bg-gray-100"><tr><th></th><th class="px-2 py-1">Kode</th><th class="px-2 py-1">Nama</th><th class="px-2 py-1 text-right">Stok Apotek</th><th class="px-2 py-1 text-right">Harga Dasar</th></tr></thead><tbody>';
+                        let html = '<table class="w-full border-collapse table-auto text-sm">';
+                        html += '<thead class="bg-gray-50 text-gray-600 border-b border-gray-200"><tr><th class="px-3 py-2 text-center w-10"></th><th class="px-3 py-2 text-left">Kode</th><th class="px-3 py-2 text-left">Nama</th><th class="px-3 py-2 text-right">Stok Apotek</th><th class="px-3 py-2 text-right">Harga Dasar</th></tr></thead><tbody class="divide-y divide-gray-100">';
 
                         data.forEach(obat => {
-                            html += `<tr class="hover:bg-gray-50">
-                                <td class="text-center px-2 py-1"><input type="checkbox" class="obat-checkbox" data-obat='${JSON.stringify(obat)}'></td>
-                                <td class="px-2 py-1">${obat.kode}</td>
-                                <td class="px-2 py-1">${obat.nama}</td>
-                                <td class="px-2 py-1 text-right">${obat.stok}</td>
-                                <td class="px-2 py-1 text-right">${formatRupiah(obat.harga_dasar)}</td>
+                            html += `<tr class="hover:bg-blue-50 transition-colors">
+                                <td class="text-center px-3 py-2"><input type="checkbox" class="obat-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" data-obat='${JSON.stringify(obat)}'></td>
+                                <td class="px-3 py-2 text-gray-500">${obat.kode}</td>
+                                <td class="px-3 py-2 font-medium text-gray-800">${obat.nama}</td>
+                                <td class="px-3 py-2 text-right font-mono">${obat.stok}</td>
+                                <td class="px-3 py-2 text-right text-gray-600">${formatRupiah(obat.harga_dasar)}</td>
                             </tr>`;
                         });
                         html += '</tbody></table>';
@@ -287,12 +316,12 @@
             suratPesananSelect.addEventListener('change', function () {
                 const spId = this.value;
                 const selectedOption = this.options[this.selectedIndex];
-                if (selectedOption) {
+                if (selectedOption && spId) {
                     const spSupplierId = selectedOption.dataset.supplierId;
                     supplierSelect.value = spSupplierId; // Otomatis pilih supplier dari SP
                 }
                 
-                obatList.innerHTML = '<div class="text-gray-500 text-sm">Memuat...</div>';
+                obatList.innerHTML = spinnerHtml;
                 tableItems.innerHTML = ''; // Clear item pembelian
                 itemIndex = 0; // Reset counter
 
@@ -310,20 +339,20 @@
                             return;
                         }
 
-                        let html = '<table class="w-full border border-gray-300 table-auto">';
-                        html += '<thead class="bg-gray-100"><tr><th></th><th class="px-2 py-1">Kode</th><th class="px-2 py-1">Nama</th><th class="px-2 py-1 text-right">Qty Pesan</th><th class="px-2 py-1 text-right">Qty Terima</th><th class="px-2 py-1 text-right">Sisa Pesan</th><th class="px-2 py-1 text-right">Harga SP</th></tr></thead><tbody>';
+                        let html = '<table class="w-full border-collapse table-auto text-sm">';
+                        html += '<thead class="bg-gray-50 text-gray-600 border-b border-gray-200"><tr><th class="px-3 py-2 text-center w-10"></th><th class="px-3 py-2 text-left">Kode</th><th class="px-3 py-2 text-left">Nama</th><th class="px-3 py-2 text-right">Qty Pesan</th><th class="px-3 py-2 text-right">Qty Terima</th><th class="px-3 py-2 text-right">Sisa Pesan</th><th class="px-3 py-2 text-right">Harga SP</th></tr></thead><tbody class="divide-y divide-gray-100">';
 
                         sp.details.forEach(spDetail => {
                             const sisaPesan = spDetail.qty_pesan - spDetail.qty_terima;
                             if (sisaPesan > 0) { // Hanya tampilkan obat yang masih ada sisa pesanan
-                                html += `<tr class="hover:bg-gray-50">
-                                    <td class="text-center px-2 py-1"><input type="checkbox" class="obat-checkbox-sp" data-obat='${JSON.stringify(spDetail.obat)}' data-sp-detail='${JSON.stringify(spDetail)}'></td>
-                                    <td class="px-2 py-1">${spDetail.obat.kode}</td>
-                                    <td class="px-2 py-1">${spDetail.obat.nama}</td>
-                                    <td class="px-2 py-1 text-right">${spDetail.qty_pesan}</td>
-                                    <td class="px-2 py-1 text-right">${spDetail.qty_terima}</td>
-                                    <td class="px-2 py-1 text-right font-bold text-blue-600">${sisaPesan}</td>
-                                    <td class="px-2 py-1 text-right">${formatRupiah(spDetail.harga_satuan)}</td>
+                                html += `<tr class="hover:bg-blue-50 transition-colors">
+                                    <td class="text-center px-3 py-2"><input type="checkbox" class="obat-checkbox-sp w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" data-obat='${JSON.stringify(spDetail.obat)}' data-sp-detail='${JSON.stringify(spDetail)}'></td>
+                                    <td class="px-3 py-2 text-gray-500">${spDetail.obat.kode}</td>
+                                    <td class="px-3 py-2 font-medium text-gray-800">${spDetail.obat.nama}</td>
+                                    <td class="px-3 py-2 text-right font-mono">${spDetail.qty_pesan}</td>
+                                    <td class="px-3 py-2 text-right font-mono">${spDetail.qty_terima}</td>
+                                    <td class="px-3 py-2 text-right font-mono font-bold text-blue-600">${sisaPesan}</td>
+                                    <td class="px-3 py-2 text-right text-gray-600">${formatRupiah(spDetail.harga_satuan)}</td>
                                 </tr>`;
                             }
                         });
@@ -356,7 +385,7 @@
                 const items = tableItems.querySelectorAll('tr');
                 if (items.length === 0) {
                     e.preventDefault();
-                    alert('Pilih minimal 1 obat untuk pembelian!');
+                    showToast('Pilih minimal 1 obat untuk pembelian!', 'error');
                     return false;
                 }
             });

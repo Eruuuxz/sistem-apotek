@@ -313,7 +313,10 @@ class PembelianService
     private function updateStockAndBatches(Pembelian $pembelian, PembelianDetail $detail, int $jumlahBaru, int $jumlahLama, float $hargaBeli, string $noBatch, string $expiredDate): void
     {
         $obat = $detail->obat;
-        $deltaQty = $jumlahBaru - $jumlahLama;
+        
+        // Karena status sebelumnya adalah 'draft' (dimana stok belum ditambahkan sama sekali),
+        // maka kuantitas yang ditambahkan ke stok utama dan batch adalah seluruh $jumlahBaru, bukan selisihnya ($deltaQty).
+        $qtyToAdd = $jumlahBaru;
 
         // 1. Update Batch (Hapus batch lama jika ada, lalu buat/update batch baru)
         // Dalam konteks ini, kita asumsikan detail pembelian yang di-update
@@ -328,21 +331,21 @@ class PembelianService
 
         if ($batch->exists) {
             // Jika batch sudah ada, tambahkan delta (perubahan kuantitas)
-            $batch->stok_awal += $deltaQty;
-            $batch->stok_saat_ini += $deltaQty;
+            $batch->stok_awal += $qtyToAdd;
+            $batch->stok_saat_ini += $qtyToAdd;
             $batch->harga_beli_per_unit = $hargaBeli; // Update harga beli terbaru
             $batch->save();
         } else {
             // Batch baru
             $batch->fill([
-                'stok_awal' => $jumlahBaru,
-                'stok_saat_ini' => $jumlahBaru,
+                'stok_awal' => $qtyToAdd,
+                'stok_saat_ini' => $qtyToAdd,
                 'harga_beli_per_unit' => $hargaBeli,
             ])->save();
         }
 
         // 2. Update Stok Obat Total
-        $obat->increment('stok', $deltaQty);
+        $obat->increment('stok', $qtyToAdd);
     }
     
     /**

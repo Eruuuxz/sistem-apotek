@@ -30,8 +30,9 @@
 
     <title>Login {{ ucfirst($role) }} - Sistem Apotek</title>
     @vite('resources/css/app.css')
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
-        @import url('https://rsms.me/inter/inter.css');
         html { font-family: 'Inter', sans-serif; }
     </style>
 </head>

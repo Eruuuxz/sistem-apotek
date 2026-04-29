@@ -3,11 +3,29 @@
 @section('title', 'POS Kasir')
 
 @section('content')
-<div class="h-[calc(100vh-100px)] flex flex-col md:flex-row gap-4 overflow-hidden">
+@if(!$activeShift)
+    @include('kasir.partials.set_initial_cash_form')
+@else
+{{-- Banner informasi sesi --}}
+<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4 flex justify-between items-center text-sm shadow-sm">
+    <div>
+        <span class="font-semibold"><i data-feather="check-circle" class="w-4 h-4 inline-block mr-1 mb-0.5"></i>Sesi Aktif</span> | 
+        Modal Awal: <strong class="text-green-800">Rp {{ number_format($initialCash ?? 0, 0, ',', '.') }}</strong> | 
+        Total Penjualan: <strong class="text-green-800">Rp {{ number_format($totalSalesToday ?? 0, 0, ',', '.') }}</strong>
+    </div>
+    <form action="{{ route('pos.clearInitialCash') }}" method="POST" class="m-0">
+        @csrf
+        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap text-xs font-bold shadow-sm" onclick="return confirm('Apakah Anda yakin ingin mengakhiri sesi kasir ini? Anda harus memasukkan modal awal lagi untuk memulai sesi baru.')">
+            AKHIRI SHIFT
+        </button>
+    </form>
+</div>
+
+<div class="h-[calc(100vh-170px)] flex flex-col md:flex-row gap-4 overflow-hidden">
     
     <div class="md:w-8/12 flex flex-col gap-4 h-full">
         <div class="bg-white p-4 rounded-xl shadow-sm shrink-0">
-            <form action="{{ route('pos.add') }}" method="POST" class="relative">
+            <form id="search-form" onsubmit="event.preventDefault(); addToCartAjax($('#search').val()); $('#search').val('');" class="relative">
                 @csrf
                 <i data-feather="search" class="absolute left-4 top-3.5 w-5 h-5 text-gray-400"></i>
                 <input type="text" id="search" name="kode" 
@@ -26,7 +44,7 @@
                 </button>
             </div>
             
-            <div class="overflow-y-auto p-0 flex-1">
+            <div class="overflow-y-auto p-0 flex-1" id="cart-container">
                 @include('kasir.partials.cart_table') 
             </div>
         </div>
@@ -52,6 +70,7 @@
 
 @include('kasir.partials.modal_list_obat')
 @include('kasir.partials.modal_add_pelanggan')
+@endif
 
 @endsection
 
@@ -195,9 +214,9 @@
                                 li.className = "px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm";
                                 li.innerHTML = `${item.nama} <span class="text-xs text-gray-500">(${item.kode})</span>`;
                                 li.onclick = () => {
-                                    searchBox.value = item.kode;
+                                    addToCartAjax(item.kode);
+                                    searchBox.value = "";
                                     suggestionBox.classList.add('hidden');
-                                    searchBox.form.submit();
                                 };
                                 suggestionBox.appendChild(li);
                             });
@@ -214,7 +233,9 @@
                     }
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        searchBox.form.submit();
+                        addToCartAjax(searchBox.value);
+                        searchBox.value = "";
+                        suggestionBox.classList.add('hidden');
                         return;
                     }
                     timer = setTimeout(() => fetchSuggestions(q), 300);
@@ -235,16 +256,92 @@
             }
 
             // --- AJAX & EVENT LISTENER MODAL ---
+            function showToast(message, type = 'success') {
+                const color = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+                const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+                const toast = $(`
+                    <div class="fixed top-5 right-5 ${color} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-[9999] opacity-0 transition-opacity duration-300 transform translate-y-[-20px]">
+                        <i data-feather="${icon}" class="w-5 h-5"></i>
+                        <span class="text-sm font-medium">${message}</span>
+                    </div>
+                `);
+                $('body').append(toast);
+                feather.replace();
+                
+                // Animate in
+                setTimeout(() => toast.removeClass('opacity-0 translate-y-[-20px]').addClass('opacity-100 translate-y-0'), 10);
+                
+                // Animate out
+                setTimeout(() => {
+                    toast.removeClass('opacity-100 translate-y-0').addClass('opacity-0 translate-y-[-20px]');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            function updateCartUI(response) {
+                if (response.success) {
+                    $('#cart-container').html(response.html);
+                    feather.replace();
+                    
+                    $('#total_display_big').text("Rp " + response.totals.totalAkhir.toLocaleString('id-ID'));
+                    $('.text-xs.bg-green-500').text(response.cart_count + " Item");
+                    
+                    $('#total_subtotal').val(response.totals.totalSebelumDiskon); // Sesuai logika baru (tanpa PPN)
+                    
+                    // Hitung total di payment summary
+                    hitungTotal();
+                    checkPsikotropikaInCart();
+                    
+                    if(response.message) showToast(response.message, 'success');
+                }
+            }
+
+            window.addToCartAjax = function(kode) {
+                if (!kode) return;
+                $.ajax({
+                    url: "{{ route('pos.add') }}",
+                    method: 'POST',
+                    data: { _token: "{{ csrf_token() }}", kode: kode },
+                    success: updateCartUI,
+                    error: function(xhr) {
+                        showToast(xhr.responseJSON?.error || 'Gagal menambahkan obat', 'error');
+                    }
+                });
+            };
+
+            window.updateQtyAjax = function(kode, qty) {
+                $.ajax({
+                    url: "{{ route('pos.update') }}",
+                    method: 'POST',
+                    data: { _token: "{{ csrf_token() }}", kode: kode, qty: qty },
+                    success: updateCartUI,
+                    error: function(xhr) {
+                        showToast(xhr.responseJSON?.error || 'Gagal mengubah kuantitas', 'error');
+                        if(xhr.responseJSON?.error) {
+                            // Reload data keranjang agar qty kembali normal (fetch cart info from server silently)
+                            // For simplicity, we just reload the page if qty is invalid
+                            setTimeout(() => location.reload(), 1500);
+                        }
+                    }
+                });
+            };
+
+            window.removeFromCartAjax = function(kode) {
+                $.ajax({
+                    url: "{{ route('pos.remove') }}",
+                    method: 'POST',
+                    data: { _token: "{{ csrf_token() }}", kode: kode },
+                    success: updateCartUI,
+                    error: function(xhr) {
+                        showToast('Gagal menghapus obat', 'error');
+                    }
+                });
+            };
+
             $(document).on('click', '.add-to-cart-btn', function() {
                 const button = $(this);
                 const kodeObat = button.data('kode');
-                
-                button.prop('disabled', true).html('...');
-
-                $('<form action="{{ route('pos.add') }}" method="POST">' +
-                  '<input type="hidden" name="_token" value="{{ csrf_token() }}">' +
-                  '<input type="hidden" name="kode" value="' + kodeObat + '">' +
-                  '</form>').appendTo('body').submit();
+                addToCartAjax(kodeObat);
             });
 
             $('#add-pelanggan-form').on('submit', function (e) {
